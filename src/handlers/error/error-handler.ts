@@ -3,7 +3,7 @@ import { BorsaItalianaHttpErrorResponse } from "../../interfaces/borsa-italiana-
 import { logger } from "../../logger/logger";
 import { MyMessageContext } from "../../interfaces/custom-context.interface";
 
-export const errorHandler = (error: unknown, ctx: MyMessageContext): string => {
+export const errorHandler = (error: unknown): string => {
   const defaultErrorMessage = "❌ Si è verificato un errore. Riprova più tardi.";
 
   if (error instanceof AxiosError) {

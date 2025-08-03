@@ -29,9 +29,9 @@ export interface BorsaItalianaHttpErrorResponse {
 export type BorsaItalianaApiResponse = BorsaItalianaResponse | BorsaItalianaErrorResponse;
 
 // Type guard per verificare se la risposta contiene dati validi
-export function isBorsaItalianaValidResponse(response: BorsaItalianaApiResponse): response is BorsaItalianaResponse {
+export const isBorsaItalianaValidResponse = (response: BorsaItalianaApiResponse): response is BorsaItalianaResponse => {
   return "intradayPoint" in response && Array.isArray(response.intradayPoint);
-}
+};
 
 export interface IntradayPoint {
   time: string;

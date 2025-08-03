@@ -1,7 +1,8 @@
+import { TelegramInlineKeyboardButton } from "gramio";
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
-import { MyMessageContext } from "../../interfaces/custom-context.interface";
+import { isCallbackContext, MyCallbackQueryContext, MyMessageContext } from "../../interfaces/custom-context.interface";
 import { logger } from "../../logger/logger";
 import { ApiHandler } from "../api/api-handler";
 import { DatabaseHandler } from "../database/database-handler";
@@ -114,12 +115,22 @@ export const handleAlertAttiviCommand = async (ctx: MyMessageContext): Promise<v
 export const handleEliminaTuttiGliAlertsCommand = async (ctx: MyMessageContext): Promise<void> => {
   try {
     await ctx.sendChatAction("typing");
+
     const userTelegramId = ctx.from?.id!;
     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
     if (alerts.length > 0) {
-      await dataBaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
-      logger.info(`Tutti gli alerts dello user ${userTelegramId} sono stati eliminati.`);
-      await ctx.reply(`✅ Tutti gli alerts sono stati eliminati con successo.`);
+      const message = "⚠️ Vuoi veramente eliminare tutti gli alerts attivi?";
+      const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
+        [
+          { text: "✅ Sì", callback_data: "delete:all_alerts" },
+          { text: "❌ No", callback_data: "cancel_delete:all_alerts" },
+        ],
+      ];
+
+      const replyOptions = {
+        reply_markup: { inline_keyboard: inlineKeyboard },
+      };
+      await ctx.reply(message, replyOptions);
     } else {
       await ctx.reply(`⚠️ Non hai nessun alert attivo da eliminare.`);
     }
@@ -157,11 +168,19 @@ export const handleTestCommand = async (ctx: MyMessageContext): Promise<void> =>
   }
 };
 
-const handleError = async (error: unknown, ctx: MyMessageContext): Promise<void> => {
+export const handleError = async (error: unknown, ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
   try {
-    const message = errorHandler(error, ctx);
-    await ctx.reply(message);
+    const message = errorHandler(error);
+    await replyOrEdit(ctx, message);
   } catch (error) {
     logger.error(`Invio del messaggio di errore a Telegram non riuscito: ${(error as Error).message}`);
+  }
+};
+
+const replyOrEdit = async (ctx: MyMessageContext | MyCallbackQueryContext, text: string, options?: Object): Promise<void> => {
+  if (isCallbackContext(ctx)) {
+    await ctx.editText(text, options);
+  } else {
+    await ctx.reply(text, options);
   }
 };

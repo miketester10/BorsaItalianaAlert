@@ -1,7 +1,8 @@
 import { Bot } from "gramio";
 import { logger } from "../../logger/logger";
-import { MyMessageContext } from "../../interfaces/custom-context.interface";
+import { MyCallbackQueryContext, MyMessageContext } from "../../interfaces/custom-context.interface";
 import { handlePriceCommand, handleStartCommand, handleAlertCommand, handleAlertAttiviCommand, handleTestCommand, handleEliminaTuttiGliAlertsCommand } from "./commands-helper";
+import { handleCallbackQuery } from "./callback-helper";
 
 export class BotHandler {
   private readonly BOT_TOKEN: string = process.env.BOT_TOKEN!;
@@ -80,6 +81,10 @@ export class BotHandler {
     });
     this.bot.command("test", async (ctx: MyMessageContext) => {
       await handleTestCommand(ctx);
+    });
+    // Handle Callback
+    this.bot.callbackQuery<RegExp>(/^.+$/, async (ctx: MyCallbackQueryContext) => {
+      await handleCallbackQuery(ctx);
     });
   }
 }
