@@ -1,0 +1,144 @@
+import { API } from "../../consts/api";
+import { JWT } from "../../consts/jwt";
+import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
+import { MyMessageContext } from "../../interfaces/custom-context.interface";
+import { logger } from "../../logger/logger";
+import { ApiHandler } from "../api/api-handler";
+import { DatabaseHandler } from "../database/database-handler";
+import { errorHandler } from "../error/error-handler";
+
+const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
+const apiHandler: ApiHandler = ApiHandler.getInstance();
+
+export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> => {
+  try {
+    await ctx.sendChatAction("typing");
+    const telegramId = ctx.from?.id!;
+    const name = ctx.from?.firstName!;
+    const username = ctx.from?.username ?? null;
+    logger.info(`Bot avviato da: ${name} - Telegram ID: ${telegramId}`);
+
+    const user = await dataBaseHandler.findUserByTelegramId(telegramId);
+    if (user) {
+      const isUpdated = await dataBaseHandler.updateUser(telegramId, user, { name, username });
+      logger.warn(`Utente già registrato. ${isUpdated ? `Dati aggiornati con successo.` : `Nessun dato da aggiornare è stato trovato.`}`);
+    } else {
+      await dataBaseHandler.createUser({ telegramId, name, username });
+      logger.info(`Nuovo utente registrato con successo.`);
+    }
+    await ctx.reply(`👋 Benvenuto ${name}`);
+  } catch (error) {
+    handleError(error, ctx);
+  }
+};
+
+export const handlePriceCommand = async (ctx: MyMessageContext): Promise<void> => {
+  try {
+    await ctx.sendChatAction("typing");
+    const isin = ctx.update?.message?.text?.trim().split(/\s+/)[1]?.toUpperCase();
+    if (!isin) {
+      await ctx.reply("⚠️ Inserisci un ISIN valido.");
+      return;
+    }
+    const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, {
+      Authorization: `Bearer ${JWT.BORSA_ITALIANA}`,
+    });
+    if (isBorsaItalianaValidResponse(response)) {
+      const price = response.intradayPoint.at(-1)?.endPx;
+      const name = response.label;
+      logger.info(`Ultimo prezzo: ${price}€`);
+      await ctx.reply(`💰 ${isin} - ${name}\nPrezzo: ${price}€`);
+    } else {
+      logger.warn(`ISIN ${isin} non valido o non trovato.`);
+      await ctx.reply("⚠️ ISIN non valido o non trovato.");
+    }
+  } catch (error) {
+    handleError(error, ctx);
+  }
+};
+
+export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> => {
+  try {
+    await ctx.sendChatAction("typing");
+    const userTelegramId = ctx.from?.id!;
+    const [command, isinRaw, priceRaw] = ctx.update?.message?.text?.trim().split(/\s+/) as [string, string | undefined, string | undefined];
+    const isin = isinRaw?.toUpperCase();
+    const alertPrice = Number(priceRaw?.replace(",", "."));
+    if (!isin || isNaN(alertPrice)) {
+      await ctx.reply("⚠️ Inserisci un ISIN ed un prezzo valido.");
+      return;
+    }
+    const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, {
+      Authorization: `Bearer ${JWT.BORSA_ITALIANA}`,
+    });
+    if (isBorsaItalianaValidResponse(response)) {
+      await dataBaseHandler.createAlert({ userTelegramId, alertPrice, isin });
+      logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${alertPrice}€`);
+      await ctx.reply(`✅ Alert registrato con successo.`);
+    } else {
+      logger.warn(`ISIN ${isin} non trovato. Nessun alert è stato registrato.`);
+      await ctx.reply(`⚠️ ISIN non trovato. Nessun alert è stato registrato.`);
+    }
+  } catch (error) {
+    handleError(error, ctx);
+  }
+};
+
+export const handleAlertAttiviCommand = async (ctx: MyMessageContext): Promise<void> => {
+  try {
+    await ctx.sendChatAction("typing");
+    const userTelegramId = ctx.from?.id!;
+    const alerts = await dataBaseHandler.findAlertsByTelegramId(userTelegramId);
+    let message = `📋 Lista degli alert attivi:\n`;
+    if (alerts.length > 0) {
+      message += alerts
+        .map((alert, _index) => {
+          return `${_index + 1}: ${alert.isin} - ${alert.alertPrice}€\n`;
+        })
+        .join("");
+      ctx.reply(message);
+    } else {
+      await ctx.reply(`⚠️ Non hai nessun alert attivo.`);
+    }
+  } catch (error) {
+    handleError(error, ctx);
+  }
+};
+
+export const handleTestCommand = async (ctx: MyMessageContext): Promise<void> => {
+  try {
+    const userId = ctx.from?.id!;
+    // const firstName = ctx.from?.firstName!;
+    // const userName = ctx.from?.username;
+
+    const prisma = DatabaseHandler.getInstance().prisma;
+    const user = await prisma.user.findUnique({ where: { telegramId: userId }, include: { alerts: true } });
+    const alerts = await prisma.alert.findMany({ where: { userTelegramId: userId }, select: { alertPrice: true, isin: true } });
+
+    if (!user) {
+      logger.warn(`Utente con ID ${userId} non trovato.`);
+    } else {
+      logger.info(`Utente trovato: ${user.name} (${user.telegramId})`);
+    }
+
+    if (alerts.length > 0) {
+      alerts.map((alert) => {
+        logger.info(`Alert per l'utente ${userId}: ${alert.isin} - Prezzo alert: ${alert.alertPrice}`);
+      });
+    } else {
+      logger.info(`Nessun alert trovato per l'utente ${userId}.`);
+    }
+    await ctx.reply("Test command executed successfully!");
+  } catch (error) {
+    handleError(error, ctx);
+  }
+};
+
+const handleError = async (error: unknown, ctx: MyMessageContext): Promise<void> => {
+  try {
+    const message = errorHandler(error, ctx);
+    await ctx.reply(message);
+  } catch (error) {
+    logger.error(`Invio del messaggio di errore a Telegram non riuscito: ${(error as Error).message}`);
+  }
+};

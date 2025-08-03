@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mongodb"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+  // The relationMode is set to "prisma" to use Prisma's relation mode for MongoDB.
+  // This allows for more intuitive relations and easier querying.
+}
+
+model User {
+  telegramId Int      @id @map("_id")
+  name       String
+  username   String?
+  alerts     Alert[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Alert {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  isin                 String
+  alertPrice           Float
+  above                Boolean  @default(false)
+  below                Boolean  @default(false)
+  lastNotificationSent Boolean  @default(false)
+  lastCheckPrice       Float?
+  userTelegramId       Int
+  user                 User     @relation(fields: [userTelegramId], references: [telegramId])
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}

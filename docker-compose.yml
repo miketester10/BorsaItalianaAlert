@@ -1,0 +1,15 @@
+services:
+  AztecBot:
+    image: node:20
+    container_name: BTPAlertBot
+    working_dir: /app
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - TZ=Europe/Rome # Imposta la variabile TimeZone per avere l'orario italiano nei logs
+    command: ["sh", "-c", "npm install --include=dev && npm run start"]
+    restart: unless-stopped
+    mem_limit: 1000m
+    memswap_limit: 1000m

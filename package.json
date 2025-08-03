@@ -1,0 +1,30 @@
+{
+  "name": "bot_btp_price",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "dev": "nodemon  --watch src --exec ts-node src/main.ts",
+    "start": "ts-node src/main.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "@types/node-cron": "^3.0.11",
+    "nodemon": "^3.1.10",
+    "prisma": "^6.13.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.13.0",
+    "axios": "^1.11.0",
+    "cron": "^4.3.2",
+    "dotenv": "16.5.0",
+    "gramio": "^0.4.10",
+    "pino": "^9.7.0",
+    "pino-pretty": "^13.0.0"
+  }
+}
