@@ -1,15 +1,7 @@
 import { Bot } from "gramio";
 import { logger } from "../../logger/logger";
 import { MyCallbackQueryContext, MyMessageContext } from "../../interfaces/custom-context.interface";
-import {
-  handlePriceCommand,
-  handleStartCommand,
-  handleAlertCommand,
-  handleAlertAttiviCommand,
-  handleTestCommand,
-  handleEliminaTuttiGliAlertsCommand,
-  handleEliminaAlertCommand,
-} from "./commands-helper";
+import { handlePrezzoCommand, handleStartCommand, handleAlertCommand, handleAlertAttiviCommand, handleEliminaAllAlertsCommand } from "./commands-helper";
 import { handleCallbackQuery } from "./callback-helper";
 
 export class BotHandler {
@@ -57,12 +49,12 @@ export class BotHandler {
             command: "alert_attivi",
             description: "Lista degli alert attivi",
           },
+          // {
+          //   command: "elimina_alert",
+          //   description: "<numero> - Elimina un singolo alert attivo",
+          // },
           {
-            command: "elimina_alert",
-            description: "<numero> - Elimina un singolo alert attivo",
-          },
-          {
-            command: "elimina_tutti_gli_alerts",
+            command: "elimina_all_alerts",
             description: "Elimina tutti gli alerts attivi",
           },
         ],
@@ -80,7 +72,7 @@ export class BotHandler {
       await handleStartCommand(ctx);
     });
     this.bot.command("prezzo", async (ctx: MyMessageContext) => {
-      await handlePriceCommand(ctx);
+      await handlePrezzoCommand(ctx);
     });
     this.bot.command("alert", async (ctx: MyMessageContext) => {
       await handleAlertCommand(ctx);
@@ -88,14 +80,11 @@ export class BotHandler {
     this.bot.command("alert_attivi", async (ctx: MyMessageContext) => {
       await handleAlertAttiviCommand(ctx);
     });
-    this.bot.command("elimina_alert", async (ctx: MyMessageContext) => {
-      await handleEliminaAlertCommand(ctx);
-    });
-    this.bot.command("elimina_tutti_gli_alerts", async (ctx: MyMessageContext) => {
-      await handleEliminaTuttiGliAlertsCommand(ctx);
-    });
-    this.bot.command("test", async (ctx: MyMessageContext) => {
-      await handleTestCommand(ctx);
+    // this.bot.command("elimina_alert", async (ctx: MyMessageContext) => {
+    //   await handleEliminaAlertCommand(ctx);
+    // });
+    this.bot.command("elimina_all_alerts", async (ctx: MyMessageContext) => {
+      await handleEliminaAllAlertsCommand(ctx);
     });
     // Handle Callback
     this.bot.callbackQuery<RegExp>(/^.+$/, async (ctx: MyCallbackQueryContext) => {

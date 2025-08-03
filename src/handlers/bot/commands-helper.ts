@@ -1,4 +1,4 @@
-import { TelegramInlineKeyboardButton } from "gramio";
+import { format, italic, TelegramInlineKeyboardButton, underline } from "gramio";
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
@@ -27,13 +27,13 @@ export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> =
       await dataBaseHandler.createUser({ telegramId, name, username });
       logger.info(`Nuovo utente registrato con successo.`);
     }
-    await ctx.reply(`👋 Benvenuto ${name}`);
+    await ctx.reply(`👋 Ciao ${name}`);
   } catch (error) {
     handleError(error, ctx);
   }
 };
 
-export const handlePriceCommand = async (ctx: MyMessageContext): Promise<void> => {
+export const handlePrezzoCommand = async (ctx: MyMessageContext): Promise<void> => {
   try {
     await ctx.sendChatAction("typing");
     const isin = ctx.update?.message?.text?.trim().split(/\s+/)[1]?.toUpperCase();
@@ -98,7 +98,7 @@ export const handleAlertAttiviCommand = async (ctx: MyMessageContext): Promise<v
     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
 
     if (alerts.length > 0) {
-      let message = `📋 Lista degli alert attivi.\n\nSeleziona un alert per eliminarlo singolarmente.`;
+      let message = format`📋 Lista degli alert attivi\n\n${underline(italic(`Seleziona un alert per eliminarlo singolarmente`))}`;
 
       // Creo i pulsanti inline per ogni alert
       const inlineKeyboard: TelegramInlineKeyboardButton[][] = alerts.map((alert, index) => [
@@ -121,49 +121,49 @@ export const handleAlertAttiviCommand = async (ctx: MyMessageContext): Promise<v
   }
 };
 
-export const handleEliminaAlertCommand = async (ctx: MyMessageContext): Promise<void> => {
-  try {
-    await ctx.sendChatAction("typing");
-    const userTelegramId = ctx.from?.id!;
-    const alertNumber = Number(ctx.update?.message?.text?.trim().split(/\s+/)[1]);
+// export const handleEliminaAlertCommand = async (ctx: MyMessageContext): Promise<void> => {
+//   try {
+//     await ctx.sendChatAction("typing");
+//     const userTelegramId = ctx.from?.id!;
+//     const alertNumber = Number(ctx.update?.message?.text?.trim().split(/\s+/)[1]);
 
-    if (isNaN(alertNumber) || alertNumber < 1) {
-      await ctx.reply("⚠️ Inserisci un numero valido per l'alert da eliminare.\nEsempio: /elimina_alert 1");
-      return;
-    }
+//     if (isNaN(alertNumber) || alertNumber < 1) {
+//       await ctx.reply("⚠️ Inserisci un numero valido per l'alert da eliminare.\nEsempio: /elimina_alert 1");
+//       return;
+//     }
 
-    const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
+//     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
 
-    if (alerts.length === 0) {
-      await ctx.reply("⚠️ Non hai nessun alert attivo da eliminare.");
-      return;
-    }
+//     if (alerts.length === 0) {
+//       await ctx.reply("⚠️ Non hai nessun alert attivo da eliminare.");
+//       return;
+//     }
 
-    if (alertNumber > alerts.length) {
-      await ctx.reply(`⚠️ Numero alert non valido. Hai ${alerts.length} alert attivi.`);
-      return;
-    }
+//     if (alertNumber > alerts.length) {
+//       await ctx.reply(`⚠️ Numero alert non valido. Hai ${alerts.length} alert attivi.`);
+//       return;
+//     }
 
-    const alertToDelete = alerts[alertNumber - 1];
+//     const alertToDelete = alerts[alertNumber - 1];
 
-    const message = `⚠️ Vuoi eliminare l'alert ${alertNumber}: ${alertToDelete.isin} - ${alertToDelete.alertPrice}€?`;
-    const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
-      [
-        { text: "✅ Sì", callback_data: `delete:single_alert:${alertToDelete.id}` },
-        { text: "❌ No", callback_data: "cancel_delete:single_alert" },
-      ],
-    ];
+//     const message = `⚠️ Vuoi eliminare l'alert ${alertNumber}: ${alertToDelete.isin} - ${alertToDelete.alertPrice}€?`;
+//     const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
+//       [
+//         { text: "✅ Sì", callback_data: `delete:single_alert:${alertToDelete.id}` },
+//         { text: "❌ No", callback_data: "cancel_delete:single_alert" },
+//       ],
+//     ];
 
-    const replyOptions = {
-      reply_markup: { inline_keyboard: inlineKeyboard },
-    };
-    await ctx.reply(message, replyOptions);
-  } catch (error) {
-    handleError(error, ctx);
-  }
-};
+//     const replyOptions = {
+//       reply_markup: { inline_keyboard: inlineKeyboard },
+//     };
+//     await ctx.reply(message, replyOptions);
+//   } catch (error) {
+//     handleError(error, ctx);
+//   }
+// };
 
-export const handleEliminaTuttiGliAlertsCommand = async (ctx: MyMessageContext): Promise<void> => {
+export const handleEliminaAllAlertsCommand = async (ctx: MyMessageContext): Promise<void> => {
   try {
     await ctx.sendChatAction("typing");
 
@@ -185,35 +185,6 @@ export const handleEliminaTuttiGliAlertsCommand = async (ctx: MyMessageContext):
     } else {
       await ctx.reply(`⚠️ Non hai nessun alert attivo da eliminare.`);
     }
-  } catch (error) {
-    handleError(error, ctx);
-  }
-};
-
-export const handleTestCommand = async (ctx: MyMessageContext): Promise<void> => {
-  try {
-    const userId = ctx.from?.id!;
-    // const firstName = ctx.from?.firstName!;
-    // const userName = ctx.from?.username;
-
-    const prisma = DatabaseHandler.getInstance().prisma;
-    const user = await prisma.user.findUnique({ where: { telegramId: userId }, include: { alerts: true } });
-    const alerts = await prisma.alert.findMany({ where: { userTelegramId: userId }, select: { alertPrice: true, isin: true } });
-
-    if (!user) {
-      logger.warn(`Utente con ID ${userId} non trovato.`);
-    } else {
-      logger.info(`Utente trovato: ${user.name} (${user.telegramId})`);
-    }
-
-    if (alerts.length > 0) {
-      alerts.map((alert) => {
-        logger.info(`Alert per l'utente ${userId}: ${alert.isin} - Prezzo alert: ${alert.alertPrice}`);
-      });
-    } else {
-      logger.info(`Nessun alert trovato per l'utente ${userId}.`);
-    }
-    await ctx.reply("Test command executed successfully!");
   } catch (error) {
     handleError(error, ctx);
   }
