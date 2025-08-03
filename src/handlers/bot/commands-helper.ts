@@ -72,9 +72,15 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
       Authorization: `Bearer ${JWT.BORSA_ITALIANA}`,
     });
     if (isBorsaItalianaValidResponse(response)) {
-      await dataBaseHandler.createAlert({ userTelegramId, alertPrice, isin });
-      logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${alertPrice}€`);
-      await ctx.reply(`✅ Alert registrato con successo.`);
+      const alert = await dataBaseHandler.findAlert(userTelegramId, isin, alertPrice);
+      if (alert) {
+        logger.warn(`Alert già registrato.`);
+        await ctx.reply(`⚠️ Alert già registrato.`);
+      } else {
+        await dataBaseHandler.createAlert({ userTelegramId, alertPrice, isin });
+        logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${alertPrice}€`);
+        await ctx.reply(`✅ Alert registrato con successo.`);
+      }
     } else {
       logger.warn(`ISIN ${isin} non trovato. Nessun alert è stato registrato.`);
       await ctx.reply(`⚠️ ISIN non trovato. Nessun alert è stato registrato.`);
@@ -88,7 +94,7 @@ export const handleAlertAttiviCommand = async (ctx: MyMessageContext): Promise<v
   try {
     await ctx.sendChatAction("typing");
     const userTelegramId = ctx.from?.id!;
-    const alerts = await dataBaseHandler.findAlertsByTelegramId(userTelegramId);
+    const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
     let message = `📋 Lista degli alert attivi:\n`;
     if (alerts.length > 0) {
       message += alerts
@@ -99,6 +105,23 @@ export const handleAlertAttiviCommand = async (ctx: MyMessageContext): Promise<v
       ctx.reply(message);
     } else {
       await ctx.reply(`⚠️ Non hai nessun alert attivo.`);
+    }
+  } catch (error) {
+    handleError(error, ctx);
+  }
+};
+
+export const handleEliminaTuttiGliAlertsCommand = async (ctx: MyMessageContext): Promise<void> => {
+  try {
+    await ctx.sendChatAction("typing");
+    const userTelegramId = ctx.from?.id!;
+    const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
+    if (alerts.length > 0) {
+      await dataBaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
+      logger.info(`Tutti gli alerts dello user ${userTelegramId} sono stati eliminati.`);
+      await ctx.reply(`✅ Tutti gli alerts sono stati eliminati con successo.`);
+    } else {
+      await ctx.reply(`⚠️ Non hai nessun alert attivo da eliminare.`);
     }
   } catch (error) {
     handleError(error, ctx);

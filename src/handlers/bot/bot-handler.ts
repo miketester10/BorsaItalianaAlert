@@ -1,7 +1,7 @@
 import { Bot } from "gramio";
 import { logger } from "../../logger/logger";
 import { MyMessageContext } from "../../interfaces/custom-context.interface";
-import { handlePriceCommand, handleStartCommand, handleAlertCommand, handleAlertAttiviCommand, handleTestCommand } from "./commands-helper";
+import { handlePriceCommand, handleStartCommand, handleAlertCommand, handleAlertAttiviCommand, handleTestCommand, handleEliminaTuttiGliAlertsCommand } from "./commands-helper";
 
 export class BotHandler {
   private readonly BOT_TOKEN: string = process.env.BOT_TOKEN!;
@@ -32,7 +32,6 @@ export class BotHandler {
   }
 
   private async inizializeMenu(): Promise<boolean> {
-    // farlo nell helper dei comandi
     try {
       const commands_set = await this.bot.api.setMyCommands({
         commands: [
@@ -48,6 +47,10 @@ export class BotHandler {
           {
             command: "alert_attivi",
             description: "Lista degli alert attivi",
+          },
+          {
+            command: "elimina_tutti_gli_alerts",
+            description: "Elimina tutti gli alerts attivi",
           },
         ],
       });
@@ -71,6 +74,9 @@ export class BotHandler {
     });
     this.bot.command("alert_attivi", async (ctx: MyMessageContext) => {
       await handleAlertAttiviCommand(ctx);
+    });
+    this.bot.command("elimina_tutti_gli_alerts", async (ctx: MyMessageContext) => {
+      await handleEliminaTuttiGliAlertsCommand(ctx);
     });
     this.bot.command("test", async (ctx: MyMessageContext) => {
       await handleTestCommand(ctx);
