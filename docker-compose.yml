@@ -1,7 +1,7 @@
 services:
-  AztecBot:
+  BorsaItalianaAlertBot:
     image: node:20
-    container_name: BTPAlertBot
+    container_name: BorsaItalianaAlertBot
     working_dir: /app
     volumes:
       - .:/app
