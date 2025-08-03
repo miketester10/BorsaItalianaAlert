@@ -82,6 +82,20 @@ export class DatabaseHandler {
     }
   }
 
+  async findAlertById(alertId: string): Promise<Alert | null> {
+    try {
+      const alert = await this.prisma.alert.findUnique({
+        where: { id: alertId },
+        include: {
+          user: true,
+        },
+      });
+      return alert;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async findAllAlertsByTelegramId(userTelegramId: number): Promise<Alert[]> {
     try {
       const alerts = await this.prisma.alert.findMany({
@@ -112,6 +126,16 @@ export class DatabaseHandler {
         return true;
       }
       return false;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async deleteAlertById(alertId: string): Promise<void> {
+    try {
+      await this.prisma.alert.delete({
+        where: { id: alertId },
+      });
     } catch (error) {
       throw error;
     }

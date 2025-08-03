@@ -96,17 +96,68 @@ export const handleAlertAttiviCommand = async (ctx: MyMessageContext): Promise<v
     await ctx.sendChatAction("typing");
     const userTelegramId = ctx.from?.id!;
     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
-    let message = `📋 Lista degli alert attivi:\n`;
+
     if (alerts.length > 0) {
-      message += alerts
-        .map((alert, _index) => {
-          return `${_index + 1}: ${alert.isin} - ${alert.alertPrice}€\n`;
-        })
-        .join("");
-      ctx.reply(message);
+      let message = `📋 Lista degli alert attivi.\n\nSeleziona un alert per eliminarlo singolarmente.`;
+
+      // Creo i pulsanti inline per ogni alert
+      const inlineKeyboard: TelegramInlineKeyboardButton[][] = alerts.map((alert, index) => [
+        {
+          text: `🗑️ ${index + 1}: ${alert.isin} - ${alert.alertPrice}€`,
+          callback_data: `delete:single_alert:${alert.id}`,
+        },
+      ]);
+
+      const replyOptions = {
+        reply_markup: { inline_keyboard: inlineKeyboard },
+      };
+
+      await ctx.reply(message, replyOptions);
     } else {
       await ctx.reply(`⚠️ Non hai nessun alert attivo.`);
     }
+  } catch (error) {
+    handleError(error, ctx);
+  }
+};
+
+export const handleEliminaAlertCommand = async (ctx: MyMessageContext): Promise<void> => {
+  try {
+    await ctx.sendChatAction("typing");
+    const userTelegramId = ctx.from?.id!;
+    const alertNumber = Number(ctx.update?.message?.text?.trim().split(/\s+/)[1]);
+
+    if (isNaN(alertNumber) || alertNumber < 1) {
+      await ctx.reply("⚠️ Inserisci un numero valido per l'alert da eliminare.\nEsempio: /elimina_alert 1");
+      return;
+    }
+
+    const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
+
+    if (alerts.length === 0) {
+      await ctx.reply("⚠️ Non hai nessun alert attivo da eliminare.");
+      return;
+    }
+
+    if (alertNumber > alerts.length) {
+      await ctx.reply(`⚠️ Numero alert non valido. Hai ${alerts.length} alert attivi.`);
+      return;
+    }
+
+    const alertToDelete = alerts[alertNumber - 1];
+
+    const message = `⚠️ Vuoi eliminare l'alert ${alertNumber}: ${alertToDelete.isin} - ${alertToDelete.alertPrice}€?`;
+    const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
+      [
+        { text: "✅ Sì", callback_data: `delete:single_alert:${alertToDelete.id}` },
+        { text: "❌ No", callback_data: "cancel_delete:single_alert" },
+      ],
+    ];
+
+    const replyOptions = {
+      reply_markup: { inline_keyboard: inlineKeyboard },
+    };
+    await ctx.reply(message, replyOptions);
   } catch (error) {
     handleError(error, ctx);
   }
@@ -119,7 +170,7 @@ export const handleEliminaTuttiGliAlertsCommand = async (ctx: MyMessageContext):
     const userTelegramId = ctx.from?.id!;
     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
     if (alerts.length > 0) {
-      const message = "⚠️ Vuoi veramente eliminare tutti gli alerts attivi?";
+      const message = "⚠️ Vuoi eliminare tutti gli alerts attivi?";
       const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
         [
           { text: "✅ Sì", callback_data: "delete:all_alerts" },

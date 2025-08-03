@@ -1,7 +1,15 @@
 import { Bot } from "gramio";
 import { logger } from "../../logger/logger";
 import { MyCallbackQueryContext, MyMessageContext } from "../../interfaces/custom-context.interface";
-import { handlePriceCommand, handleStartCommand, handleAlertCommand, handleAlertAttiviCommand, handleTestCommand, handleEliminaTuttiGliAlertsCommand } from "./commands-helper";
+import {
+  handlePriceCommand,
+  handleStartCommand,
+  handleAlertCommand,
+  handleAlertAttiviCommand,
+  handleTestCommand,
+  handleEliminaTuttiGliAlertsCommand,
+  handleEliminaAlertCommand,
+} from "./commands-helper";
 import { handleCallbackQuery } from "./callback-helper";
 
 export class BotHandler {
@@ -50,6 +58,10 @@ export class BotHandler {
             description: "Lista degli alert attivi",
           },
           {
+            command: "elimina_alert",
+            description: "<numero> - Elimina un singolo alert attivo",
+          },
+          {
             command: "elimina_tutti_gli_alerts",
             description: "Elimina tutti gli alerts attivi",
           },
@@ -75,6 +87,9 @@ export class BotHandler {
     });
     this.bot.command("alert_attivi", async (ctx: MyMessageContext) => {
       await handleAlertAttiviCommand(ctx);
+    });
+    this.bot.command("elimina_alert", async (ctx: MyMessageContext) => {
+      await handleEliminaAlertCommand(ctx);
     });
     this.bot.command("elimina_tutti_gli_alerts", async (ctx: MyMessageContext) => {
       await handleEliminaTuttiGliAlertsCommand(ctx);

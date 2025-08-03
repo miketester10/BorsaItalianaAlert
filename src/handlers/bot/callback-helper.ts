@@ -37,12 +37,35 @@ const callbackRouter = (): CallbackRouter => {
             handleError(error, ctx);
           }
           break;
+        case CallbackPayload.SINGLE_ALERT:
+          try {
+            const alertId = ctx.update?.callback_query?.data?.split(":")[2];
+            if (!alertId) {
+              await ctx.editText(`❌ Errore: ID alert non valido.`);
+              return;
+            }
+
+            const alert = await dataBaseHandler.findAlertById(alertId);
+            if (!alert) {
+              await ctx.editText(`❌ Alert non trovato.`);
+              return;
+            }
+
+            await dataBaseHandler.deleteAlertById(alertId);
+            await ctx.editText(`✅ Alert per ${alert.isin} - ${alert.alertPrice}€ eliminato con successo.`);
+          } catch (error) {
+            handleError(error, ctx);
+          }
+          break;
       }
     },
     cancel_delete: async (ctx, payload): Promise<void> => {
       switch (payload) {
         case CallbackPayload.ALL_ALERTS:
           await ctx.editText(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`);
+          break;
+        case CallbackPayload.SINGLE_ALERT:
+          await ctx.editText(`❌ Comando annullato. L'alert non è stato eliminato.`);
           break;
       }
     },
