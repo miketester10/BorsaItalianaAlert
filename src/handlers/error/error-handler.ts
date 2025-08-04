@@ -2,9 +2,10 @@ import { AxiosError } from "axios";
 import { BorsaItalianaHttpErrorResponse } from "../../interfaces/borsa-italiana-response.interface";
 import { logger } from "../../logger/logger";
 import { MyMessageContext } from "../../interfaces/custom-context.interface";
+import { code, format, FormattableString } from "gramio";
 
-export const errorHandler = (error: unknown): string => {
-  const defaultErrorMessage = "❌ Si è verificato un errore. Riprova più tardi.";
+export const errorHandler = (error: unknown): FormattableString => {
+  const defaultErrorMessage = format`${code(`❌ Si è verificato un errore. Riprova più tardi.`)}`;
 
   if (error instanceof AxiosError) {
     const message = (error as AxiosError<BorsaItalianaHttpErrorResponse>).response?.data.message || error.message;

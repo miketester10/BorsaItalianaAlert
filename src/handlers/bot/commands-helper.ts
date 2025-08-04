@@ -1,4 +1,4 @@
-import { format, italic, TelegramInlineKeyboardButton, underline } from "gramio";
+import { format, FormattableString, italic, TelegramInlineKeyboardButton, underline } from "gramio";
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
@@ -91,9 +91,13 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
   }
 };
 
-export const handleAlertAttiviCommand = async (ctx: MyMessageContext): Promise<void> => {
+export const handleAlertAttiviCommand = async (ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
+  const isCbContext = isCallbackContext(ctx);
   try {
-    await ctx.sendChatAction("typing");
+    if (!isCbContext) {
+      await ctx.sendChatAction("typing");
+    }
+
     const userTelegramId = ctx.from?.id!;
     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
 
@@ -101,10 +105,10 @@ export const handleAlertAttiviCommand = async (ctx: MyMessageContext): Promise<v
       let message = format`📋 Lista degli alert attivi\n\n${underline(italic(`Seleziona un alert per eliminarlo singolarmente`))}`;
 
       // Creo i pulsanti inline per ogni alert
-      const inlineKeyboard: TelegramInlineKeyboardButton[][] = alerts.map((alert, index) => [
+      const inlineKeyboard: TelegramInlineKeyboardButton[][] = alerts.map((alert, _index) => [
         {
-          text: `🗑️ ${index + 1}: ${alert.isin} - ${alert.alertPrice}€`,
-          callback_data: `delete:single_alert:${alert.id}`,
+          text: `🗑️ ${_index + 1}: ${alert.isin} - ${alert.alertPrice}€`,
+          callback_data: `pre_delete:single_alert:${alert.id}`,
         },
       ]);
 
@@ -112,9 +116,9 @@ export const handleAlertAttiviCommand = async (ctx: MyMessageContext): Promise<v
         reply_markup: { inline_keyboard: inlineKeyboard },
       };
 
-      await ctx.reply(message, replyOptions);
+      await replyOrEdit(ctx, message, replyOptions);
     } else {
-      await ctx.reply(`⚠️ Non hai nessun alert attivo.`);
+      await replyOrEdit(ctx, `⚠️ Non hai nessun alert attivo.`);
     }
   } catch (error) {
     handleError(error, ctx);
@@ -199,7 +203,7 @@ export const handleError = async (error: unknown, ctx: MyMessageContext | MyCall
   }
 };
 
-const replyOrEdit = async (ctx: MyMessageContext | MyCallbackQueryContext, text: string, options?: Object): Promise<void> => {
+const replyOrEdit = async (ctx: MyMessageContext | MyCallbackQueryContext, text: string | FormattableString, options?: Object): Promise<void> => {
   if (isCallbackContext(ctx)) {
     await ctx.editText(text, options);
   } else {

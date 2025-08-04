@@ -70,13 +70,13 @@ export class DatabaseHandler {
 
   async findAlert(userTelegramId: number, isin: string, alertPrice: number): Promise<Alert | null> {
     try {
-      const alerts = await this.prisma.alert.findFirst({
+      const alert = await this.prisma.alert.findFirst({
         where: { userTelegramId, isin, alertPrice },
         include: {
           user: true,
         },
       });
-      return alerts;
+      return alert;
     } catch (error) {
       throw error;
     }
