@@ -3,6 +3,7 @@ import { logger } from "../../logger/logger";
 import { CreateUserDto } from "../../dto/create-user.dto";
 import { UpdateUserDto } from "../../dto/update-user.dto";
 import { CreateAlertDto } from "../../dto/create-alert.dto";
+import { UpdateAlertDto } from "../../dto/update-alert.dto";
 
 export class DatabaseHandler {
   private static _instance: DatabaseHandler;
@@ -96,6 +97,19 @@ export class DatabaseHandler {
     }
   }
 
+  async findAllAlerts(): Promise<Alert[]> {
+    try {
+      const alerts = await this.prisma.alert.findMany({
+        include: {
+          user: true,
+        },
+      });
+      return alerts;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async findAllAlertsByTelegramId(userTelegramId: number): Promise<Alert[]> {
     try {
       const alerts = await this.prisma.alert.findMany({
@@ -126,6 +140,18 @@ export class DatabaseHandler {
         return true;
       }
       return false;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateAlert(updateAlertDto: UpdateAlertDto): Promise<void> {
+    try {
+      const { id, ...rest } = updateAlertDto;
+      await this.prisma.alert.update({
+        where: { id },
+        data: rest,
+      });
     } catch (error) {
       throw error;
     }

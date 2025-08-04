@@ -26,16 +26,20 @@ model User {
 }
 
 model Alert {
-  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
-  isin                 String
-  label                String
-  alertPrice           Float
-  above                Boolean  @default(false)
-  below                Boolean  @default(false)
-  lastNotificationSent Boolean  @default(false)
-  lastCheckPrice       Float?
-  userTelegramId       Int
-  user                 User     @relation(fields: [userTelegramId], references: [telegramId])
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id             String     @id @default(auto()) @map("_id") @db.ObjectId
+  isin           String
+  label          String
+  alertPrice     Float
+  lastCondition  Condition?
+  lastCheckPrice Float?
+  userTelegramId Int
+  user           User       @relation(fields: [userTelegramId], references: [telegramId])
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+enum Condition {
+  above
+  below
+  equal
 }
