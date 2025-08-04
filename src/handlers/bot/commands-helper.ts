@@ -107,7 +107,7 @@ export const handleAlertAttiviCommand = async (ctx: MyMessageContext | MyCallbac
       // Creo i pulsanti inline per ogni alert
       const inlineKeyboard: TelegramInlineKeyboardButton[][] = alerts.map((alert, _index) => [
         {
-          text: `🗑️ ${_index + 1}: ${alert.isin} - ${alert.alertPrice}€`,
+          text: `${_index + 1}: ${alert.isin} - ${alert.alertPrice}€`,
           callback_data: `pre_delete:single_alert:${alert.id}`,
         },
       ]);
