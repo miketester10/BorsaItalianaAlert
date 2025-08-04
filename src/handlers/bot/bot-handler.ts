@@ -49,10 +49,6 @@ export class BotHandler {
             command: "alert_attivi",
             description: "Lista degli alert attivi",
           },
-          // {
-          //   command: "elimina_alert",
-          //   description: "<numero> - Elimina un singolo alert attivo",
-          // },
           {
             command: "elimina_all_alerts",
             description: "Elimina tutti gli alerts attivi",
@@ -80,9 +76,6 @@ export class BotHandler {
     this.bot.command("alert_attivi", async (ctx: MyMessageContext) => {
       await handleAlertAttiviCommand(ctx);
     });
-    // this.bot.command("elimina_alert", async (ctx: MyMessageContext) => {
-    //   await handleEliminaAlertCommand(ctx);
-    // });
     this.bot.command("elimina_all_alerts", async (ctx: MyMessageContext) => {
       await handleEliminaAllAlertsCommand(ctx);
     });
