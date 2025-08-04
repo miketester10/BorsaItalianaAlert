@@ -28,6 +28,7 @@ model User {
 model Alert {
   id                   String   @id @default(auto()) @map("_id") @db.ObjectId
   isin                 String
+  label                String
   alertPrice           Float
   above                Boolean  @default(false)
   below                Boolean  @default(false)

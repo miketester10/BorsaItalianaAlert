@@ -78,7 +78,8 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
         logger.warn(`Alert già registrato.`);
         await ctx.reply(`⚠️ Alert già registrato.`);
       } else {
-        await dataBaseHandler.createAlert({ userTelegramId, alertPrice, isin });
+        const label = response.label;
+        await dataBaseHandler.createAlert({ userTelegramId, isin, label, alertPrice });
         logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${alertPrice}€`);
         await ctx.reply(`✅ Alert registrato con successo.`);
       }
@@ -124,48 +125,6 @@ export const handleAlertAttiviCommand = async (ctx: MyMessageContext | MyCallbac
     handleError(error, ctx);
   }
 };
-
-// export const handleEliminaAlertCommand = async (ctx: MyMessageContext): Promise<void> => {
-//   try {
-//     await ctx.sendChatAction("typing");
-//     const userTelegramId = ctx.from?.id!;
-//     const alertNumber = Number(ctx.update?.message?.text?.trim().split(/\s+/)[1]);
-
-//     if (isNaN(alertNumber) || alertNumber < 1) {
-//       await ctx.reply("⚠️ Inserisci un numero valido per l'alert da eliminare.\nEsempio: /elimina_alert 1");
-//       return;
-//     }
-
-//     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
-
-//     if (alerts.length === 0) {
-//       await ctx.reply("⚠️ Non hai nessun alert attivo da eliminare.");
-//       return;
-//     }
-
-//     if (alertNumber > alerts.length) {
-//       await ctx.reply(`⚠️ Numero alert non valido. Hai ${alerts.length} alert attivi.`);
-//       return;
-//     }
-
-//     const alertToDelete = alerts[alertNumber - 1];
-
-//     const message = `⚠️ Vuoi eliminare l'alert ${alertNumber}: ${alertToDelete.isin} - ${alertToDelete.alertPrice}€?`;
-//     const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
-//       [
-//         { text: "✅ Sì", callback_data: `delete:single_alert:${alertToDelete.id}` },
-//         { text: "❌ No", callback_data: "cancel_delete:single_alert" },
-//       ],
-//     ];
-
-//     const replyOptions = {
-//       reply_markup: { inline_keyboard: inlineKeyboard },
-//     };
-//     await ctx.reply(message, replyOptions);
-//   } catch (error) {
-//     handleError(error, ctx);
-//   }
-// };
 
 export const handleEliminaAllAlertsCommand = async (ctx: MyMessageContext): Promise<void> => {
   try {

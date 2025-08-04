@@ -1,3 +1,3 @@
 import { Alert } from "@prisma/client";
 
-export interface CreateAlertDto extends Pick<Alert, "userTelegramId" | "isin" | "alertPrice"> {}
+export interface CreateAlertDto extends Pick<Alert, "userTelegramId" | "isin" | "label" | "alertPrice"> {}

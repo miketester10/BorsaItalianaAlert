@@ -30,7 +30,6 @@ const callbackRouter = (): CallbackRouter => {
       switch (payload) {
         case CallbackPayload.SINGLE_ALERT:
           try {
-            const message = "⚠️ Vuoi eliminare l'alert selezionato?";
             const alertId = ctx.update?.callback_query?.data?.split(":")[2];
 
             if (!alertId) {
@@ -43,6 +42,8 @@ const callbackRouter = (): CallbackRouter => {
               await ctx.editText(`❌ Alert non trovato.`);
               return;
             }
+
+            const message = `⚠️ Vuoi eliminare l'alert selezionato?\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\nAlert Price: ${alert.alertPrice}€`;
 
             const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
               [
