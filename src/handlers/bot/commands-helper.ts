@@ -102,7 +102,7 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
 
     if (alerts.length > 0) {
-      let message = format`📋 Lista degli alert attivi\n\n${underline(italic(`Seleziona un alert per eliminarlo singolarmente`))}`;
+      let message = format`📋 Lista degli alerts attivi\n\n${underline(italic(`Seleziona un alert per eliminarlo singolarmente`))}`;
 
       // Creo i pulsanti inline per ogni alert
       const inlineKeyboard: TelegramInlineKeyboardButton[][] = alerts.map((alert, _index) => [
