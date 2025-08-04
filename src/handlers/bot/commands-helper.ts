@@ -93,9 +93,8 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
 };
 
 export const handleAlertAttiviCommand = async (ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
-  const isCbContext = isCallbackContext(ctx);
   try {
-    if (!isCbContext) {
+    if (!isCallbackContext(ctx)) {
       await ctx.sendChatAction("typing");
     }
 
