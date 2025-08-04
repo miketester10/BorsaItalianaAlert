@@ -46,9 +46,9 @@ export const handlePrezzoCommand = async (ctx: MyMessageContext): Promise<void> 
     });
     if (isBorsaItalianaValidResponse(response)) {
       const price = response.intradayPoint.at(-1)?.endPx;
-      const name = response.label;
+      const label = response.label;
       logger.info(`Ultimo prezzo: ${price}€`);
-      await ctx.reply(`💰 ${isin} - ${name}\nPrezzo: ${price}€`);
+      await ctx.reply(`ISIN: ${isin}\nLabel: ${label}\n💰 Prezzo: ${price}€`);
     } else {
       logger.warn(`ISIN ${isin} non valido o non trovato.`);
       await ctx.reply("⚠️ ISIN non valido o non trovato.");
@@ -92,7 +92,7 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
   }
 };
 
-export const handleAlertAttiviCommand = async (ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
+export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
   try {
     if (!isCallbackContext(ctx)) {
       await ctx.sendChatAction("typing");
@@ -125,7 +125,7 @@ export const handleAlertAttiviCommand = async (ctx: MyMessageContext | MyCallbac
   }
 };
 
-export const handleEliminaAllAlertsCommand = async (ctx: MyMessageContext): Promise<void> => {
+export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise<void> => {
   try {
     await ctx.sendChatAction("typing");
 

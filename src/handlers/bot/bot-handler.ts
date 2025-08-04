@@ -1,7 +1,7 @@
 import { Bot } from "gramio";
 import { logger } from "../../logger/logger";
 import { MyCallbackQueryContext, MyMessageContext } from "../../interfaces/custom-context.interface";
-import { handlePrezzoCommand, handleStartCommand, handleAlertCommand, handleAlertAttiviCommand, handleEliminaAllAlertsCommand } from "./commands-helper";
+import { handlePrezzoCommand, handleStartCommand, handleAlertCommand, handleAlertsAttiviCommand, handleEliminaAlertsCommand } from "./commands-helper";
 import { handleCallbackQuery } from "./callback-helper";
 
 export class BotHandler {
@@ -46,11 +46,11 @@ export class BotHandler {
             description: "<ISIN> <prezzo> - Inserisci alert",
           },
           {
-            command: "alert_attivi",
+            command: "alerts_attivi",
             description: "Lista degli alert attivi",
           },
           {
-            command: "elimina_all_alerts",
+            command: "elimina_alerts",
             description: "Elimina tutti gli alerts attivi",
           },
         ],
@@ -73,11 +73,11 @@ export class BotHandler {
     this.bot.command("alert", async (ctx: MyMessageContext) => {
       await handleAlertCommand(ctx);
     });
-    this.bot.command("alert_attivi", async (ctx: MyMessageContext) => {
-      await handleAlertAttiviCommand(ctx);
+    this.bot.command("alerts_attivi", async (ctx: MyMessageContext) => {
+      await handleAlertsAttiviCommand(ctx);
     });
-    this.bot.command("elimina_all_alerts", async (ctx: MyMessageContext) => {
-      await handleEliminaAllAlertsCommand(ctx);
+    this.bot.command("elimina_alerts", async (ctx: MyMessageContext) => {
+      await handleEliminaAlertsCommand(ctx);
     });
     // Handle Callback
     this.bot.callbackQuery<RegExp>(/^.+$/, async (ctx: MyCallbackQueryContext) => {

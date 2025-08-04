@@ -4,7 +4,7 @@ import { CallbackRouter } from "../../interfaces/callback-router.interface";
 import { MyCallbackQueryContext } from "../../interfaces/custom-context.interface";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
-import { handleAlertAttiviCommand, handleError } from "./commands-helper";
+import { handleAlertsAttiviCommand, handleError } from "./commands-helper";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 
@@ -43,7 +43,7 @@ const callbackRouter = (): CallbackRouter => {
               return;
             }
 
-            const message = `⚠️ Vuoi eliminare l'alert selezionato?\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\nAlert Price: ${alert.alertPrice}€`;
+            const message = `⚠️ Vuoi eliminare l'alert selezionato?\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🔔 Alert Price: ${alert.alertPrice}€`;
 
             const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
               [
@@ -86,7 +86,7 @@ const callbackRouter = (): CallbackRouter => {
             }
 
             await dataBaseHandler.deleteAlertById(alertId);
-            handleAlertAttiviCommand(ctx);
+            handleAlertsAttiviCommand(ctx);
           } catch (error) {
             handleError(error, ctx);
           }
@@ -100,7 +100,7 @@ const callbackRouter = (): CallbackRouter => {
           await ctx.editText(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`);
           break;
         case CallbackPayload.SINGLE_ALERT:
-          handleAlertAttiviCommand(ctx);
+          handleAlertsAttiviCommand(ctx);
           break;
       }
     },
