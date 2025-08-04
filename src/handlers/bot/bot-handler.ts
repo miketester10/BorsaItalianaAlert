@@ -47,7 +47,7 @@ export class BotHandler {
           },
           {
             command: "alerts_attivi",
-            description: "Lista degli alert attivi",
+            description: "Lista alerts attivi",
           },
           {
             command: "elimina_alerts",
