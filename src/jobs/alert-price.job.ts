@@ -1,11 +1,8 @@
 import { CronJob } from "cron";
 import { logger } from "../logger/logger";
-import { Bot } from "gramio";
 import { AlertHandler } from "../handlers/alert/alert-handler";
-import { BotHandler } from "../handlers/bot/bot-handler";
 
 const alertHandler: AlertHandler = AlertHandler.getInstance();
-const bot: Bot = BotHandler.getInstance().bot;
 
 /* ✅ Cron: ogni 5 minuti dalle 07:00 alle 18:00, dal lunedì al venerdì */
 export const startAlertPriceJob = async (): Promise<void> => {
