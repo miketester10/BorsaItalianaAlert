@@ -12,7 +12,7 @@ const bot: Bot = BotHandler.getInstance().bot;
 //   const job = new CronJob(
 //     "*/10 7-18 * * 1-5",
 //     async () => {
-//       await alertHandler.checkAndNotifyAlerts(bot);
+//       await alertHandler.checkAndNotifyAlerts();
 //       const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
 //       logger.info(`CronJob eseguito il: ${date}`);
 //     },
@@ -29,7 +29,7 @@ export const startTestAlertPriceJob = async (): Promise<void> => {
   const job = new CronJob(
     "*/1 0-23 * * 1-5",
     async () => {
-      await alertHandler.checkAndNotifyAlerts(bot);
+      await alertHandler.checkAndNotifyAlerts();
       const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
       logger.info(`CronJob eseguito il: ${date}`);
     },

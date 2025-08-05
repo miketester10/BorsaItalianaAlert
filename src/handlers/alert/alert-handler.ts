@@ -6,14 +6,15 @@ import { logger } from "../../logger/logger";
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { UpdateAlertDto } from "../../dto/update-alert.dto";
+import { BotHandler } from "../bot/bot-handler";
 import { Bot } from "gramio";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
+const botHandler: BotHandler = BotHandler.getInstance();
 
 export class AlertHandler {
   private static _instance: AlertHandler;
-  private bot!: Bot;
 
   private constructor() {}
 
@@ -28,9 +29,7 @@ export class AlertHandler {
    * Controlla tutti gli alert, confronta il prezzo corrente con alertPrice,
    * invia notifiche se la condizione è cambiata e aggiorna il DB.
    */
-  async checkAndNotifyAlerts(bot: Bot): Promise<void> {
-    this.bot = bot;
-
+  async checkAndNotifyAlerts(): Promise<void> {
     const alerts = await dataBaseHandler.findAllAlerts();
     if (alerts.length === 0) return;
 
@@ -67,7 +66,7 @@ export class AlertHandler {
 
       if (this.shouldNotify(alert, newCondition)) {
         try {
-          await this.sendNotification(bot, alert, currentPrice, newCondition);
+          await this.sendNotification(alert, currentPrice, newCondition);
         } catch (error) {
           logger.error(`Errore nell'invio della notifica allo user ${alert.userTelegramId}: ${(error as Error).message}`);
           continue;
@@ -114,7 +113,9 @@ export class AlertHandler {
   /**
    * Invia la notifica a Telegram
    */
-  private async sendNotification(bot: Bot, alert: Alert, price: number, condition: Condition): Promise<void> {
+  private async sendNotification(alert: Alert, price: number, condition: Condition): Promise<void> {
+    const bot: Bot = botHandler.bot;
+
     const message =
       condition === Condition.above
         ? `🚨 ALERT\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🟢 Il prezzo ha SUPERATO ${alert.alertPrice}€\n💰 Prezzo attuale: ${price}€`
