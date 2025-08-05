@@ -71,13 +71,13 @@ export class AlertHandler {
           logger.error(`Errore nell'invio della notifica allo user ${alert.userTelegramId}: ${(error as Error).message}`);
           continue;
         }
-      }
 
-      try {
-        await this.updateAlertStatus(alert.id, newCondition, currentPrice);
-      } catch (error) {
-        logger.error(`Errore nell'aggiornamento dello stato dell'alert: ${(error as Error).message}`);
-        continue;
+        try {
+          await this.updateAlertStatus(alert.id, newCondition, currentPrice);
+        } catch (error) {
+          logger.error(`Errore nell'aggiornamento dello stato dell'alert: ${(error as Error).message}`);
+          continue;
+        }
       }
     }
   }
