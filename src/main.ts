@@ -1,6 +1,7 @@
 import { BotHandler } from "./handlers/bot/bot-handler";
 import { DatabaseHandler } from "./handlers/database/database-handler";
-import { startTestAlertPriceJob } from "./jobs/alert-price.job";
+import { startAlertPriceJob } from "./jobs/alert-price.job";
+// import { startTestAlertPriceJob } from "./jobs/alert-price.job";
 import { logger } from "./logger/logger";
 
 const databaseHandler = DatabaseHandler.getInstance();
@@ -10,7 +11,7 @@ const main = async () => {
   try {
     await databaseHandler.connect();
     await botHanlder.start();
-    await startTestAlertPriceJob();
+    await startAlertPriceJob();
   } catch (error) {
     logger.error(`Unknown Error during the startup: ${(error as Error).message}`);
   }
