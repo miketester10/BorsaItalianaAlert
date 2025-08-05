@@ -92,10 +92,9 @@ BOT_TOKEN=your_telegram_bot_token
 DATABASE_URL=mongodb://localhost:27017/borsa_italiana_alert
 
 # API Borsa Italiana
+BORSA_ITALIANA_API=your_borsa_italiana_api_endpoint
+BORSA_ITALIANA_API_TAIL=your_borsa_italiana_api_tail_endpoint
 BORSA_ITALIANA_JWT=your_borsa_italiana_jwt_token
-
-# Ambiente
-NODE_ENV=development
 ```
 
 ### Script Principali
@@ -143,8 +142,8 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 
 ### CronJob
 
-- **Modalità Test:** Controllo ogni minuto (lun-ven, 00:00-23:59)
-- **Modalità Produzione:** Controllo ogni 10 minuti (lun-ven, 07:00-18:59)
+- **Modalità Test:** Controllo ogni minuto (lun-ven, 00:00-23:00)
+- **Modalità Produzione:** Controllo ogni 5 minuti (lun-ven, 07:00-18:00)
 
 ## Struttura del Progetto
 

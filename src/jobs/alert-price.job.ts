@@ -24,7 +24,7 @@ export const startAlertPriceJob = async (): Promise<void> => {
   logger.info("✅ CronJob attivo: ogni 5 minuti dalle 07:00 alle 18:00 (lun-ven).");
 };
 
-/* ✅ [TEST] Cron: ogni minuto dalle 00:00 alle 23, dal lunedì al venerdì */
+/* ✅ [TEST] Cron: ogni minuto dalle 00:00 alle 23:00, dal lunedì al venerdì */
 // export const startTestAlertPriceJob = async (): Promise<void> => {
 //   const job = new CronJob(
 //     "*/1 0-23 * * 1-5",
