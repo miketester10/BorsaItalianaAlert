@@ -60,7 +60,7 @@ export class DatabaseHandler {
       const user = await this.prisma.user.findUnique({
         where: { telegramId },
         include: {
-          alerts: true, // Include gli alert associati all'utente
+          alerts: true,
         },
       });
       return user;
