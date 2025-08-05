@@ -142,8 +142,8 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 
 ### CronJob
 
-- **Modalità Test:** Controllo ogni minuto (lun-ven, 00:00-23:00)
-- **Modalità Produzione:** Controllo ogni 5 minuti (lun-ven, 07:00-18:00)
+- **Modalità Test:** Controllo ogni minuto (lun-ven, 00:00-23:55)
+- **Modalità Produzione:** Controllo ogni 5 minuti (lun-ven, 07:00-18:55)
 
 ## Struttura del Progetto
 
