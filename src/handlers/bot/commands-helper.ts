@@ -163,6 +163,8 @@ const replyOrEdit = async (ctx: MyMessageContext | MyCallbackQueryContext, text:
 export const handleError = async (error: unknown, ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
   if (error instanceof TelegramError && error.message.includes("message is not modified")) {
     logger.error(`Telegram Error: ${error.message}`);
+    // Stop animation of the button
+    await (ctx as MyCallbackQueryContext).answerCallbackQuery();
     return;
   }
 
