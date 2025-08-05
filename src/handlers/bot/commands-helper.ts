@@ -1,4 +1,4 @@
-import { format, FormattableString, italic, TelegramInlineKeyboardButton, underline } from "gramio";
+import { format, FormattableString, italic, TelegramError, TelegramInlineKeyboardButton, underline } from "gramio";
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
@@ -152,19 +152,24 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
   }
 };
 
-export const handleError = async (error: unknown, ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
-  try {
-    const message = errorHandler(error);
-    await replyOrEdit(ctx, message);
-  } catch (error) {
-    logger.error(`Invio del messaggio di errore a Telegram non riuscito: ${(error as Error).message}`);
-  }
-};
-
 const replyOrEdit = async (ctx: MyMessageContext | MyCallbackQueryContext, text: string | FormattableString, options?: Object): Promise<void> => {
   if (isCallbackContext(ctx)) {
     await ctx.editText(text, options);
   } else {
     await ctx.reply(text, options);
+  }
+};
+
+export const handleError = async (error: unknown, ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
+  if (error instanceof TelegramError && error.message.includes("message is not modified")) {
+    logger.error(`Telegram Error: ${error.message}`);
+    return;
+  }
+
+  try {
+    const message = errorHandler(error);
+    await replyOrEdit(ctx, message);
+  } catch (e) {
+    logger.error(`Invio del messaggio di errore a Telegram non riuscito: ${(e as Error).message}`);
   }
 };
