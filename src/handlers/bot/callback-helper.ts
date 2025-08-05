@@ -4,7 +4,8 @@ import { CallbackRouter } from "../../interfaces/callback-router.interface";
 import { MyCallbackQueryContext } from "../../interfaces/custom-context.interface";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
-import { handleAlertsAttiviCommand, handleError } from "./commands-helper";
+import { handleAlertsAttiviCommand } from "./commands-helper";
+import { errorHandler } from "../error/error-handler";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 
@@ -58,7 +59,7 @@ const callbackRouter = (): CallbackRouter => {
 
             await ctx.editText(message, replyOptions);
           } catch (error) {
-            handleError(error, ctx);
+            errorHandler(error, ctx);
           }
           break;
       }
@@ -72,7 +73,7 @@ const callbackRouter = (): CallbackRouter => {
             await dataBaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
             await ctx.editText(`✅ Tutti gli alerts sono stati eliminati con successo.`);
           } catch (error) {
-            handleError(error, ctx);
+            errorHandler(error, ctx);
           }
           break;
         case CallbackPayload.SINGLE_ALERT:
@@ -88,7 +89,7 @@ const callbackRouter = (): CallbackRouter => {
             await dataBaseHandler.deleteAlertById(alertId);
             handleAlertsAttiviCommand(ctx);
           } catch (error) {
-            handleError(error, ctx);
+            errorHandler(error, ctx);
           }
           break;
       }
