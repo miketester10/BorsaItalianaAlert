@@ -35,25 +35,42 @@ export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> =
   }
 };
 
-export const handlePrezzoCommand = async (ctx: MyMessageContext): Promise<void> => {
+export const handlePrezzoCommand = async (ctx: MyMessageContext | MyCallbackQueryContext, codice_isin: string = ""): Promise<void> => {
+  const isCbContext = isCallbackContext(ctx);
+  let isin = codice_isin;
+  let inlineKeyboard: TelegramInlineKeyboardButton[][];
+  let replyOptions;
+
   try {
-    await ctx.sendChatAction("typing");
-    const isin = ctx.update?.message?.text?.trim().split(/\s+/)[1]?.toUpperCase();
-    if (!isin) {
-      await ctx.reply("⚠️ Inserisci un ISIN valido.");
-      return;
+    if (!isCbContext) {
+      await ctx.sendChatAction("typing");
+      const isinRaw = ctx.update?.message?.text?.trim().split(/\s+/)[1]?.toUpperCase();
+      if (!isinRaw) {
+        await ctx.reply("⚠️ Inserisci un ISIN valido.");
+        return;
+      } else {
+        isin = isinRaw;
+      }
+    } else {
+      inlineKeyboard = [[{ text: "🔙 Torna agli alerts attivi", callback_data: `back:all_alerts` }]];
+      replyOptions = {
+        reply_markup: { inline_keyboard: inlineKeyboard },
+      };
     }
+
     const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, {
       Authorization: `Bearer ${JWT.BORSA_ITALIANA}`,
     });
     if (isBorsaItalianaValidResponse(response)) {
       const price = response.intradayPoint.at(-1)?.endPx;
       const label = response.label;
+      const message = `ISIN: ${isin}\nLabel: ${label}\n💰 Prezzo: ${price}€`;
       logger.info(`Ultimo prezzo: ${price}€`);
-      await ctx.reply(`ISIN: ${isin}\nLabel: ${label}\n💰 Prezzo: ${price}€`);
+      await replyOrEdit(ctx, message, replyOptions);
     } else {
       logger.warn(`ISIN ${isin} non valido o non trovato.`);
-      await ctx.reply("⚠️ ISIN non valido o non trovato.");
+      const message = `⚠️ ISIN non valido o non trovato.`;
+      await replyOrEdit(ctx, message);
     }
   } catch (error) {
     errorHandler(error, ctx);
@@ -113,7 +130,7 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
         return b.alertPrice - a.alertPrice;
       });
 
-      let message = format`📋 Lista degli alerts attivi\n\n${underline(italic(`Seleziona un alert per eliminarlo singolarmente`))}`;
+      let message = format`📋 Lista degli alerts attivi\n\n${underline(italic(`Seleziona un alert per eliminarlo \no per controllare il prezzo attuale`))}`;
 
       // Creo i pulsanti inline per ogni alert
       const inlineKeyboard: TelegramInlineKeyboardButton[][] = alerts.map((alert, _index) => [

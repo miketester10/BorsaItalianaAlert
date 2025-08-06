@@ -4,7 +4,7 @@ import { CallbackRouter } from "../../interfaces/callback-router.interface";
 import { MyCallbackQueryContext } from "../../interfaces/custom-context.interface";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
-import { handleAlertsAttiviCommand } from "./commands-helper";
+import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./commands-helper";
 import { errorHandler } from "../error/error-handler";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
@@ -51,6 +51,7 @@ const callbackRouter = (): CallbackRouter => {
                 { text: "✅ Sì", callback_data: `delete:single_alert:${alertId}` },
                 { text: "❌ No", callback_data: "cancel_delete:single_alert" },
               ],
+              [{ text: "💰 Prezzo Attuale", callback_data: `current_price:single_alert:${alert.isin}` }],
             ];
 
             const replyOptions = {
@@ -101,6 +102,23 @@ const callbackRouter = (): CallbackRouter => {
           await ctx.editText(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`);
           break;
         case CallbackPayload.SINGLE_ALERT:
+          handleAlertsAttiviCommand(ctx);
+          break;
+      }
+    },
+
+    current_price: async (ctx, payload): Promise<void> => {
+      switch (payload) {
+        case CallbackPayload.SINGLE_ALERT:
+          const isin = ctx.update?.callback_query?.data?.split(":")[2]!;
+          handlePrezzoCommand(ctx, isin);
+          break;
+      }
+    },
+
+    back: async (ctx, payload): Promise<void> => {
+      switch (payload) {
+        case CallbackPayload.ALL_ALERTS:
           handleAlertsAttiviCommand(ctx);
           break;
       }
