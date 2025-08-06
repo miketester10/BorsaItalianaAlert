@@ -52,7 +52,7 @@ export const handlePrezzoCommand = async (ctx: MyMessageContext | MyCallbackQuer
         isin = isinRaw;
       }
     } else {
-      inlineKeyboard = [[{ text: "🔙 Torna agli alerts attivi", callback_data: `back:all_alerts` }]];
+      inlineKeyboard = [[{ text: "⬅️ Torna agli alerts attivi", callback_data: `back:all_alerts` }]];
       replyOptions = {
         reply_markup: { inline_keyboard: inlineKeyboard },
       };
