@@ -4,12 +4,14 @@ import { JWT } from "../../consts/jwt";
 import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
 import { isCallbackContext, MyCallbackQueryContext, MyMessageContext } from "../../interfaces/custom-context.interface";
 import { logger } from "../../logger/logger";
-import { ApiHandler } from "../api/api-handler";
 import { DatabaseHandler } from "../database/database-handler";
+import { ApiHandler } from "../api/api-handler";
+import { AlertHandler } from "../alert/alert-handler";
 import { errorHandler } from "../error/error-handler";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
+const alertHandler: AlertHandler = AlertHandler.getInstance();
 
 export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> => {
   try {
@@ -79,7 +81,9 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
         await ctx.reply(`⚠️ Alert già registrato.`);
       } else {
         const label = response.label;
-        await dataBaseHandler.createAlert({ userTelegramId, isin, label, alertPrice });
+        const lastCheckPrice = response.intradayPoint.at(-1)?.endPx!;
+        const lastCondition = alertHandler.calculateCondition(lastCheckPrice, alertPrice);
+        await dataBaseHandler.createAlert({ userTelegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
         logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${alertPrice}€`);
         await ctx.reply(`✅ Alert registrato con successo.`);
       }

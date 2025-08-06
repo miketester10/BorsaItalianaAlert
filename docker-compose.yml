@@ -9,7 +9,7 @@ services:
       - .env
     environment:
       - TZ=Europe/Rome # Imposta la variabile TimeZone per avere l'orario italiano nei logs
-    command: ["sh", "-c", "npm install --include=dev && npx prisma generate && npm run start"]
+    command: ["sh", "-c", "npm install --include=dev && npx prisma generate && npx prisma db push && npm run start"]
     restart: unless-stopped
     mem_limit: 1000m
     memswap_limit: 1000m

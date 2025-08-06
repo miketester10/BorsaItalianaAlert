@@ -9,9 +9,13 @@ export const startAlertPriceJob = async (): Promise<void> => {
   const job = new CronJob(
     "*/5 7-18 * * 1-5",
     async () => {
-      await alertHandler.checkAndNotifyAlerts();
-      const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
-      logger.info(`CronJob eseguito il: ${date}`);
+      try {
+        await alertHandler.checkAndNotifyAlerts();
+        const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
+        logger.info(`CronJob eseguito il: ${date}`);
+      } catch (error) {
+        logger.error(`Errore nell'esecuzione del CronJob: ${(error as Error).message}`);
+      }
     },
     null,
     true,
@@ -26,9 +30,13 @@ export const startAlertPriceJob = async (): Promise<void> => {
 //   const job = new CronJob(
 //     "*/1 0-23 * * 1-5",
 //     async () => {
-//       await alertHandler.checkAndNotifyAlerts();
-//       const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
-//       logger.info(`CronJob eseguito il: ${date}`);
+//       try {
+//         await alertHandler.checkAndNotifyAlerts();
+//         const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
+//         logger.info(`CronJob eseguito il: ${date}`);
+//       } catch (error) {
+//         logger.error(`Errore nell'esecuzione del CronJob: ${(error as Error).message}`);
+//       }
 //     },
 //     null,
 //     true,

@@ -11,7 +11,6 @@ import { Bot } from "gramio";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
-const botHandler: BotHandler = BotHandler.getInstance();
 
 export class AlertHandler {
   private static _instance: AlertHandler;
@@ -85,7 +84,7 @@ export class AlertHandler {
   /**
    * Determina la condizione attuale (above, below, equal)
    */
-  private calculateCondition(currentPrice: number, alertPrice: number): Condition {
+  calculateCondition(currentPrice: number, alertPrice: number): Condition {
     if (currentPrice > alertPrice) return Condition.above;
     if (currentPrice < alertPrice) return Condition.below;
     return Condition.equal;
@@ -114,7 +113,15 @@ export class AlertHandler {
    * Invia la notifica a Telegram
    */
   private async sendNotification(alert: Alert, price: number, condition: Condition): Promise<void> {
-    const bot: Bot = botHandler.bot;
+    /**
+     * Recupero l'istanza del bot qui per evitare problemi di dipendenza circolare tra AlertHandler e BotHandler.
+     * Se la recupero a livello globale (fuori dalla classe AlertHandler) o come proprietà della classe, sarà undefined
+     * a causa dell'ordine di inizializzazione dei moduli in Node.js/TypeScript.
+     * Nel dettaglio: commands-helpers.ts (importato da BotHandler) importa AlertHandler, ed AlertHandler importa BotHandler.
+     * Recuperando l'istanza solo all'interno del metodo, evito side effect e garantisco che il bot sia sempre inizializzato correttamente.
+     * PS: In NestJS ad esempio la dipendenza circolare viene risolta in questo modo: https://docs.nestjs.com/fundamentals/circular-dependency
+    */
+    const bot: Bot = BotHandler.getInstance().bot;
 
     const message =
       condition === Condition.above
