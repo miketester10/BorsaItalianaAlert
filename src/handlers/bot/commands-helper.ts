@@ -106,6 +106,13 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
 
     if (alerts.length > 0) {
+      // Ordina gli alert per ISIN (alfabetico) e per prezzo (decrescente)
+      alerts.sort((a, b) => {
+        const isinCompare = a.isin.localeCompare(b.isin);
+        if (isinCompare !== 0) return isinCompare;
+        return b.alertPrice - a.alertPrice;
+      });
+
       let message = format`📋 Lista degli alerts attivi\n\n${underline(italic(`Seleziona un alert per eliminarlo singolarmente`))}`;
 
       // Creo i pulsanti inline per ogni alert
