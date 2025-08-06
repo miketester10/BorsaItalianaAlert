@@ -208,8 +208,8 @@ model Alert {
   isin           String
   label          String
   alertPrice     Float
-  lastCondition  Condition?
-  lastCheckPrice Float?
+  lastCondition  Condition
+  lastCheckPrice Float
   userTelegramId Int
   user           User       @relation(fields: [userTelegramId], references: [telegramId])
   createdAt      DateTime   @default(now())
