@@ -11,6 +11,7 @@ export const errorHandler = async (error: unknown, ctx: MyMessageContext | MyCal
   if (error instanceof TelegramError && error.message.includes("message is not modified")) {
     await (ctx as MyCallbackQueryContext).answerCallbackQuery(); // Stop animation of the button
     logger.error(`Telegram Error: ${error.message}`);
+    return;
   } else if (error instanceof AxiosError) {
     const message = (error as AxiosError<BorsaItalianaHttpErrorResponse>).response?.data.message || error.message;
     const status = error.response?.status || "Unknown";
