@@ -36,20 +36,31 @@ export class AlertHandler {
     const isins = [...new Set(alerts.map((alert) => alert.isin))];
     const priceMap: Record<string, number | undefined> = {};
 
-    for (const isin of isins) {
-      let response: BorsaItalianaApiResponse;
-
+    // Parallelizza le chiamate API per gli ISIN unici e raccoglie i risultati
+    const requests = isins.map(async (isin) => {
       try {
-        response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, {
-          Authorization: `Bearer ${JWT.BORSA_ITALIANA}`,
-        });
+        const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, { Authorization: `Bearer ${JWT.BORSA_ITALIANA}` });
+        return { isin, response };
+      } catch (error) {
+        throw new Error(`ISIN ${isin} - ${(error as Error).message}`);
+      }
+    });
 
+    const t1 = Date.now();
+    const results = await Promise.allSettled(requests);
+    const t2 = Date.now();
+    logger.info(`Fetch prezzi completato in ${t2 - t1}ms`);
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        const { isin, response } = result.value;
         if (isBorsaItalianaValidResponse(response)) {
           priceMap[isin] = response.intradayPoint.at(-1)?.endPx;
+        } else {
+          logger.warn(`Risposta non valida per ISIN ${isin}`);
         }
-      } catch (error) {
-        logger.error(`Errore nel recupero del prezzo per ISIN ${isin}: ${(error as Error).message}`);
-        continue;
+      } else {
+        logger.error(`Errore nel recupero del prezzo: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`);
       }
     }
 
@@ -120,7 +131,7 @@ export class AlertHandler {
      * Nel dettaglio: commands-helpers.ts (importato da BotHandler) importa AlertHandler, ed AlertHandler importa BotHandler.
      * Recuperando l'istanza solo all'interno del metodo, evito side effect e garantisco che il bot sia sempre inizializzato correttamente.
      * PS: In NestJS ad esempio la dipendenza circolare viene risolta in questo modo: https://docs.nestjs.com/fundamentals/circular-dependency
-    */
+     */
     const bot: Bot = BotHandler.getInstance().bot;
 
     const message =
