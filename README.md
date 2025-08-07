@@ -155,6 +155,7 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 │   │   ├── api/         # Integrazione API esterne
 │   │   ├── database/    # Operazioni database
 │   │   └── error/       # Gestione errori
+│   ├── types/           # Tipi TypeScript e type guards
 │   ├── dto/             # Data Transfer Objects
 │   ├── interfaces/      # Interfacce TypeScript
 │   ├── enums/           # Enumerazioni
@@ -186,7 +187,8 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 ### Type Safety
 
 - **Interfacce TypeScript** per tutte le strutture dati
-- **Type Guards** per validazione runtime delle risposte API
+- **Type Guards** per validazione runtime delle risposte API e opzioni Telegram
+- **Tipi centralizzati** in `src/types/` per riutilizzabilità
 - **DTO pattern** per trasferimento dati sicuro
 
 ## Database Schema

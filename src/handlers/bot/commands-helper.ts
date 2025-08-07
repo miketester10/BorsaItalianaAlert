@@ -1,4 +1,4 @@
-import { format, FormattableString, italic, TelegramInlineKeyboardButton, underline } from "gramio";
+import { format, FormattableString, italic, TelegramInlineKeyboardButton, TelegramParams, underline } from "gramio";
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
@@ -8,17 +8,20 @@ import { DatabaseHandler } from "../database/database-handler";
 import { ApiHandler } from "../api/api-handler";
 import { AlertHandler } from "../alert/alert-handler";
 import { errorHandler } from "../error/error-handler";
+import { isEditMessageOptions, isSendMessageOptions, TelegramOptions } from "../../types/telegram-options.type";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
 const alertHandler: AlertHandler = AlertHandler.getInstance();
 
 export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> => {
+  const telegramId = ctx.from?.id!;
+  const name = ctx.from?.firstName!;
+  const username = ctx.from?.username ?? null;
+
   try {
     await ctx.sendChatAction("typing");
-    const telegramId = ctx.from?.id!;
-    const name = ctx.from?.firstName!;
-    const username = ctx.from?.username ?? null;
+
     logger.info(`Bot avviato da: ${name} - Telegram ID: ${telegramId}`);
 
     const user = await dataBaseHandler.findUserByTelegramId(telegramId);
@@ -35,91 +38,104 @@ export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> =
   }
 };
 
-export const handlePrezzoCommand = async (ctx: MyMessageContext | MyCallbackQueryContext, codice_isin: string = ""): Promise<void> => {
-  const isCbContext = isCallbackContext(ctx);
-  let isin = codice_isin;
+export const handlePrezzoCommand = async (ctx: MyMessageContext | MyCallbackQueryContext, codiceIsin?: string): Promise<void> => {
+  const isinRaw = ctx.update?.message?.text?.trim().split(/\s+/)[1]?.toUpperCase();
+  let isin: string;
+  let message: string;
   let inlineKeyboard: TelegramInlineKeyboardButton[][];
-  let replyOptions;
+  let replyOptions: TelegramOptions = {};
 
   try {
-    if (!isCbContext) {
+    if (!isCallbackContext(ctx)) {
       await ctx.sendChatAction("typing");
-      const isinRaw = ctx.update?.message?.text?.trim().split(/\s+/)[1]?.toUpperCase();
+
       if (!isinRaw) {
-        await ctx.reply("⚠️ Inserisci un ISIN valido.");
+        await ctx.reply(`⚠️ Inserisci un ISIN valido.`);
         return;
       } else {
         isin = isinRaw;
       }
     } else {
+      if (!codiceIsin) throw new Error(`ISIN non ricevuto dalla Callback`);
+      isin = codiceIsin;
       inlineKeyboard = [[{ text: "⬅️ Torna agli alerts attivi", callback_data: `back:all_alerts` }]];
-      replyOptions = {
-        reply_markup: { inline_keyboard: inlineKeyboard },
-      };
+      replyOptions.reply_markup = { inline_keyboard: inlineKeyboard };
     }
 
     const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, {
       Authorization: `Bearer ${JWT.BORSA_ITALIANA}`,
     });
+
     if (isBorsaItalianaValidResponse(response)) {
       const price = response.intradayPoint.at(-1)?.endPx;
       const label = response.label;
-      const message = `ISIN: ${isin}\nLabel: ${label}\n💰 Prezzo: ${price}€`;
+      message = `ISIN: ${isin}\nLabel: ${label}\n💰 Prezzo: ${price}€`;
       logger.info(`Ultimo prezzo: ${price}€`);
-      await replyOrEdit(ctx, message, replyOptions);
     } else {
+      message = `⚠️ ISIN non valido o non trovato.`;
       logger.warn(`ISIN ${isin} non valido o non trovato.`);
-      const message = `⚠️ ISIN non valido o non trovato.`;
-      await replyOrEdit(ctx, message);
     }
+
+    await replyOrEdit(ctx, message, replyOptions);
   } catch (error) {
     errorHandler(error, ctx);
   }
 };
 
 export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> => {
+  const userTelegramId = ctx.from?.id!;
+  const [command, isinRaw, priceRaw] = ctx.update?.message?.text?.trim().split(/\s+/) as [string, string | undefined, string | undefined];
+  const isin = isinRaw?.toUpperCase();
+  const alertPrice = Number(priceRaw?.replace(",", "."));
+  let message: string;
+
   try {
     await ctx.sendChatAction("typing");
-    const userTelegramId = ctx.from?.id!;
-    const [command, isinRaw, priceRaw] = ctx.update?.message?.text?.trim().split(/\s+/) as [string, string | undefined, string | undefined];
-    const isin = isinRaw?.toUpperCase();
-    const alertPrice = Number(priceRaw?.replace(",", "."));
+
     if (!isin || isNaN(alertPrice)) {
-      await ctx.reply("⚠️ Inserisci un ISIN ed un prezzo valido.");
+      await ctx.reply(`⚠️ Inserisci un ISIN ed un prezzo valido.`);
       return;
     }
+
     const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, {
       Authorization: `Bearer ${JWT.BORSA_ITALIANA}`,
     });
+
     if (isBorsaItalianaValidResponse(response)) {
       const alert = await dataBaseHandler.findAlert(userTelegramId, isin, alertPrice);
       if (alert) {
+        message = `⚠️ Alert già registrato.`;
         logger.warn(`Alert già registrato.`);
-        await ctx.reply(`⚠️ Alert già registrato.`);
       } else {
         const label = response.label;
         const lastCheckPrice = response.intradayPoint.at(-1)?.endPx!;
         const lastCondition = alertHandler.calculateCondition(lastCheckPrice, alertPrice);
         await dataBaseHandler.createAlert({ userTelegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
+        message = `✅ Alert registrato con successo.`;
         logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${alertPrice}€`);
-        await ctx.reply(`✅ Alert registrato con successo.`);
       }
     } else {
+      message = `⚠️ ISIN non trovato. Nessun alert è stato registrato.`;
       logger.warn(`ISIN ${isin} non trovato. Nessun alert è stato registrato.`);
-      await ctx.reply(`⚠️ ISIN non trovato. Nessun alert è stato registrato.`);
     }
+
+    await ctx.reply(message);
   } catch (error) {
     errorHandler(error, ctx);
   }
 };
 
 export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
+  const userTelegramId = ctx.from?.id!;
+  let message: string | FormattableString;
+  let inlineKeyboard: TelegramInlineKeyboardButton[][];
+  let replyOptions: TelegramOptions = {};
+
   try {
     if (!isCallbackContext(ctx)) {
       await ctx.sendChatAction("typing");
     }
 
-    const userTelegramId = ctx.from?.id!;
     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
 
     if (alerts.length > 0) {
@@ -130,60 +146,70 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
         return b.alertPrice - a.alertPrice;
       });
 
-      let message = format`📋 Lista degli alerts attivi\n\n${underline(italic(`Seleziona un alert per eliminarlo \no per controllare il prezzo attuale`))}`;
+      message = format`📋 Lista degli alerts attivi\n\n${underline(italic(`Seleziona un alert per eliminarlo \no per controllare il prezzo attuale`))}`;
 
       // Creo i pulsanti inline per ogni alert
-      const inlineKeyboard: TelegramInlineKeyboardButton[][] = alerts.map((alert, _index) => [
+      inlineKeyboard = alerts.map((alert, _index) => [
         {
           text: `${_index + 1}: ${alert.isin} - ${alert.alertPrice}€`,
           callback_data: `pre_delete:single_alert:${alert.id}`,
         },
       ]);
 
-      const replyOptions = {
-        reply_markup: { inline_keyboard: inlineKeyboard },
-      };
-
-      await replyOrEdit(ctx, message, replyOptions);
+      replyOptions.reply_markup = { inline_keyboard: inlineKeyboard };
     } else {
-      await replyOrEdit(ctx, `⚠️ Non hai nessun alert attivo.`);
+      message = `⚠️ Non hai nessun alert attivo.`;
     }
+
+    await replyOrEdit(ctx, message, replyOptions);
   } catch (error) {
     errorHandler(error, ctx);
   }
 };
 
 export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise<void> => {
+  const userTelegramId = ctx.from?.id!;
+  let message: string | FormattableString;
+  let inlineKeyboard: TelegramInlineKeyboardButton[][];
+  let replyOptions: TelegramOptions = {};
+
   try {
     await ctx.sendChatAction("typing");
 
-    const userTelegramId = ctx.from?.id!;
     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
+
     if (alerts.length > 0) {
-      const message = "⚠️ Vuoi eliminare tutti gli alerts attivi?";
-      const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
+      message = `⚠️ Vuoi eliminare tutti gli alerts attivi?`;
+      inlineKeyboard = [
         [
           { text: "✅ Sì", callback_data: "delete:all_alerts" },
           { text: "❌ No", callback_data: "cancel_delete:all_alerts" },
         ],
       ];
 
-      const replyOptions = {
-        reply_markup: { inline_keyboard: inlineKeyboard },
-      };
-      await ctx.reply(message, replyOptions);
+      replyOptions.reply_markup = { inline_keyboard: inlineKeyboard };
     } else {
-      await ctx.reply(`⚠️ Non hai nessun alert attivo da eliminare.`);
+      message = `⚠️ Non hai nessun alert attivo da eliminare.`;
     }
+
+    await ctx.reply(message, replyOptions);
   } catch (error) {
     errorHandler(error, ctx);
   }
 };
 
-export const replyOrEdit = async (ctx: MyMessageContext | MyCallbackQueryContext, text: string | FormattableString, options?: Object): Promise<void> => {
+export const replyOrEdit = async (ctx: MyMessageContext | MyCallbackQueryContext, text: string | FormattableString, options?: TelegramOptions): Promise<void> => {
   if (isCallbackContext(ctx)) {
-    await ctx.editText(text, options);
+    if (isEditMessageOptions(options)) {
+      await ctx.editText(text, options);
+    } else {
+      await ctx.editText(text);
+    }
   } else {
-    await ctx.reply(text, options);
+    if (isSendMessageOptions(options)) {
+      await ctx.reply(text, options);
+    } else {
+      await ctx.reply(text);
+    }
   }
 };

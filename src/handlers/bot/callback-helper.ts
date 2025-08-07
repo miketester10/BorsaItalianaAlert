@@ -1,4 +1,4 @@
-import { TelegramInlineKeyboardButton } from "gramio";
+import { TelegramInlineKeyboardButton, TelegramParams } from "gramio";
 import { CallbackPayload } from "../../enums/callback-payload.enum";
 import { CallbackRouter } from "../../interfaces/callback-router.interface";
 import { MyCallbackQueryContext } from "../../interfaces/custom-context.interface";
@@ -54,7 +54,7 @@ const callbackRouter = (): CallbackRouter => {
               [{ text: "💰 Prezzo Attuale", callback_data: `current_price:single_alert:${alert.isin}` }],
             ];
 
-            const replyOptions = {
+            const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
               reply_markup: { inline_keyboard: inlineKeyboard },
             };
 
