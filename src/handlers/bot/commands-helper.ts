@@ -59,7 +59,7 @@ export const handlePrezzoCommand = async (ctx: MyMessageContext | MyCallbackQuer
       if (!codiceIsin) throw new Error(`ISIN non ricevuto dalla Callback`);
       isin = codiceIsin;
       inlineKeyboard = [[{ text: "⬅️ Torna agli alerts attivi", callback_data: `back:all_alerts` }]];
-      replyOptions.reply_markup = { inline_keyboard: inlineKeyboard };
+      replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
     }
 
     const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, {
@@ -156,7 +156,7 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
         },
       ]);
 
-      replyOptions.reply_markup = { inline_keyboard: inlineKeyboard };
+      replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
     } else {
       message = `⚠️ Non hai nessun alert attivo.`;
     }
