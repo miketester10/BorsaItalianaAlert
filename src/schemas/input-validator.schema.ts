@@ -8,7 +8,7 @@ const isinSchema = z
   .nonempty("ISIN non può essere vuoto")
   .regex(/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/, "ISIN non valido");
 
-// Validazione prezzo
+// Validazione ALERT_PRICE
 const alertPriceSchema = z
   .string()
   .trim()
@@ -29,17 +29,16 @@ const alertSchema = z.object({
   alertPrice: alertPriceSchema,
 });
 
-export type PrezzoValidated = z.infer<typeof isinSchema>;
+export type IsinValidated = z.infer<typeof isinSchema>;
 export type AlertValidated = z.infer<typeof alertSchema>;
 
 type ValidateResult<T> = { success: true; data: T } | { success: false; errors: string[] };
 
 // Overload
-export function validateInput(command: CommandType.PREZZO, isin: string | undefined): ValidateResult<PrezzoValidated>;
+export function validateInput(command: CommandType.PREZZO, isin: string | undefined): ValidateResult<IsinValidated>;
 export function validateInput(command: CommandType.ALERT, isin: string | undefined, alertPrice: string | undefined): ValidateResult<AlertValidated>;
 // Implementazione concreta
 export function validateInput(command: CommandType, isin: string | undefined, alertPrice?: string): ValidateResult<any> {
-  // interno può essere any perché poi l'utente ha i tipi corretti grazie agli overload
   if (command === CommandType.PREZZO) {
     const result = isinSchema.safeParse(isin);
     if (!result.success) {
@@ -58,6 +57,6 @@ export function validateInput(command: CommandType, isin: string | undefined, al
     }
     return { success: true, data: result.data };
   }
-
+  // Fallback
   return { success: false, errors: ["Comando non supportato"] };
 }
