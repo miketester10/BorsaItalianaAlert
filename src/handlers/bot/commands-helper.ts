@@ -8,7 +8,7 @@ import { DatabaseHandler } from "../database/database-handler";
 import { ApiHandler } from "../api/api-handler";
 import { AlertHandler } from "../alert/alert-handler";
 import { errorHandler } from "../error/error-handler";
-import { isEditMessageOptions, isSendMessageOptions, TelegramOptions } from "../../types/telegram-options.type";
+import { TelegramOptionsCustom } from "../../types/telegram-options.type";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
@@ -43,7 +43,7 @@ export const handlePrezzoCommand = async (ctx: MyMessageContext | MyCallbackQuer
   let isin: string;
   let message: string;
   let inlineKeyboard: TelegramInlineKeyboardButton[][];
-  let replyOptions: TelegramOptions = {};
+  let replyOptions: TelegramOptionsCustom = {};
 
   try {
     if (!isCallbackContext(ctx)) {
@@ -129,7 +129,7 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
   const userTelegramId = ctx.from?.id!;
   let message: string | FormattableString;
   let inlineKeyboard: TelegramInlineKeyboardButton[][];
-  let replyOptions: TelegramOptions = {};
+  let replyOptions: TelegramOptionsCustom = {};
 
   try {
     if (!isCallbackContext(ctx)) {
@@ -171,7 +171,7 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
   const userTelegramId = ctx.from?.id!;
   let message: string | FormattableString;
   let inlineKeyboard: TelegramInlineKeyboardButton[][];
-  let replyOptions: TelegramOptions = {};
+  let replyOptions: TelegramOptionsCustom = {};
 
   try {
     await ctx.sendChatAction("typing");
@@ -198,18 +198,10 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
   }
 };
 
-export const replyOrEdit = async (ctx: MyMessageContext | MyCallbackQueryContext, text: string | FormattableString, options?: TelegramOptions): Promise<void> => {
+export const replyOrEdit = async (ctx: MyMessageContext | MyCallbackQueryContext, text: string | FormattableString, options?: TelegramOptionsCustom): Promise<void> => {
   if (isCallbackContext(ctx)) {
-    if (isEditMessageOptions(options)) {
-      await ctx.editText(text, options);
-    } else {
-      await ctx.editText(text);
-    }
+    await ctx.editText(text, options as TelegramParams.EditMessageTextParams);
   } else {
-    if (isSendMessageOptions(options)) {
-      await ctx.reply(text, options);
-    } else {
-      await ctx.reply(text);
-    }
+    await ctx.reply(text, options);
   }
 };
