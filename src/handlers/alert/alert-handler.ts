@@ -8,6 +8,7 @@ import { JWT } from "../../consts/jwt";
 import { UpdateAlertDto } from "../../dto/update-alert.dto";
 import { BotHandler } from "../bot/bot-handler";
 import { Bot } from "gramio";
+import pLimit from "p-limit";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
@@ -36,15 +37,18 @@ export class AlertHandler {
     const isins = [...new Set(alerts.map((alert) => alert.isin))];
     const priceMap: Record<string, number | undefined> = {};
 
-    // Parallelizza le chiamate API per gli ISIN unici e raccoglie i risultati
-    const requests = isins.map(async (isin) => {
-      try {
-        const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, { Authorization: `Bearer ${JWT.BORSA_ITALIANA}` });
-        return { isin, response };
-      } catch (error) {
-        throw new Error(`ISIN ${isin} - ${(error as Error).message}`);
-      }
-    });
+    // Parallelizza le chiamate API per gli ISIN unici e raccoglie i risultati con limite di concorrenza
+    const limit = pLimit(10); // Max 10 richieste parallele
+    const requests = isins.map((isin) =>
+      limit(async () => {
+        try {
+          const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, { Authorization: `Bearer ${JWT.BORSA_ITALIANA}` });
+          return { isin, response };
+        } catch (error) {
+          throw new Error(`ISIN ${isin} - ${(error as Error).message}`);
+        }
+      })
+    );
 
     const t1 = Date.now();
     const results = await Promise.allSettled(requests);
