@@ -8,7 +8,9 @@ import { DatabaseHandler } from "../database/database-handler";
 import { ApiHandler } from "../api/api-handler";
 import { AlertHandler } from "../alert/alert-handler";
 import { errorHandler } from "../error/error-handler";
-import { TelegramOptionsCustom } from "../../types/telegram-options.type";
+import { TelegramOptionsCustom } from "../../types/telegram-options-custom.type";
+import { validateInput } from "../../schemas/inputValidatorSchemas";
+import { CommandType } from "../../enums/command-type.enum";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
@@ -49,11 +51,14 @@ export const handlePrezzoCommand = async (ctx: MyMessageContext | MyCallbackQuer
     if (!isCallbackContext(ctx)) {
       await ctx.sendChatAction("typing");
 
-      if (!isinRaw) {
+      const validation = validateInput(CommandType.PREZZO, isinRaw);
+
+      if (!validation.success) {
+        logger.error(validation.errors);
         await ctx.reply(`⚠️ Inserisci un ISIN valido.`);
         return;
       } else {
-        isin = isinRaw;
+        isin = validation.data;
       }
     } else {
       if (!codiceIsin) throw new Error(`ISIN non ricevuto dalla Callback`);
@@ -85,17 +90,20 @@ export const handlePrezzoCommand = async (ctx: MyMessageContext | MyCallbackQuer
 export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> => {
   const userTelegramId = ctx.from?.id!;
   const [command, isinRaw, priceRaw] = ctx.update?.message?.text?.trim().split(/\s+/) as [string, string | undefined, string | undefined];
-  const isin = isinRaw?.toUpperCase();
-  const alertPrice = Number(priceRaw?.replace(",", "."));
   let message: string;
 
   try {
     await ctx.sendChatAction("typing");
 
-    if (!isin || isNaN(alertPrice)) {
+    const validation = validateInput(CommandType.ALERT, isinRaw, priceRaw);
+
+    if (!validation.success) {
+      logger.error(validation.errors);
       await ctx.reply(`⚠️ Inserisci un ISIN ed un prezzo valido.`);
       return;
     }
+
+    const { isin, alertPrice } = validation.data;
 
     const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, {
       Authorization: `Bearer ${JWT.BORSA_ITALIANA}`,
