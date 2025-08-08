@@ -5,15 +5,15 @@ import { Agent as HttpsAgent } from "https";
 // Reuse TCP/TLS connections and set a sane timeout
 const httpAgent = new HttpAgent({
   keepAlive: true,
-  keepAliveMsecs: 10000, // 10 secondi
+  keepAliveMsecs: 20 * 1000, // 20 secondi
 });
 const httpsAgent = new HttpsAgent({
   keepAlive: true,
-  keepAliveMsecs: 10000,
+  keepAliveMsecs: 20 * 1000,
 });
 
 const httpClient = axios.create({
-  timeout: 5000, // 5 secondi
+  timeout: 10 * 1000, // 10 secondi
   httpAgent,
   httpsAgent,
 });

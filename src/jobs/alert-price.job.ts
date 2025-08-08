@@ -3,16 +3,18 @@ import { logger } from "../logger/logger";
 import { AlertHandler } from "../handlers/alert/alert-handler";
 
 const alertHandler: AlertHandler = AlertHandler.getInstance();
+const minutiProduzione = 2;
+const minutiTest = 1;
 
-/* ✅ Cron: ogni 5 minuti dalle 07:00 alle 18:55, dal lunedì al venerdì */
+/* ✅ Cron: ogni 2 minuti dalle 07:00 alle 18:55, dal lunedì al venerdì */
 // export const startAlertPriceJob = async (): Promise<void> => {
 //   const job = new CronJob(
-//     "*/5 7-18 * * 1-5",
+//     `*/${minutiProduzione} 7-18 * * 1-5`,
 //     async () => {
 //       try {
 //         await alertHandler.checkAndNotifyAlerts();
 //         const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
-//         logger.info(`CronJob eseguito il: ${date}`);
+//         logger.debug(`CronJob eseguito il: ${date}`);
 //       } catch (error) {
 //         logger.error(`Errore nell'esecuzione del CronJob: ${(error as Error).message}`);
 //       }
@@ -22,18 +24,18 @@ const alertHandler: AlertHandler = AlertHandler.getInstance();
 //     "Europe/Rome"
 //   );
 //   job.start();
-//   logger.info("✅ CronJob attivo: ogni 5 minuti dalle 07:00 alle 18:55 (lun-ven).");
+//   logger.info(`✅ CronJob attivo: ogni ${minutiProduzione} min. dalle 07:00 alle 18:55 (lun-ven).`);
 // };
 
-/* ✅ [TEST] Cron: ogni minuto dalle 00:00 alle 23:55, dal lunedì al venerdì */
+/* ✅ [TEST] Cron: ogni minuto dalle 00:00 alle 23:55, dal lunedì alla domenica */
 export const startTestAlertPriceJob = async (): Promise<void> => {
   const job = new CronJob(
-    "*/1 0-23 * * 1-5",
+    `*/${minutiTest} 0-23 * * 1-7`,
     async () => {
       try {
         await alertHandler.checkAndNotifyAlerts();
         const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
-        logger.info(`CronJob eseguito il: ${date}`);
+        logger.debug(`CronJob eseguito il: ${date}`);
       } catch (error) {
         logger.error(`Errore nell'esecuzione del CronJob: ${(error as Error).message}`);
       }
@@ -43,5 +45,5 @@ export const startTestAlertPriceJob = async (): Promise<void> => {
     "Europe/Rome"
   );
   job.start();
-  logger.info("✅ CronJob attivo: ogni minuto dalle 00:00 alle 23:55 (lun-ven).");
+  logger.info(`✅ CronJob attivo: ogni ${minutiTest} min. dalle 00:00 alle 23:55 (lun-dom).`);
 };

@@ -38,7 +38,7 @@ export class AlertHandler {
     const priceMap: Record<string, number | undefined> = {};
 
     // Parallelizza le chiamate API per gli ISIN unici e raccoglie i risultati con limite di concorrenza
-    const limit = pLimit(5); // Max 5 richieste parallele
+    const limit = pLimit(20); // Max 20 richieste parallele
     const requests = isins.map((isin) =>
       limit(async () => {
         try {
@@ -53,7 +53,9 @@ export class AlertHandler {
     const t1 = Date.now();
     const results = await Promise.allSettled(requests);
     const t2 = Date.now();
-    logger.info(`Fetch prezzi completato in ${t2 - t1}ms`);
+
+    const elapsedSeconds = ((t2 - t1) / 1000).toFixed(2);
+    logger.warn(`Fetch prezzi completato in ${elapsedSeconds}s`);
 
     for (const result of results) {
       if (result.status === "fulfilled") {
