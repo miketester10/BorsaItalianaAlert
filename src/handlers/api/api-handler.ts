@@ -1,4 +1,16 @@
 import axios, { RawAxiosRequestHeaders } from "axios";
+import { Agent as HttpAgent } from "http";
+import { Agent as HttpsAgent } from "https";
+
+// Reuse TCP/TLS connections and set a sane timeout
+const httpAgent = new HttpAgent({ keepAlive: true, maxSockets: 50 });
+const httpsAgent = new HttpsAgent({ keepAlive: true, maxSockets: 50 });
+
+const httpClient = axios.create({
+  timeout: 3000, // 3 secondi
+  httpAgent,
+  httpsAgent,
+});
 
 export class ApiHandler {
   private static _instance: ApiHandler;
@@ -12,9 +24,8 @@ export class ApiHandler {
     return ApiHandler._instance;
   }
 
-  async getPrice<T>(api: string, headers?: RawAxiosRequestHeaders): Promise<T> {
-    const config = headers && { headers };
-    const response = await axios.get<T>(api, config);
+  async getPrice<T>(api: string, headers: RawAxiosRequestHeaders = {}): Promise<T> {
+    const response = await httpClient.get<T>(api, { headers });
     return response.data;
   }
 }
