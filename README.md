@@ -239,6 +239,8 @@ enum Condition {
 - **Raggruppamento ISIN:** Riduzione chiamate API duplicate
 - **Caching implicito:** Riutilizzo prezzi per alert multipli
 - **Error handling:** Gestione graceful degli errori API
+- **Concorrenza controllata:** chiamate HTTP in parallelo con [p-limit](https://github.com/sindresorhus/p-limit)
+- **HTTP keep-alive:** client Axios dedicato con `http/https.Agent` (pool connessioni, `timeout` default 3000ms)
 
 ## Contribuire
 
