@@ -14,7 +14,7 @@ const minutiTest = 1;
 //       try {
 //         await alertHandler.checkAndNotifyAlerts();
 //         const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
-//         logger.debug(`CronJob eseguito il: ${date}`);
+//         logger.info(`CronJob eseguito il: ${date}`);
 //       } catch (error) {
 //         logger.error(`Errore nell'esecuzione del CronJob: ${(error as Error).message}`);
 //       }
@@ -35,7 +35,7 @@ export const startTestAlertPriceJob = async (): Promise<void> => {
       try {
         await alertHandler.checkAndNotifyAlerts();
         const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
-        logger.debug(`CronJob eseguito il: ${date}`);
+        logger.info(`CronJob eseguito il: ${date}`);
       } catch (error) {
         logger.error(`Errore nell'esecuzione del CronJob: ${(error as Error).message}`);
       }

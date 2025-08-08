@@ -55,20 +55,31 @@ export class AlertHandler {
     const t2 = Date.now();
 
     const elapsedSeconds = ((t2 - t1) / 1000).toFixed(2);
-    logger.warn(`Fetch prezzi completato in ${elapsedSeconds}s`);
+    logger.debug(`Fetch prezzi completato in ${elapsedSeconds}s`);
+
+    let successCount = 0;
+    let errorCount = 0;
 
     for (const result of results) {
       if (result.status === "fulfilled") {
         const { isin, response } = result.value;
         if (isBorsaItalianaValidResponse(response)) {
           priceMap[isin] = response.intradayPoint.at(-1)?.endPx;
+          successCount++;
         } else {
           logger.warn(`Risposta non valida per ISIN ${isin}`);
+          errorCount++;
         }
       } else {
-        logger.error(`Errore nel recupero del prezzo: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`);
+        logger.error(`Errore nel recupero del prezzo:`, result.reason instanceof Error ? result.reason.message : { reason: result.reason });
+        errorCount++;
       }
     }
+
+    const total = successCount + errorCount;
+    const successRate = ((successCount / total) * 100).toFixed(2);
+
+    logger.debug(`✅ Successi: ${successCount}, ❌ Errori: ${errorCount}, 📊 Success rate: ${successRate}%`);
 
     for (const alert of alerts) {
       const currentPrice = priceMap[alert.isin];

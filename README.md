@@ -26,6 +26,7 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
   - [cron](https://github.com/node-cron/node-cron) (Scheduling)
   - [dotenv](https://github.com/motdotla/dotenv) (Gestione variabili ambiente)
   - [pino](https://getpino.io/) (Logging)
+  - [Zod](https://zod.dev/) (Validazione runtime degli input)
 - **Database:** MongoDB con Prisma
 - **Containerizzazione:** Docker
 - **Pattern:** Singleton, Dependency Injection
@@ -142,26 +143,27 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 
 ### CronJob
 
-- **Modalità Test:** Controllo ogni minuto (lun-ven, 00:00-23:55)
-- **Modalità Produzione:** Controllo ogni 5 minuti (lun-ven, 07:00-18:55)
+- **Modalità Test:** Controllo ogni minuto (lun-dom, 00:00-23:55)
+- **Modalità Produzione:** Controllo ogni 2 minuti (lun-ven, 07:00-18:55)
 
 ## Struttura del Progetto
 
 ```
 ├── src/
-│   ├── handlers/         # Logica di business (bot, alert, api, database, error)
+│   ├── handlers/        # Logica di business (bot, alert, api, database, error)
 │   │   ├── bot/         # Gestione bot Telegram
 │   │   ├── alert/       # Logica alert e notifiche
 │   │   ├── api/         # Integrazione API esterne
 │   │   ├── database/    # Operazioni database
 │   │   └── error/       # Gestione errori
-│   ├── types/           # Tipi TypeScript e type guards
+│   ├── types/           # Tipi TypeScript
 │   ├── dto/             # Data Transfer Objects
 │   ├── interfaces/      # Interfacce TypeScript
 │   ├── enums/           # Enumerazioni
 │   ├── consts/          # Costanti (API endpoints)
 │   ├── jobs/            # CronJob e task schedulati
 │   ├── logger/          # Configurazione logging
+│   ├── schemas/         # Schemi Zod per validazione input
 │   └── main.ts          # Punto di ingresso
 ├── prisma/              # Schema database e migrazioni
 ├── docker-compose.yml   # Configurazione Docker
@@ -190,6 +192,14 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 - **Type Guards** per validazione runtime delle risposte API e opzioni Telegram
 - **Tipi centralizzati** in `src/types/` per riutilizzabilità
 - **DTO pattern** per trasferimento dati sicuro
+- **Validazione input con Zod**: tutti gli input utente e parametri sono validati tramite schemi definiti in `src/schemas/`
+
+### Validazione Input (Zod)
+
+Gli input provenienti dagli utenti (comandi Telegram e parametri) sono validati con [Zod](https://zod.dev/). Questo garantisce formati coerenti, messaggi di errore chiari e tipizzazione inferita.
+
+- Posizione schemi: `src/schemas/`
+- File principale: `src/schemas/input-validator.schema.ts`
 
 ## Database Schema
 
@@ -232,7 +242,7 @@ enum Condition {
 - **Endpoint:** Integrazione con API ufficiali Borsa Italiana
 - **Autenticazione:** Bearer token JWT
 - **Rate Limiting:** Gestione automatica delle chiamate API
-- **Validazione:** Type guards per risposte API
+- **Validazione:** Type guards per risposte API; Zod per input utente
 
 ### Ottimizzazioni
 

@@ -9,7 +9,7 @@ import { ApiHandler } from "../api/api-handler";
 import { AlertHandler } from "../alert/alert-handler";
 import { errorHandler } from "../error/error-handler";
 import { TelegramOptionsCustom } from "../../types/telegram-options-custom.type";
-import { validateInput } from "../../schemas/inputValidatorSchemas";
+import { validateInput } from "../../schemas/input-validator.schema";
 import { CommandType } from "../../enums/command-type.enum";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
