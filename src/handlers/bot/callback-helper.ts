@@ -6,6 +6,7 @@ import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
 import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./commands-helper";
 import { errorHandler } from "../error/error-handler";
+import { formatPrice } from "../../utils/price-formatter";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 
@@ -44,7 +45,7 @@ const callbackRouter = (): CallbackRouter => {
               return;
             }
 
-            const message = `⚠️ Vuoi eliminare l'alert selezionato?\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🔔 Alert Price: ${alert.alertPrice}€`;
+            const message = `⚠️ Vuoi eliminare l'alert selezionato?\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🔔 Alert Price: ${formatPrice(alert.alertPrice)}€`;
 
             const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
               [

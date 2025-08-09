@@ -9,6 +9,7 @@ import { UpdateAlertDto } from "../../dto/update-alert.dto";
 import { BotHandler } from "../bot/bot-handler";
 import { Bot } from "gramio";
 import pLimit from "p-limit";
+import { formatPrice } from "../../utils/price-formatter";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
@@ -153,8 +154,8 @@ export class AlertHandler {
 
     const message =
       condition === Condition.above
-        ? `🚨 ALERT\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🟢 Il prezzo ha SUPERATO ${alert.alertPrice}€\n💰 Prezzo attuale: ${price}€`
-        : `🚨 ALERT\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🔴 Il prezzo è SCESO sotto ${alert.alertPrice}€\n💰 Prezzo attuale: ${price}€`;
+        ? `🚨 ALERT\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🟢 Il prezzo ha SUPERATO ${formatPrice(alert.alertPrice)}€\n💰 Prezzo attuale: ${price}€`
+        : `🚨 ALERT\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🔴 Il prezzo è SCESO sotto ${formatPrice(alert.alertPrice)}€\n💰 Prezzo attuale: ${price}€`;
 
     await bot.api.sendMessage({
       chat_id: alert.userTelegramId,

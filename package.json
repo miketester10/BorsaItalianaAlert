@@ -23,6 +23,7 @@
     "axios": "^1.11.0",
     "cron": "^4.3.2",
     "dotenv": "16.5.0",
+    "from-exponential": "^1.1.1",
     "gramio": "^0.4.10",
     "p-limit": "^6.2.0",
     "pino": "^9.7.0",

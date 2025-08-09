@@ -156,6 +156,7 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 │   │   ├── api/         # Integrazione API esterne
 │   │   ├── database/    # Operazioni database
 │   │   └── error/       # Gestione errori
+│   ├── utils/           # Utility helpers (es. formattazione prezzi)
 │   ├── types/           # Tipi TypeScript
 │   ├── dto/             # Data Transfer Objects
 │   ├── interfaces/      # Interfacce TypeScript

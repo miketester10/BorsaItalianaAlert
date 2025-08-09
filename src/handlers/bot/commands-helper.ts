@@ -11,6 +11,7 @@ import { errorHandler } from "../error/error-handler";
 import { TelegramOptionsCustom } from "../../types/telegram-options-custom.type";
 import { validateInput } from "../../schemas/input-validator.schema";
 import { CommandType } from "../../enums/command-type.enum";
+import { formatPrice } from "../../utils/price-formatter";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
@@ -120,7 +121,7 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
         const lastCondition = alertHandler.calculateCondition(lastCheckPrice, alertPrice);
         await dataBaseHandler.createAlert({ userTelegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
         message = `✅ Alert registrato con successo.`;
-        logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${alertPrice}€`);
+        logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${formatPrice(alertPrice)}€`);
       }
     } else {
       message = `⚠️ ISIN non trovato. Nessun alert è stato registrato.`;
@@ -159,7 +160,7 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
       // Creo i pulsanti inline per ogni alert
       inlineKeyboard = alerts.map((alert, _index) => [
         {
-          text: `${_index + 1}: ${alert.isin} - ${alert.alertPrice}€`,
+          text: `${_index + 1}: ${alert.isin} - ${formatPrice(alert.alertPrice)}€`,
           callback_data: `pre_delete:single_alert:${alert.id}`,
         },
       ]);
