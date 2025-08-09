@@ -1,0 +1,49 @@
+name: 🚀 Deploy BorsaItalianaAlertBot su VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: ⚙️ Deploy su VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 Clona il repository
+        uses: actions/checkout@v4
+
+      - name: 🚀 Deploy via SSH al VPS (con riavvio Container solo se necessario)
+        run: |
+          echo "📦 Installo sshpass..."
+          sudo apt-get update && sudo apt-get install -y sshpass
+
+          echo "🔐 Connessione SSH al VPS..."
+          sshpass -p "${{ secrets.VPS_PASSWORD }}" ssh -o StrictHostKeyChecking=no "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << 'EOF'
+            
+            echo "📁 [1/4] Verifico/creo la cartella del progetto..."
+            if [ ! -d "/root/BorsaItalianaAlert" ]; then
+              git clone https://github.com/miketester10/BorsaItalianaAlert.git /root/BorsaItalianaAlert
+            fi
+            cd /root/BorsaItalianaAlert
+
+            echo "📥 [2/4] Eseguo git pull..."
+            OUTPUT=$(git pull origin main)
+
+            echo "🔍 Verifico se ci sono modifiche..."
+            if [[ "$OUTPUT" == *"Already up to date."* ]]; then
+              echo "ℹ️ Nessuna modifica trovata, il container non verrà riavviato."
+            else
+              echo "✅ Modifiche trovate:"
+              echo "$OUTPUT"
+
+              echo "🛑 [3/4] Stop del container esistente..."
+              docker compose stop || true
+
+              echo "▶️ [4/4] Avvio del container aggiornato..."
+              docker compose up -d
+
+              echo "🎉 Deploy completato con successo!"
+            fi
+          EOF

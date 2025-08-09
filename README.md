@@ -166,12 +166,36 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 │   ├── logger/          # Configurazione logging
 │   ├── schemas/         # Schemi Zod per validazione input
 │   └── main.ts          # Punto di ingresso
+├── .github/
+│   └── workflows/
+│       └── deploy.yml   # CI/CD: deploy automatico su VPS al push su main
 ├── prisma/              # Schema database e migrazioni
 ├── docker-compose.yml   # Configurazione Docker
 ├── package.json
 ├── tsconfig.json
 └── README.md
 ```
+
+## Deploy automatico (GitHub Actions)
+
+Il repository include una pipeline CI/CD in `/.github/workflows/deploy.yml` che esegue il **deploy automatico su VPS** ad ogni push sul branch `main`.
+
+### Come funziona
+
+- All'evento `push` su `main`, la pipeline:
+  - si connette via SSH al VPS usando le credenziali configurate nei Secrets
+  - fa `git pull` nella cartella del progetto sul server
+  - riavvia il container Docker solo se ci sono modifiche
+
+### Secrets richiesti
+
+Configura questi Secrets nel repository (Settings → Secrets and variables → Actions):
+
+- `VPS_USER` — utente SSH del server (es. `root`)
+- `VPS_PASSWORD` — password SSH dell'utente
+- `VPS_HOST` — host/IP del VPS (es. `1.2.3.4`)
+
+La pipeline si aspetta che il progetto sul VPS sia in `/root/BorsaItalianaAlert` e che il server abbia Docker installato.
 
 ## Architettura
 
