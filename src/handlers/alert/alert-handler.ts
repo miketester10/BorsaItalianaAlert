@@ -72,7 +72,7 @@ export class AlertHandler {
           errorCount++;
         }
       } else {
-        logger.error(`Errore nel recupero del prezzo:`, result.reason instanceof Error ? result.reason.message : { reason: result.reason });
+        logger.error(`Errore nel recupero del prezzo: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`);
         errorCount++;
       }
     }
