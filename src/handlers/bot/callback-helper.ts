@@ -89,7 +89,7 @@ const callbackRouter = (): CallbackRouter => {
             }
 
             await dataBaseHandler.deleteAlertById(alertId);
-            handleAlertsAttiviCommand(ctx);
+            await handleAlertsAttiviCommand(ctx);
           } catch (error) {
             errorHandler(error, ctx);
           }
@@ -103,7 +103,7 @@ const callbackRouter = (): CallbackRouter => {
           await ctx.editText(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`);
           break;
         case CallbackPayload.SINGLE_ALERT:
-          handleAlertsAttiviCommand(ctx);
+          await handleAlertsAttiviCommand(ctx);
           break;
       }
     },
@@ -112,7 +112,7 @@ const callbackRouter = (): CallbackRouter => {
       switch (payload) {
         case CallbackPayload.SINGLE_ALERT:
           const isin = ctx.update?.callback_query?.data?.split(":")[2]!;
-          handlePrezzoCommand(ctx, isin);
+          await handlePrezzoCommand(ctx, isin);
           break;
       }
     },
@@ -120,7 +120,7 @@ const callbackRouter = (): CallbackRouter => {
     back: async (ctx, payload): Promise<void> => {
       switch (payload) {
         case CallbackPayload.ALL_ALERTS:
-          handleAlertsAttiviCommand(ctx);
+          await handleAlertsAttiviCommand(ctx);
           break;
       }
     },
