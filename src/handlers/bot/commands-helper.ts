@@ -41,12 +41,12 @@ export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> =
   }
 };
 
-export const handlePrezzoCommand = async (ctx: MyMessageContext | MyCallbackQueryContext, codiceIsin?: string): Promise<void> => {
+export async function handlePrezzoCommand(ctx: MyMessageContext): Promise<void>;
+export async function handlePrezzoCommand(ctx: MyCallbackQueryContext, isinFromCallback: string): Promise<string>;
+export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQueryContext, isinFromCallback?: string): Promise<string | void> {
   const isinRaw = ctx.update?.message?.text?.trim().split(/\s+/)[1]?.toUpperCase();
   let isin: string;
   let message: string;
-  let inlineKeyboard: TelegramInlineKeyboardButton[][];
-  let replyOptions: TelegramOptionsCustom = {};
 
   try {
     if (!isCallbackContext(ctx)) {
@@ -62,10 +62,8 @@ export const handlePrezzoCommand = async (ctx: MyMessageContext | MyCallbackQuer
         isin = validation.data;
       }
     } else {
-      if (!codiceIsin) throw new Error(`ISIN non ricevuto dalla Callback`);
-      isin = codiceIsin;
-      inlineKeyboard = [[{ text: "⬅️ Torna agli alerts attivi", callback_data: `back:all_alerts` }]];
-      replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
+      if (!isinFromCallback) throw new Error(`ISIN non ricevuto dalla Callback`);
+      isin = isinFromCallback;
     }
 
     const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, {
@@ -82,11 +80,17 @@ export const handlePrezzoCommand = async (ctx: MyMessageContext | MyCallbackQuer
       logger.warn(`ISIN ${isin} non valido o non trovato.`);
     }
 
-    await replyOrEdit(ctx, message, replyOptions);
+    if (isCallbackContext(ctx)) {
+      return message;
+    } else {
+      const inlineKeyboard: TelegramInlineKeyboardButton[][] = [[{ text: "🔄 Aggiorna prezzo", callback_data: `current_price:from_comando_prezzo:${isin}` }]];
+      const replyOptions: TelegramOptionsCustom = { reply_markup: { inline_keyboard: inlineKeyboard } };
+      await replyOrEdit(ctx, message, replyOptions);
+    }
   } catch (error) {
     errorHandler(error, ctx);
   }
-};
+}
 
 export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> => {
   const userTelegramId = ctx.from?.id!;

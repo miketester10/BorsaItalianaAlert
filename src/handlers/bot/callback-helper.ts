@@ -52,7 +52,7 @@ const callbackRouter = (): CallbackRouter => {
                 { text: "✅ Sì", callback_data: `delete:single_alert:${alertId}` },
                 { text: "❌ No", callback_data: "cancel_delete:single_alert" },
               ],
-              [{ text: "💰 Prezzo Attuale", callback_data: `current_price:single_alert:${alert.isin}` }],
+              [{ text: "💰 Prezzo Attuale", callback_data: `current_price:from_callback_alerts_attivi:${alert.isin}` }],
             ];
 
             const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
@@ -109,12 +109,26 @@ const callbackRouter = (): CallbackRouter => {
     },
 
     current_price: async (ctx, payload): Promise<void> => {
+      const isin = ctx.update?.callback_query?.data?.split(":")[2]!;
+      const message = await handlePrezzoCommand(ctx, isin);
+      let inlineKeyboard: TelegramInlineKeyboardButton[][];
+      let replyOptions: Partial<TelegramParams.EditMessageTextParams>;
       switch (payload) {
-        case CallbackPayload.SINGLE_ALERT:
-          const isin = ctx.update?.callback_query?.data?.split(":")[2]!;
-          await handlePrezzoCommand(ctx, isin);
+        case CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI:
+          inlineKeyboard = [
+            [{ text: "🔄 Aggiorna prezzo", callback_data: `current_price:from_callback_alerts_attivi:${isin}` }],
+            [{ text: "⬅️ Torna agli alerts attivi", callback_data: `back:all_alerts` }],
+          ];
+          replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
           break;
+        case CallbackPayload.FROM_COMANDO_PREZZO:
+          inlineKeyboard = [[{ text: "🔄 Aggiorna prezzo", callback_data: `current_price:from_comando_prezzo:${isin}` }]];
+          replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
+          break;
+        default:
+          replyOptions = {};
       }
+      await ctx.editText(message, replyOptions).catch((error) => errorHandler(error, ctx));
     },
 
     back: async (ctx, payload): Promise<void> => {
