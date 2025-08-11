@@ -27,14 +27,14 @@ export class BotHandler {
 
   async start(): Promise<void> {
     await this._bot.start();
+    await this.inizializeCommands();
 
-    // Inizializza menu e comandi dopo che il bot è avviato
+    // Inizializzail menu dei comandi Telegram
     if (!(await this.inizializeMenu())) {
       logger.warn("⚠️ Bot Telegram avviato senza Menu inizializzato");
     } else {
       logger.info("✅ Bot Telegram avviato con successo");
     }
-    this.inizializeCommands();
   }
 
   private async inizializeMenu(): Promise<boolean> {
