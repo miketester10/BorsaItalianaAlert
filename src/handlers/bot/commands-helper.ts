@@ -12,6 +12,7 @@ import { TelegramOptionsCustom } from "../../types/telegram-options-custom.type"
 import { validateInput } from "../../schemas/input-validator.schema";
 import { CommandType } from "../../enums/command-type.enum";
 import { formatPrice } from "../../utils/price-formatter";
+import { CallbackPayload } from "../../enums/callback-payload.enum";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
@@ -83,7 +84,7 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
     if (isCallbackContext(ctx)) {
       return message;
     } else {
-      const inlineKeyboard: TelegramInlineKeyboardButton[][] = [[{ text: "🔄 Aggiorna prezzo", callback_data: `current_price:from_comando_prezzo:${isin}` }]];
+      const inlineKeyboard: TelegramInlineKeyboardButton[][] = [[{ text: "🔄 Aggiorna prezzo", callback_data: `current_price:${CallbackPayload.FROM_COMANDO_PREZZO}:${isin}` }]];
       const replyOptions: TelegramOptionsCustom = { reply_markup: { inline_keyboard: inlineKeyboard } };
       await replyOrEdit(ctx, message, replyOptions);
     }
@@ -165,7 +166,7 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
       inlineKeyboard = alerts.map((alert, _index) => [
         {
           text: `${_index + 1}: ${alert.isin} - ${formatPrice(alert.alertPrice)}€`,
-          callback_data: `pre_delete:single_alert:${alert.id}`,
+          callback_data: `pre_delete:${CallbackPayload.SINGLE_ALERT}:${alert.id}`,
         },
       ]);
 
@@ -195,8 +196,8 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
       message = `⚠️ Vuoi eliminare tutti gli alerts attivi?`;
       inlineKeyboard = [
         [
-          { text: "✅ Sì", callback_data: "delete:all_alerts" },
-          { text: "❌ No", callback_data: "cancel_delete:all_alerts" },
+          { text: "✅ Sì", callback_data: `delete:${CallbackPayload.ALL_ALERTS}` },
+          { text: "❌ No", callback_data: `cancel_delete:${CallbackPayload.ALL_ALERTS}` },
         ],
       ];
 

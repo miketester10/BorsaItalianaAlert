@@ -49,10 +49,10 @@ const callbackRouter = (): CallbackRouter => {
 
             const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
               [
-                { text: "✅ Sì", callback_data: `delete:single_alert:${alertId}` },
-                { text: "❌ No", callback_data: "cancel_delete:single_alert" },
+                { text: "✅ Sì", callback_data: `delete:${CallbackPayload.SINGLE_ALERT}:${alertId}` },
+                { text: "❌ No", callback_data: `cancel_delete:${CallbackPayload.SINGLE_ALERT}` },
               ],
-              [{ text: "💰 Prezzo Attuale", callback_data: `current_price:from_callback_alerts_attivi:${alert.isin}` }],
+              [{ text: "💰 Prezzo Attuale", callback_data: `current_price:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${alert.isin}:${alert.id}` }],
             ];
 
             const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
@@ -109,25 +109,24 @@ const callbackRouter = (): CallbackRouter => {
     },
 
     current_price: async (ctx, payload): Promise<void> => {
-      const isin = ctx.update?.callback_query?.data?.split(":")[2]!;
+      const parts = ctx.update?.callback_query?.data?.split(":")!;
+      const isin = parts[2];
       const message = await handlePrezzoCommand(ctx, isin);
-      let inlineKeyboard: TelegramInlineKeyboardButton[][];
-      let replyOptions: Partial<TelegramParams.EditMessageTextParams>;
+      let inlineKeyboard: TelegramInlineKeyboardButton[][] = [];
+      let replyOptions: Partial<TelegramParams.EditMessageTextParams> = {};
       switch (payload) {
         case CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI:
+          const alertId = parts[3];
           inlineKeyboard = [
-            [{ text: "🔄 Aggiorna prezzo", callback_data: `current_price:from_callback_alerts_attivi:${isin}` }],
-            [{ text: "⬅️ Torna agli alerts attivi", callback_data: `back:all_alerts` }],
+            [{ text: "🔄 Aggiorna prezzo", callback_data: `current_price:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${isin}:${alertId}` }],
+            [{ text: "⬅️ Indietro", callback_data: `pre_delete:${CallbackPayload.SINGLE_ALERT}:${alertId}` }],
           ];
-          replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
           break;
         case CallbackPayload.FROM_COMANDO_PREZZO:
-          inlineKeyboard = [[{ text: "🔄 Aggiorna prezzo", callback_data: `current_price:from_comando_prezzo:${isin}` }]];
-          replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
+          inlineKeyboard = [[{ text: "🔄 Aggiorna prezzo", callback_data: `current_price:${CallbackPayload.FROM_COMANDO_PREZZO}:${isin}` }]];
           break;
-        default:
-          replyOptions = {};
       }
+      replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
       await ctx.editText(message, replyOptions).catch((error) => errorHandler(error, ctx));
     },
 
