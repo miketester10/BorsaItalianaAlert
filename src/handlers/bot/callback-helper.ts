@@ -1,12 +1,13 @@
 import { TelegramInlineKeyboardButton, TelegramParams } from "gramio";
 import { CallbackPayload } from "../../enums/callback-payload.enum";
-import { CallbackRouter } from "../../interfaces/callback-router.interface";
+import { CallbackRouter, isCallbackAction, isCallbackPayload } from "../../interfaces/callback-router.interface";
 import { MyCallbackQueryContext } from "../../interfaces/custom-context.interface";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
 import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./commands-helper";
 import { errorHandler } from "../error/error-handler";
 import { formatPrice } from "../../utils/price-formatter";
+import { CallbackAction } from "../../enums/callback-action.enum";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 
@@ -15,12 +16,16 @@ export const handleCallbackQuery = async (ctx: MyCallbackQueryContext): Promise<
   const [action, payload] = data?.split(":") || [];
 
   const cbRouter = callbackRouter();
-  const actionHandler = cbRouter[action];
 
-  if (actionHandler) {
-    await actionHandler(ctx, payload);
+  if (isCallbackAction(action)) {
+    const actionHandler = cbRouter[action];
+    if (isCallbackPayload(payload)) {
+      await actionHandler(ctx, payload);
+    } else {
+      logger.error(`No payload found for: ${action}`);
+    }
   } else {
-    logger.error(`No actionHandler found for: ${action}`);
+    logger.error(`No action found for: ${action}`);
   }
   // Stop animation of the button
   await ctx.answerCallbackQuery();
@@ -49,10 +54,10 @@ const callbackRouter = (): CallbackRouter => {
 
             const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
               [
-                { text: "✅ Sì", callback_data: `delete:${CallbackPayload.SINGLE_ALERT}:${alertId}` },
-                { text: "❌ No", callback_data: `cancel_delete:${CallbackPayload.SINGLE_ALERT}` },
+                { text: "✅ Sì", callback_data: `${CallbackAction.DELETE}:${CallbackPayload.SINGLE_ALERT}:${alertId}` },
+                { text: "❌ No", callback_data: `${CallbackAction.CANCEL_DELETE}:${CallbackPayload.SINGLE_ALERT}` },
               ],
-              [{ text: "💰 Prezzo Attuale", callback_data: `current_price:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${alert.isin}:${alert.id}` }],
+              [{ text: "💰 Prezzo Attuale", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${alert.isin}:${alert.id}` }],
             ];
 
             const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
@@ -118,12 +123,12 @@ const callbackRouter = (): CallbackRouter => {
         case CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI:
           const alertId = parts[3];
           inlineKeyboard = [
-            [{ text: "🔄 Aggiorna prezzo", callback_data: `current_price:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${isin}:${alertId}` }],
-            [{ text: "⬅️ Indietro", callback_data: `pre_delete:${CallbackPayload.SINGLE_ALERT}:${alertId}` }],
+            [{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${isin}:${alertId}` }],
+            [{ text: "⬅️ Indietro", callback_data: `${CallbackAction.PRE_DELETE}:${CallbackPayload.SINGLE_ALERT}:${alertId}` }],
           ];
           break;
         case CallbackPayload.FROM_COMANDO_PREZZO:
-          inlineKeyboard = [[{ text: "🔄 Aggiorna prezzo", callback_data: `current_price:${CallbackPayload.FROM_COMANDO_PREZZO}:${isin}` }]];
+          inlineKeyboard = [[{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_COMANDO_PREZZO}:${isin}` }]];
           break;
       }
       replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
