@@ -22,7 +22,7 @@ export const handleCallbackQuery = async (ctx: MyCallbackQueryContext): Promise<
     if (isCallbackPayload(payload)) {
       await actionHandler(ctx, payload);
     } else {
-      logger.error(`No payload found for: ${action}`);
+      logger.error(`No payload found for: ${payload}`);
     }
   } else {
     logger.error(`No action found for: ${action}`);
