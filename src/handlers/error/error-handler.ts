@@ -3,7 +3,7 @@ import { BorsaItalianaHttpErrorResponse } from "../../interfaces/borsa-italiana-
 import { logger } from "../../logger/logger";
 import { code, format, TelegramError } from "gramio";
 import { MyCallbackQueryContext, MyMessageContext } from "../../interfaces/custom-context.interface";
-import { replyOrEdit } from "../bot/commands-helper";
+import { replyOrEdit } from "../bot/02-commands-helper";
 
 export const errorHandler = async (error: unknown, ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
   const defaultErrorMessage = format`${code(`❌ Si è verificato un errore. Riprova più tardi.`)}`;

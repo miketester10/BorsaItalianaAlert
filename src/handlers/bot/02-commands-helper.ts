@@ -19,30 +19,6 @@ const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
 const alertHandler: AlertHandler = AlertHandler.getInstance();
 
-export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> => {
-  const telegramId = ctx.from?.id!;
-  const name = ctx.from?.firstName!;
-  const username = ctx.from?.username ?? null;
-
-  try {
-    await ctx.sendChatAction("typing");
-
-    logger.info(`Bot avviato da: ${name} - Telegram ID: ${telegramId}`);
-
-    const user = await dataBaseHandler.findUserByTelegramId(telegramId);
-    if (user) {
-      const isUpdated = await dataBaseHandler.updateUser(telegramId, user, { name, username });
-      logger.warn(`Utente già registrato. ${isUpdated ? `Dati aggiornati con successo.` : `Nessun dato da aggiornare è stato trovato.`}`);
-    } else {
-      await dataBaseHandler.createUser({ telegramId, name, username });
-      logger.info(`Nuovo utente registrato con successo.`);
-    }
-    await ctx.reply(`👋 Ciao ${name}`);
-  } catch (error) {
-    errorHandler(error, ctx);
-  }
-};
-
 export async function handlePrezzoCommand(ctx: MyMessageContext): Promise<void>;
 export async function handlePrezzoCommand(ctx: MyCallbackQueryContext, isinFromCallback: string): Promise<string>;
 export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQueryContext, isinFromCallback?: string): Promise<string | void> {

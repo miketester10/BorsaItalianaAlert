@@ -6,7 +6,7 @@ import { logger } from "../../logger/logger";
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { UpdateAlertDto } from "../../dto/update-alert.dto";
-import { BotHandler } from "../bot/bot-handler";
+import { BotHandler } from "../bot/00-bot-handler";
 import { Bot } from "gramio";
 import pLimit from "p-limit";
 import { formatPrice } from "../../utils/price-formatter";

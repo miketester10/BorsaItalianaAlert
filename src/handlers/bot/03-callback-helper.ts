@@ -4,7 +4,7 @@ import { CallbackRouter, isCallbackAction, isCallbackPayload } from "../../inter
 import { MyCallbackQueryContext } from "../../interfaces/custom-context.interface";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
-import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./commands-helper";
+import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./02-commands-helper";
 import { errorHandler } from "../error/error-handler";
 import { formatPrice } from "../../utils/price-formatter";
 import { CallbackAction } from "../../enums/callback-action.enum";

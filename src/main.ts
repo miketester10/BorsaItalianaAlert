@@ -1,4 +1,4 @@
-import { BotHandler } from "./handlers/bot/bot-handler";
+import { BotHandler } from "./handlers/bot/00-bot-handler";
 import { DatabaseHandler } from "./handlers/database/database-handler";
 // import { startAlertPriceJob } from "./jobs/alert-price.job";
 import { startTestAlertPriceJob } from "./jobs/alert-price.job";

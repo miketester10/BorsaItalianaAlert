@@ -1,8 +1,9 @@
 import { Bot } from "gramio";
 import { logger } from "../../logger/logger";
 import { MyCallbackQueryContext, MyMessageContext } from "../../interfaces/custom-context.interface";
-import { handlePrezzoCommand, handleStartCommand, handleAlertCommand, handleAlertsAttiviCommand, handleEliminaAlertsCommand } from "./commands-helper";
-import { handleCallbackQuery } from "./callback-helper";
+import { handleHelpCommand, handleStartCommand } from "./01-commands-basic.helper";
+import { handlePrezzoCommand, handleAlertCommand, handleAlertsAttiviCommand, handleEliminaAlertsCommand } from "./02-commands-helper";
+import { handleCallbackQuery } from "./03-callback-helper";
 
 export class BotHandler {
   private readonly BOT_TOKEN: string = process.env.BOT_TOKEN!;
@@ -41,7 +42,6 @@ export class BotHandler {
     try {
       const commands_set = await this._bot.api.setMyCommands({
         commands: [
-          { command: "start", description: "Avvia il bot" },
           {
             command: "prezzo",
             description: "<ISIN> - Mostra il prezzo attuale",
@@ -58,6 +58,8 @@ export class BotHandler {
             command: "elimina_alerts",
             description: "Elimina tutti gli alerts attivi",
           },
+          { command: "start", description: "Avvia il bot" },
+          { command: "help", description: "Mostra l'elenco dei comandi disponibili" },
         ],
       });
       return commands_set;
@@ -69,9 +71,6 @@ export class BotHandler {
   }
 
   private async inizializeCommands(): Promise<void> {
-    this._bot.command("start", async (ctx: MyMessageContext) => {
-      await handleStartCommand(ctx);
-    });
     this._bot.command("prezzo", async (ctx: MyMessageContext) => {
       await handlePrezzoCommand(ctx);
     });
@@ -83,6 +82,12 @@ export class BotHandler {
     });
     this._bot.command("elimina_alerts", async (ctx: MyMessageContext) => {
       await handleEliminaAlertsCommand(ctx);
+    });
+    this._bot.command("start", async (ctx: MyMessageContext) => {
+      await handleStartCommand(ctx);
+    });
+    this.bot.command("help", async (ctx: MyMessageContext) => {
+      await handleHelpCommand(ctx);
     });
     // Handle Callback
     this._bot.callbackQuery<RegExp>(/^.+$/, async (ctx: MyCallbackQueryContext) => {
