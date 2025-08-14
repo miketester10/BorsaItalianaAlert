@@ -14,9 +14,9 @@ const minutiTest = 1;
 //       try {
 //         await alertHandler.checkAndNotifyAlerts();
 //         const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
-//         logger.info(`CronJob eseguito il: ${date}`);
+//         logger.info(`AlertPriceJob eseguito il: ${date}`);
 //       } catch (error) {
-//         logger.error(`Errore nell'esecuzione del CronJob: ${(error as Error).message}`);
+//         logger.error(`Errore nell'esecuzione dell'AlertPriceJob: ${(error as Error).message}`);
 //       }
 //     },
 //     null,
@@ -24,7 +24,7 @@ const minutiTest = 1;
 //     "Europe/Rome"
 //   );
 //   job.start();
-//   logger.info(`✅ CronJob attivo: ogni ${minutiProduzione} min. dalle 07:00 alle 18:55 (lun-ven).`);
+//   logger.info(`✅ AlertPriceJob attivo: ogni ${minutiProduzione} min. dalle 07:00 alle 18:55 (lun-ven).`);
 // };
 
 /* ✅ [TEST] Cron: ogni minuto dalle 00:00 alle 23:55, dal lunedì alla domenica */
@@ -35,9 +35,9 @@ export const startTestAlertPriceJob = async (): Promise<void> => {
       try {
         await alertHandler.checkAndNotifyAlerts();
         const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
-        logger.info(`CronJob eseguito il: ${date}`);
+        logger.info(`TestAlertPriceJob eseguito il: ${date}`);
       } catch (error) {
-        logger.error(`Errore nell'esecuzione del CronJob: ${(error as Error).message}`);
+        logger.error(`Errore nell'esecuzione del TestAlertPriceJob: ${(error as Error).message}`);
       }
     },
     null,
@@ -45,5 +45,5 @@ export const startTestAlertPriceJob = async (): Promise<void> => {
     "Europe/Rome"
   );
   job.start();
-  logger.info(`✅ CronJob attivo: ogni ${minutiTest} min. dalle 00:00 alle 23:55 (lun-dom).`);
+  logger.info(`✅ TestAlertPriceJob attivo: ogni ${minutiTest} min. dalle 00:00 alle 23:55 (lun-dom).`);
 };
