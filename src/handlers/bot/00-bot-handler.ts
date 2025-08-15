@@ -9,22 +9,17 @@ export class BotHandler {
   private readonly BOT_TOKEN: string = process.env.BOT_TOKEN!;
 
   private static _instance: BotHandler;
-  private _bot: Bot | null = null;
+  readonly bot: Bot;
 
-  private constructor() {}
+  private constructor() {
+    this.bot = new Bot(this.BOT_TOKEN);
+  }
 
   static getInstance(): BotHandler {
     if (!BotHandler._instance) {
       BotHandler._instance = new BotHandler();
     }
     return BotHandler._instance;
-  }
-
-  get bot(): Bot {
-    if (!this._bot) {
-      this._bot = new Bot(this.BOT_TOKEN);
-    }
-    return this._bot;
   }
 
   async start(): Promise<void> {

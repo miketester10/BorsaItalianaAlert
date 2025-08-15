@@ -16,11 +16,12 @@ export class AlertHandler {
   private readonly dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
   private readonly apiHandler: ApiHandler = ApiHandler.getInstance();
 
-  private constructor() {}
-
+  // Lazy init: ottengo l'instanza del bot solo quando serve (evito il problema della dipendenza circolare)
   private get bot(): Bot {
-    return BotHandler.getInstance().bot; // Lazy init: ottengo l'instanza del bot solo quando serve (evito il problema della dipendenza circolare)
+    return BotHandler.getInstance().bot;
   }
+
+  private constructor() {}
 
   static getInstance(): AlertHandler {
     if (!AlertHandler._instance) {
