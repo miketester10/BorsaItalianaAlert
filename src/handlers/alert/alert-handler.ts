@@ -11,13 +11,16 @@ import { Bot } from "gramio";
 import pLimit from "p-limit";
 import { formatPrice } from "../../utils/price-formatter";
 
-const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
-const apiHandler: ApiHandler = ApiHandler.getInstance();
-
 export class AlertHandler {
   private static _instance: AlertHandler;
+  private readonly dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
+  private readonly apiHandler: ApiHandler = ApiHandler.getInstance();
 
   private constructor() {}
+
+  private get bot(): Bot {
+    return BotHandler.getInstance().bot; // Lazy init: ottengo l'instanza del bot solo quando serve (evito il problema della dipendenza circolare)
+  }
 
   static getInstance(): AlertHandler {
     if (!AlertHandler._instance) {
@@ -31,7 +34,7 @@ export class AlertHandler {
    * invia notifiche se la condizione è cambiata e aggiorna il DB.
    */
   async checkAndNotifyAlerts(): Promise<void> {
-    const alerts = await dataBaseHandler.findAllAlerts();
+    const alerts = await this.dataBaseHandler.findAllAlerts();
     if (alerts.length === 0) return;
 
     // Ottimizzazione: prendo tutti gli ISIN unici per ridurre chiamate API
@@ -43,7 +46,7 @@ export class AlertHandler {
     const requests = isins.map((isin) =>
       limit(async () => {
         try {
-          const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, { Authorization: `Bearer ${JWT.BORSA_ITALIANA}` });
+          const response = await this.apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, { Authorization: `Bearer ${JWT.BORSA_ITALIANA}` });
           return { isin, response };
         } catch (error) {
           throw new Error(`ISIN ${isin} - ${(error as Error).message}`);
@@ -135,29 +138,19 @@ export class AlertHandler {
       lastCondition: condition,
       lastCheckPrice: price,
     };
-    await dataBaseHandler.updateAlert(updateAlertDto);
+    await this.dataBaseHandler.updateAlert(updateAlertDto);
   }
 
   /**
    * Invia la notifica a Telegram
    */
   private async sendNotification(alert: Alert, price: number, condition: Condition): Promise<void> {
-    /**
-     * Recupero l'istanza del bot qui per evitare problemi di dipendenza circolare tra AlertHandler e BotHandler.
-     * Se la recupero a livello globale (fuori dalla classe AlertHandler) o come proprietà della classe, sarà undefined
-     * a causa dell'ordine di inizializzazione dei moduli in Node.js/TypeScript.
-     * Nel dettaglio: commands-helpers.ts (importato da BotHandler) importa AlertHandler, ed AlertHandler importa BotHandler.
-     * Recuperando l'istanza solo all'interno del metodo, evito side effect e garantisco che il bot sia sempre inizializzato correttamente.
-     * PS: In NestJS ad esempio la dipendenza circolare viene risolta in questo modo: https://docs.nestjs.com/fundamentals/circular-dependency
-     */
-    const bot: Bot = BotHandler.getInstance().bot;
-
     const message =
       condition === Condition.above
         ? `🚨 ALERT\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🟢 Il prezzo ha SUPERATO ${formatPrice(alert.alertPrice)}€\n💰 Prezzo attuale: ${price}€`
         : `🚨 ALERT\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🔴 Il prezzo è SCESO sotto ${formatPrice(alert.alertPrice)}€\n💰 Prezzo attuale: ${price}€`;
 
-    await bot.api.sendMessage({
+    await this.bot.api.sendMessage({
       chat_id: alert.userTelegramId,
       text: message,
     });

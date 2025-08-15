@@ -9,11 +9,9 @@ export class BotHandler {
   private readonly BOT_TOKEN: string = process.env.BOT_TOKEN!;
 
   private static _instance: BotHandler;
-  private readonly _bot: Bot;
+  private _bot: Bot | null = null;
 
-  private constructor() {
-    this._bot = new Bot(this.BOT_TOKEN);
-  }
+  private constructor() {}
 
   static getInstance(): BotHandler {
     if (!BotHandler._instance) {
@@ -23,12 +21,15 @@ export class BotHandler {
   }
 
   get bot(): Bot {
+    if (!this._bot) {
+      this._bot = new Bot(this.BOT_TOKEN);
+    }
     return this._bot;
   }
 
   async start(): Promise<void> {
     await this.inizializeCommands();
-    await this._bot.start();
+    await this.bot.start();
 
     // Inizializza il menu dei comandi Telegram
     if (!(await this.inizializeMenu())) return logger.warn("⚠️ Bot Telegram avviato senza Menu inizializzato");
@@ -38,7 +39,7 @@ export class BotHandler {
 
   private async inizializeMenu(): Promise<boolean> {
     try {
-      const commands_set = await this._bot.api.setMyCommands({
+      const commands_set = await this.bot.api.setMyCommands({
         commands: [
           {
             command: "prezzo",
@@ -69,26 +70,26 @@ export class BotHandler {
   }
 
   private async inizializeCommands(): Promise<void> {
-    this._bot.command("prezzo", async (ctx: MyMessageContext) => {
+    this.bot.command("prezzo", async (ctx: MyMessageContext) => {
       await handlePrezzoCommand(ctx);
     });
-    this._bot.command("alert", async (ctx: MyMessageContext) => {
+    this.bot.command("alert", async (ctx: MyMessageContext) => {
       await handleAlertCommand(ctx);
     });
-    this._bot.command("alerts_attivi", async (ctx: MyMessageContext) => {
+    this.bot.command("alerts_attivi", async (ctx: MyMessageContext) => {
       await handleAlertsAttiviCommand(ctx);
     });
-    this._bot.command("elimina_alerts", async (ctx: MyMessageContext) => {
+    this.bot.command("elimina_alerts", async (ctx: MyMessageContext) => {
       await handleEliminaAlertsCommand(ctx);
     });
-    this._bot.command("start", async (ctx: MyMessageContext) => {
+    this.bot.command("start", async (ctx: MyMessageContext) => {
       await handleStartCommand(ctx);
     });
     this.bot.command("help", async (ctx: MyMessageContext) => {
       await handleHelpCommand(ctx);
     });
     // Handle Callback
-    this._bot.callbackQuery<RegExp>(/^.+$/, async (ctx: MyCallbackQueryContext) => {
+    this.bot.callbackQuery<RegExp>(/^.+$/, async (ctx: MyCallbackQueryContext) => {
       await handleCallbackQuery(ctx);
     });
   }
