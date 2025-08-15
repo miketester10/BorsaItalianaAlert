@@ -143,7 +143,7 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 
 ### CronJob
 
-- **Modalità Test:** Controllo ogni minuto (lun-dom, 00:00-23:55)
+- **Modalità Test:** Controllo ogni minuto
 - **Modalità Produzione:** Controllo ogni 2 minuti (lun-ven, 07:00-18:55)
 
 ## Struttura del Progetto
@@ -275,7 +275,7 @@ enum Condition {
 - **Caching implicito:** Riutilizzo prezzi per alert multipli
 - **Error handling:** Gestione graceful degli errori API
 - **Concorrenza controllata:** chiamate HTTP in parallelo con [p-limit](https://github.com/sindresorhus/p-limit)
-- **HTTP keep-alive:** client Axios dedicato con `http/https.Agent` (pool connessioni, `timeout` default 3000ms)
+- **HTTP keep-alive:** client Axios dedicato con `http/https.Agent` (pool connessioni, `timeout` 10 secondi)
 
 ## Contribuire
 

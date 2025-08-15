@@ -27,10 +27,10 @@ const minutiTest = 1;
 //   logger.info(`✅ AlertPriceJob attivo: ogni ${minutiProduzione} min. dalle 07:00 alle 18:55 (lun-ven).`);
 // };
 
-/* ✅ [TEST] Cron: ogni minuto dalle 00:00 alle 23:55, dal lunedì alla domenica */
+/* ✅ [TEST] Cron: ogni minuto */
 export const startTestAlertPriceJob = async (): Promise<void> => {
   const job = new CronJob(
-    `*/${minutiTest} 0-23 * * 1-7`,
+    `*/${minutiTest} * * * *`,
     async () => {
       try {
         await alertHandler.checkAndNotifyAlerts();
@@ -45,5 +45,5 @@ export const startTestAlertPriceJob = async (): Promise<void> => {
     "Europe/Rome"
   );
   job.start();
-  logger.info(`✅ TestAlertPriceJob attivo: ogni ${minutiTest} min. dalle 00:00 alle 23:55 (lun-dom).`);
+  logger.info(`✅ TestAlertPriceJob attivo: ogni ${minutiTest} min.`);
 };
