@@ -34,8 +34,6 @@ export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> =
       ${blockquote(code("/help"))}
 
       ${blockquote(`⚠️ Per maggiori informazioni contatta lo sviluppatore:\n@m1keehrmantraut`)}
-
-      👨🏻‍💻 ${link("GitHub", "https://github.com/miketester10/BorsaItalianaAlert")}
     `;
 
     await ctx.reply(message, { link_preview_options: { is_disabled: true } });
