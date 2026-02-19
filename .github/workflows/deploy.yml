@@ -14,19 +14,21 @@ jobs:
       - name: 📦 Clona il repository
         uses: actions/checkout@v4
 
-      - name: 🚀 Deploy via SSH al VPS (con riavvio Container solo se necessario)
+      - name: 🚀 Deploy via SSH al VPS con KEY_PEM (con riavvio Container solo se necessario)
         run: |
-          echo "📦 Installo sshpass..."
-          sudo apt-get update && sudo apt-get install -y sshpass
+          echo "🔐 Scrivo la chiave privata..."
+          echo "${{ secrets.VPS_KEY_PEM }}" > ./vps_key.pem
+          chmod 600 ./vps_key.pem
 
-          echo "🔐 Connessione SSH al VPS..."
-          sshpass -p "${{ secrets.VPS_PASSWORD }}" ssh -o StrictHostKeyChecking=no "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << 'EOF'
-            
+          echo "📦 Connessione SSH al VPS..."
+          ssh -i ./vps_key.pem -o StrictHostKeyChecking=no "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << 'EOF'
+            PROJECT_DIR="/home/ubuntu/BorsaItalianaAlert"
+
             echo "📁 [1/4] Verifico/creo la cartella del progetto..."
-            if [ ! -d "/root/BorsaItalianaAlert" ]; then
-              git clone https://github.com/miketester10/BorsaItalianaAlert.git /root/BorsaItalianaAlert
+            if [ ! -d "$PROJECT_DIR" ]; then
+              git clone https://github.com/miketester10/BorsaItalianaAlert.git "$PROJECT_DIR"
             fi
-            cd /root/BorsaItalianaAlert
+            cd "$PROJECT_DIR"
 
             echo "📥 [2/4] Eseguo git pull..."
             OUTPUT=$(git pull origin main)
