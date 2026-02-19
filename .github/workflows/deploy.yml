@@ -17,8 +17,8 @@ jobs:
       - name: 🚀 Deploy via SSH al VPS con KEY_PEM (con riavvio Container solo se necessario)
         run: |
           echo "🔐 Scrivo la chiave privata..."
-          echo "${{ secrets.VPS_KEY_PEM }}" > ./vps_key.pem
-          chmod 600 ./vps_key.pem
+          echo "${{ secrets.VPS_PEM_BASE64 }}" | base64 -d > vps_key.pem
+          chmod 600 vps_key.pem
 
           echo "📦 Connessione SSH al VPS..."
           ssh -i ./vps_key.pem -o StrictHostKeyChecking=no "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << 'EOF'
