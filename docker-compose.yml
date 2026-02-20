@@ -9,6 +9,8 @@ services:
       - .env
     environment:
       - TZ=Europe/Rome # Imposta la variabile TimeZone per avere l'orario italiano nei logs
+    expose:
+      - "3000" # Espone la porta 3000 per health checks (non è accessibile dall'esterno, ma solo per i container nella stessa rete Docker)
     command: ["sh", "-c", "npm install --include=dev && npx prisma generate && npx prisma db push && npm run start"]
     restart: unless-stopped
     mem_limit: 1000m

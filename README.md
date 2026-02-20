@@ -96,6 +96,9 @@ DATABASE_URL=mongodb://localhost:27017/borsa_italiana_alert
 BORSA_ITALIANA_API=your_borsa_italiana_api_endpoint
 BORSA_ITALIANA_API_TAIL=your_borsa_italiana_api_tail_endpoint
 BORSA_ITALIANA_JWT=your_borsa_italiana_jwt_token
+
+# Express Server
+PORT=3000
 ```
 
 ### Script Principali
@@ -155,6 +158,7 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 │   │   ├── alert/       # Logica alert e notifiche
 │   │   ├── api/         # Integrazione API esterne
 │   │   ├── database/    # Operazioni database
+│   │   ├── server       # Express server
 │   │   └── error/       # Gestione errori
 │   ├── utils/           # Utility helpers (es. formattazione prezzi)
 │   ├── types/           # Tipi TypeScript
