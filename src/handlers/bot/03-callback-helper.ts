@@ -1,148 +1,123 @@
-import { TelegramInlineKeyboardButton, TelegramParams } from "gramio";
-import { CallbackPayload } from "../../enums/callback-payload.enum";
-import { CallbackRouter, isCallbackAction, isCallbackPayload } from "../../interfaces/callback-router.interface";
+import { Bot, TelegramInlineKeyboardButton, TelegramParams } from "gramio";
 import { MyCallbackQueryContext } from "../../interfaces/custom-context.interface";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
 import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./02-commands-helper";
 import { errorHandler } from "../error/error-handler";
 import { formatPrice } from "../../utils/price-formatter";
-import { CallbackAction } from "../../enums/callback-action.enum";
+import { cancelDeleteAllAlerts, cancelDeleteAlert, currentPriceFromCallbackAlertsAttivi, currentPriceFromComandoPrezzo, deleteAllAlerts, deleteAlert, preDeleteAlert } from "./04-callback-data";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 
-export const handleCallbackQuery = async (ctx: MyCallbackQueryContext): Promise<void> => {
-  const data = ctx.update?.callback_query?.data;
-  const [action, payload] = data?.split(":") || [];
+export const setupCallbacks = (bot: Bot): void => {
+  bot.callbackQuery(preDeleteAlert, async (ctx) => {
+    try {
+      const alertId = ctx.queryData.alertId;
 
-  const cbRouter = callbackRouter();
+      if (!alertId) {
+        await ctx.editText(`❌ Errore: ID alert non valido.`);
+        return ctx.answer();
+      }
 
-  if (isCallbackAction(action)) {
-    const actionHandler = cbRouter[action];
-    if (isCallbackPayload(payload)) {
-      await actionHandler(ctx, payload);
-    } else {
-      logger.error(`No payload found for: ${payload}`);
+      const alert = await dataBaseHandler.findAlertById(alertId);
+      if (!alert) {
+        await ctx.editText(`❌ Alert non trovato.`);
+        return ctx.answer();
+      }
+
+      const message = `⚠️ Vuoi eliminare l'alert selezionato?\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🔔 Alert Price: ${formatPrice(alert.alertPrice)}€`;
+
+      const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
+        [
+          { text: "✅ Sì", callback_data: deleteAlert.pack({ alertId }), style: "success" },
+          { text: "❌ No", callback_data: cancelDeleteAlert.pack(), style: "danger" },
+        ],
+        [{ text: "💰 Prezzo Attuale", callback_data: currentPriceFromCallbackAlertsAttivi.pack({ isin: alert.isin, alertId }), style: "primary" }],
+      ];
+
+      const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
+        reply_markup: { inline_keyboard: inlineKeyboard },
+      };
+
+      await ctx.editText(message, replyOptions);
+    } catch (error) {
+      errorHandler(error, ctx);
     }
-  } else {
-    logger.error(`No action found for: ${action}`);
-  }
-  // Stop animation of the button
-  await ctx.answerCallbackQuery();
-};
+    return ctx.answer();
+  });
 
-const callbackRouter = (): CallbackRouter => {
-  const callbackRouter: CallbackRouter = {
-    pre_delete: async (ctx, payload): Promise<void> => {
-      switch (payload) {
-        case CallbackPayload.SINGLE_ALERT:
-          try {
-            const alertId = ctx.update?.callback_query?.data?.split(":")[2];
+  bot.callbackQuery(deleteAllAlerts, async (ctx) => {
+    try {
+      const userTelegramId = ctx.from?.id!;
+      await dataBaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
+      await ctx.editText(`✅ Tutti gli alerts sono stati eliminati con successo.`);
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
+    return ctx.answer();
+  });
 
-            if (!alertId) {
-              await ctx.editText(`❌ Errore: ID alert non valido.`);
-              return;
-            }
+  bot.callbackQuery(deleteAlert, async (ctx) => {
+    try {
+      const alertId = ctx.queryData.alertId;
 
-            const alert = await dataBaseHandler.findAlertById(alertId);
-            if (!alert) {
-              await ctx.editText(`❌ Alert non trovato.`);
-              return;
-            }
-
-            const message = `⚠️ Vuoi eliminare l'alert selezionato?\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🔔 Alert Price: ${formatPrice(alert.alertPrice)}€`;
-
-            const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
-              [
-                { text: "✅ Sì", callback_data: `${CallbackAction.DELETE}:${CallbackPayload.SINGLE_ALERT}:${alertId}`, style: "success" },
-                { text: "❌ No", callback_data: `${CallbackAction.CANCEL_DELETE}:${CallbackPayload.SINGLE_ALERT}`, style: "danger" },
-              ],
-              [{ text: "💰 Prezzo Attuale", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${alert.isin}:${alert.id}`, style: "primary" }],
-            ];
-
-            const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
-              reply_markup: { inline_keyboard: inlineKeyboard },
-            };
-
-            await ctx.editText(message, replyOptions);
-          } catch (error) {
-            errorHandler(error, ctx);
-          }
-          break;
+      const alert = await dataBaseHandler.findAlertById(alertId);
+      if (!alert) {
+        await ctx.editText(`❌ Alert non trovato.`);
+        return ctx.answer();
       }
-    },
 
-    delete: async (ctx, payload): Promise<void> => {
-      switch (payload) {
-        case CallbackPayload.ALL_ALERTS:
-          try {
-            const userTelegramId = ctx.from?.id!;
-            await dataBaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
-            await ctx.editText(`✅ Tutti gli alerts sono stati eliminati con successo.`);
-          } catch (error) {
-            errorHandler(error, ctx);
-          }
-          break;
-        case CallbackPayload.SINGLE_ALERT:
-          try {
-            const alertId = ctx.update?.callback_query?.data?.split(":")[2]!;
+      await dataBaseHandler.deleteAlertById(alertId);
+      await handleAlertsAttiviCommand(ctx);
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
+    return ctx.answer();
+  });
 
-            const alert = await dataBaseHandler.findAlertById(alertId);
-            if (!alert) {
-              await ctx.editText(`❌ Alert non trovato.`);
-              return;
-            }
+  bot.callbackQuery(cancelDeleteAllAlerts, async (ctx) => {
+    await ctx.editText(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`);
+    return ctx.answer();
+  });
 
-            await dataBaseHandler.deleteAlertById(alertId);
-            await handleAlertsAttiviCommand(ctx);
-          } catch (error) {
-            errorHandler(error, ctx);
-          }
-          break;
-      }
-    },
+  bot.callbackQuery(cancelDeleteAlert, async (ctx) => {
+    await handleAlertsAttiviCommand(ctx);
+    return ctx.answer();
+  });
 
-    cancel_delete: async (ctx, payload): Promise<void> => {
-      switch (payload) {
-        case CallbackPayload.ALL_ALERTS:
-          await ctx.editText(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`);
-          break;
-        case CallbackPayload.SINGLE_ALERT:
-          await handleAlertsAttiviCommand(ctx);
-          break;
-      }
-    },
+  bot.callbackQuery(currentPriceFromCallbackAlertsAttivi, async (ctx) => {
+    try {
+      const isin = ctx.queryData.isin;
+      const alertId = ctx.queryData.alertId;
 
-    current_price: async (ctx, payload): Promise<void> => {
-      const parts = ctx.update?.callback_query?.data?.split(":")!;
-      const isin = parts[2];
       const message = await handlePrezzoCommand(ctx, isin);
-      let inlineKeyboard: TelegramInlineKeyboardButton[][] = [];
-      let replyOptions: Partial<TelegramParams.EditMessageTextParams> = {};
-      switch (payload) {
-        case CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI:
-          const alertId = parts[3];
-          inlineKeyboard = [
-            [{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${isin}:${alertId}` }],
-            [{ text: "⬅️ Indietro", callback_data: `${CallbackAction.PRE_DELETE}:${CallbackPayload.SINGLE_ALERT}:${alertId}` }],
-          ];
-          break;
-        case CallbackPayload.FROM_COMANDO_PREZZO:
-          inlineKeyboard = [[{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_COMANDO_PREZZO}:${isin}` }]];
-          break;
+      if (message) {
+        const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
+          [{ text: "🔄 Aggiorna prezzo", callback_data: currentPriceFromCallbackAlertsAttivi.pack({ isin, alertId }) }],
+          [{ text: "⬅️ Indietro", callback_data: preDeleteAlert.pack({ alertId }) }],
+        ];
+        const replyOptions: Partial<TelegramParams.EditMessageTextParams> = { reply_markup: { inline_keyboard: inlineKeyboard } };
+        await ctx.editText(message, replyOptions);
       }
-      replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
-      await ctx.editText(message, replyOptions).catch((error) => errorHandler(error, ctx));
-    },
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
+    return ctx.answer();
+  });
 
-    back: async (ctx, payload): Promise<void> => {
-      switch (payload) {
-        case CallbackPayload.ALL_ALERTS:
-          await handleAlertsAttiviCommand(ctx);
-          break;
+  bot.callbackQuery(currentPriceFromComandoPrezzo, async (ctx) => {
+    try {
+      const isin = ctx.queryData.isin;
+
+      const message = await handlePrezzoCommand(ctx, isin);
+      if (message) {
+        const inlineKeyboard: TelegramInlineKeyboardButton[][] = [[{ text: "🔄 Aggiorna prezzo", callback_data: currentPriceFromComandoPrezzo.pack({ isin }) }]];
+        const replyOptions: Partial<TelegramParams.EditMessageTextParams> = { reply_markup: { inline_keyboard: inlineKeyboard } };
+        await ctx.editText(message, replyOptions);
       }
-    },
-  };
-
-  return callbackRouter;
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
+    return ctx.answer();
+  });
 };
