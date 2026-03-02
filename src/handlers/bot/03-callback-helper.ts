@@ -54,10 +54,10 @@ const callbackRouter = (): CallbackRouter => {
 
             const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
               [
-                { text: "✅ Sì", callback_data: `${CallbackAction.DELETE}:${CallbackPayload.SINGLE_ALERT}:${alertId}` },
-                { text: "❌ No", callback_data: `${CallbackAction.CANCEL_DELETE}:${CallbackPayload.SINGLE_ALERT}` },
+                { text: "✅ Sì", callback_data: `${CallbackAction.DELETE}:${CallbackPayload.SINGLE_ALERT}:${alertId}`, style: "success" },
+                { text: "❌ No", callback_data: `${CallbackAction.CANCEL_DELETE}:${CallbackPayload.SINGLE_ALERT}`, style: "danger" },
               ],
-              [{ text: "💰 Prezzo Attuale", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${alert.isin}:${alert.id}` }],
+              [{ text: "💰 Prezzo Attuale", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${alert.isin}:${alert.id}`, style: "primary" }],
             ];
 
             const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
@@ -123,12 +123,12 @@ const callbackRouter = (): CallbackRouter => {
         case CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI:
           const alertId = parts[3];
           inlineKeyboard = [
-            [{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${isin}:${alertId}` }],
+            [{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${isin}:${alertId}`, style: "primary" }],
             [{ text: "⬅️ Indietro", callback_data: `${CallbackAction.PRE_DELETE}:${CallbackPayload.SINGLE_ALERT}:${alertId}` }],
           ];
           break;
         case CallbackPayload.FROM_COMANDO_PREZZO:
-          inlineKeyboard = [[{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_COMANDO_PREZZO}:${isin}` }]];
+          inlineKeyboard = [[{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_COMANDO_PREZZO}:${isin}`, style: "primary" }]];
           break;
       }
       replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
