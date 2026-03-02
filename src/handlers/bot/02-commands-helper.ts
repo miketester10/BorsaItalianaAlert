@@ -61,9 +61,7 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
     if (isCallbackContext(ctx)) {
       return message;
     } else {
-      const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
-        [{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_COMANDO_PREZZO}:${isin}`, style: "primary" }],
-      ];
+      const inlineKeyboard: TelegramInlineKeyboardButton[][] = [[{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_COMANDO_PREZZO}:${isin}` }]];
       const replyOptions: TelegramOptionsCustom = { reply_markup: { inline_keyboard: inlineKeyboard } };
       await replyOrEdit(ctx, message, replyOptions);
     }

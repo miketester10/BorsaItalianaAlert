@@ -123,12 +123,12 @@ const callbackRouter = (): CallbackRouter => {
         case CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI:
           const alertId = parts[3];
           inlineKeyboard = [
-            [{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${isin}:${alertId}`, style: "primary" }],
+            [{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_CALLBACK_ALERTS_ATTIVI}:${isin}:${alertId}` }],
             [{ text: "⬅️ Indietro", callback_data: `${CallbackAction.PRE_DELETE}:${CallbackPayload.SINGLE_ALERT}:${alertId}` }],
           ];
           break;
         case CallbackPayload.FROM_COMANDO_PREZZO:
-          inlineKeyboard = [[{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_COMANDO_PREZZO}:${isin}`, style: "primary" }]];
+          inlineKeyboard = [[{ text: "🔄 Aggiorna prezzo", callback_data: `${CallbackAction.CURRENT_PRICE}:${CallbackPayload.FROM_COMANDO_PREZZO}:${isin}` }]];
           break;
       }
       replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
