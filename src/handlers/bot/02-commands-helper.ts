@@ -1,4 +1,4 @@
-import { format, FormattableString, InlineKeyboard, italic, TelegramInlineKeyboardButton, TelegramParams, underline } from "gramio";
+import { format, FormattableString, italic, TelegramInlineKeyboardButton, TelegramParams, underline } from "gramio";
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
