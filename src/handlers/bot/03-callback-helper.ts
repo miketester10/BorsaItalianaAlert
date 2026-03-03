@@ -1,6 +1,4 @@
 import { Bot, TelegramInlineKeyboardButton, TelegramParams } from "gramio";
-import { MyCallbackQueryContext } from "../../interfaces/custom-context.interface";
-import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
 import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./02-commands-helper";
 import { errorHandler } from "../error/error-handler";
@@ -13,11 +11,6 @@ export const setupCallbacks = (bot: Bot): void => {
   bot.callbackQuery(preDeleteAlert, async (ctx) => {
     try {
       const alertId = ctx.queryData.alertId;
-
-      if (!alertId) {
-        await ctx.editText(`❌ Errore: ID alert non valido.`);
-        return ctx.answer();
-      }
 
       const alert = await dataBaseHandler.findAlertById(alertId);
       if (!alert) {
@@ -46,17 +39,6 @@ export const setupCallbacks = (bot: Bot): void => {
     return ctx.answer();
   });
 
-  bot.callbackQuery(deleteAllAlerts, async (ctx) => {
-    try {
-      const userTelegramId = ctx.from?.id!;
-      await dataBaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
-      await ctx.editText(`✅ Tutti gli alerts sono stati eliminati con successo.`);
-    } catch (error) {
-      errorHandler(error, ctx);
-    }
-    return ctx.answer();
-  });
-
   bot.callbackQuery(deleteAlert, async (ctx) => {
     try {
       const alertId = ctx.queryData.alertId;
@@ -75,13 +57,38 @@ export const setupCallbacks = (bot: Bot): void => {
     return ctx.answer();
   });
 
+  bot.callbackQuery(cancelDeleteAlert, async (ctx) => {
+    await handleAlertsAttiviCommand(ctx);
+    return ctx.answer();
+  });
+
+  bot.callbackQuery(deleteAllAlerts, async (ctx) => {
+    try {
+      const userTelegramId = ctx.from.id;
+      await dataBaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
+      await ctx.editText(`✅ Tutti gli alerts sono stati eliminati con successo.`);
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
+    return ctx.answer();
+  });
+
   bot.callbackQuery(cancelDeleteAllAlerts, async (ctx) => {
     await ctx.editText(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`);
     return ctx.answer();
   });
 
-  bot.callbackQuery(cancelDeleteAlert, async (ctx) => {
-    await handleAlertsAttiviCommand(ctx);
+  bot.callbackQuery(currentPriceFromComandoPrezzo, async (ctx) => {
+    try {
+      const isin = ctx.queryData.isin;
+
+      const message = await handlePrezzoCommand(ctx, isin);
+      const inlineKeyboard: TelegramInlineKeyboardButton[][] = [[{ text: "🔄 Aggiorna prezzo", callback_data: currentPriceFromComandoPrezzo.pack({ isin }) }]];
+      const replyOptions: Partial<TelegramParams.EditMessageTextParams> = { reply_markup: { inline_keyboard: inlineKeyboard } };
+      await ctx.editText(message, replyOptions);
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
     return ctx.answer();
   });
 
@@ -91,30 +98,12 @@ export const setupCallbacks = (bot: Bot): void => {
       const alertId = ctx.queryData.alertId;
 
       const message = await handlePrezzoCommand(ctx, isin);
-      if (message) {
-        const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
-          [{ text: "🔄 Aggiorna prezzo", callback_data: currentPriceFromCallbackAlertsAttivi.pack({ isin, alertId }) }],
-          [{ text: "⬅️ Indietro", callback_data: preDeleteAlert.pack({ alertId }) }],
-        ];
-        const replyOptions: Partial<TelegramParams.EditMessageTextParams> = { reply_markup: { inline_keyboard: inlineKeyboard } };
-        await ctx.editText(message, replyOptions);
-      }
-    } catch (error) {
-      errorHandler(error, ctx);
-    }
-    return ctx.answer();
-  });
-
-  bot.callbackQuery(currentPriceFromComandoPrezzo, async (ctx) => {
-    try {
-      const isin = ctx.queryData.isin;
-
-      const message = await handlePrezzoCommand(ctx, isin);
-      if (message) {
-        const inlineKeyboard: TelegramInlineKeyboardButton[][] = [[{ text: "🔄 Aggiorna prezzo", callback_data: currentPriceFromComandoPrezzo.pack({ isin }) }]];
-        const replyOptions: Partial<TelegramParams.EditMessageTextParams> = { reply_markup: { inline_keyboard: inlineKeyboard } };
-        await ctx.editText(message, replyOptions);
-      }
+      const inlineKeyboard: TelegramInlineKeyboardButton[][] = [
+        [{ text: "🔄 Aggiorna prezzo", callback_data: currentPriceFromCallbackAlertsAttivi.pack({ isin, alertId }) }],
+        [{ text: "⬅️ Indietro", callback_data: preDeleteAlert.pack({ alertId }) }],
+      ];
+      const replyOptions: Partial<TelegramParams.EditMessageTextParams> = { reply_markup: { inline_keyboard: inlineKeyboard } };
+      await ctx.editText(message, replyOptions);
     } catch (error) {
       errorHandler(error, ctx);
     }
