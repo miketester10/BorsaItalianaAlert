@@ -1,4 +1,4 @@
-import { blockquote, bold, code, format, italic, link, underline } from "gramio";
+import { blockquote, bold, code, format, italic, underline } from "gramio";
 import { MyMessageContext } from "../../interfaces/custom-context.interface";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
@@ -57,7 +57,7 @@ export const handleHelpCommand = async (ctx: MyMessageContext): Promise<void> =>
         Cliccando sul singolo alert si può decidere se eliminarlo o visualizzare direttamente il prezzo aggiornato del titolo senza usare il comando ${code("/prezzo <ISIN>")}.
     🔹${code("/elimina_alerts")} - Elimina in un solo comando tutti gli alerts impostati, previa conferma.
     🔹${code("/start")} - Avvia il bot.
-    🔹${code("/help")} - Ricevi questo messaggio.`
+    🔹${code("/help")} - Ricevi questo messaggio.`,
       )}
 
       ℹ️ ${underline(italic("Suggerimenti d’uso:"))}

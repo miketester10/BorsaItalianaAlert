@@ -1,4 +1,4 @@
-import { format, FormattableString, italic, TelegramInlineKeyboardButton, TelegramParams, underline } from "gramio";
+import { format, FormattableString, italic, TelegramParams, underline, InlineKeyboard } from "gramio";
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
@@ -12,7 +12,7 @@ import { TelegramOptionsCustom } from "../../types/telegram-options-custom.type"
 import { validateInput } from "../../schemas/input-validator.schema";
 import { CommandType } from "../../enums/command-type.enum";
 import { formatPrice } from "../../utils/price-formatter";
-import { currentPriceFromComandoPrezzo, preDeleteAlert, deleteAllAlerts, cancelDeleteAllAlerts } from "./04-callback-data";
+import { currentPriceFromComandoPrezzo, preDeleteAlert, deleteAllAlerts, cancelDeleteAllAlerts } from "./04-callbacks-data";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
@@ -60,8 +60,9 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
     if (isCallbackContext(ctx)) {
       return message;
     } else {
-      const inlineKeyboard: TelegramInlineKeyboardButton[][] = [[{ text: "🔄 Aggiorna prezzo", callback_data: currentPriceFromComandoPrezzo.pack({ isin }) }]];
-      const replyOptions: TelegramOptionsCustom = { reply_markup: { inline_keyboard: inlineKeyboard } };
+      const replyOptions: TelegramOptionsCustom = {
+        reply_markup: new InlineKeyboard().text("🔄 Aggiorna prezzo", currentPriceFromComandoPrezzo.pack({ isin })),
+      };
       await replyOrEdit(ctx, message, replyOptions);
     }
   } catch (error) {
@@ -118,7 +119,6 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
 export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
   const userTelegramId = ctx.from?.id!;
   let message: string | FormattableString;
-  let inlineKeyboard: TelegramInlineKeyboardButton[][];
   let replyOptions: TelegramOptionsCustom = {};
 
   try {
@@ -139,18 +139,13 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
       message = format`📋 Lista degli alerts attivi\n\n${underline(italic(`Seleziona un alert per eliminarlo \no per controllare il prezzo attuale`))}`;
 
       // Creo i pulsanti inline per ogni alert
-      inlineKeyboard = alerts.map(
-        (alert, _index) =>
-          [
-            {
-              text: `${_index + 1}: ${alert.isin} - ${formatPrice(alert.alertPrice)}€`,
-              callback_data: preDeleteAlert.pack({ alertId: alert.id }),
-              style: "primary",
-            },
-          ] as TelegramInlineKeyboardButton[],
-      );
+      const keyboard = new InlineKeyboard();
+      alerts.forEach((alert, _index) => {
+        let textButton = `${_index + 1}: ${alert.isin} - ${formatPrice(alert.alertPrice)}€`;
+        keyboard.text(textButton, preDeleteAlert.pack({ alertId: alert.id }), { style: "primary" }).row();
+      });
 
-      replyOptions = { reply_markup: { inline_keyboard: inlineKeyboard } };
+      replyOptions = { reply_markup: keyboard };
     } else {
       message = `⚠️ Non hai nessun alert attivo.`;
     }
@@ -164,7 +159,6 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
 export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise<void> => {
   const userTelegramId = ctx.from?.id!;
   let message: string | FormattableString;
-  let inlineKeyboard: TelegramInlineKeyboardButton[][];
   let replyOptions: TelegramOptionsCustom = {};
 
   try {
@@ -174,14 +168,7 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
 
     if (alerts.length > 0) {
       message = `⚠️ Vuoi eliminare tutti gli alerts attivi?`;
-      inlineKeyboard = [
-        [
-          { text: "✅ Sì", callback_data: deleteAllAlerts.pack(), style: "success" },
-          { text: "❌ No", callback_data: cancelDeleteAllAlerts.pack(), style: "danger" },
-        ],
-      ];
-
-      replyOptions.reply_markup = { inline_keyboard: inlineKeyboard };
+      replyOptions.reply_markup = new InlineKeyboard().text("✅ Sì", deleteAllAlerts.pack()).text("❌ No", cancelDeleteAllAlerts.pack());
     } else {
       message = `⚠️ Non hai nessun alert attivo da eliminare.`;
     }
@@ -192,7 +179,11 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
   }
 };
 
-export const replyOrEdit = async (ctx: MyMessageContext | MyCallbackQueryContext, text: string | FormattableString, options?: TelegramOptionsCustom): Promise<void> => {
+export const replyOrEdit = async (
+  ctx: MyMessageContext | MyCallbackQueryContext,
+  text: string | FormattableString,
+  options?: TelegramOptionsCustom,
+): Promise<void> => {
   if (isCallbackContext(ctx)) {
     await ctx.editText(text, options as TelegramParams.EditMessageTextParams);
   } else {

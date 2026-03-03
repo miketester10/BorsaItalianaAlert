@@ -21,7 +21,7 @@ const minutiTest = 1;
 //     },
 //     null,
 //     true,
-//     "Europe/Rome"
+//     "Europe/Rome",
 //   );
 //   job.start();
 //   logger.info(`✅ AlertPriceJob attivo: ogni ${minutiProduzione} min. dalle 07:00 alle 18:55 (lun-ven).`);
@@ -42,7 +42,7 @@ export const startTestAlertPriceJob = async (): Promise<void> => {
     },
     null,
     true,
-    "Europe/Rome"
+    "Europe/Rome",
   );
   job.start();
   logger.info(`✅ TestAlertPriceJob attivo: ogni ${minutiTest} min.`);

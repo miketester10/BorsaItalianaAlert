@@ -47,12 +47,14 @@ export class AlertHandler {
     const requests = isins.map((isin) =>
       limit(async () => {
         try {
-          const response = await this.apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, { Authorization: `Bearer ${JWT.BORSA_ITALIANA}` });
+          const response = await this.apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, {
+            Authorization: `Bearer ${JWT.BORSA_ITALIANA}`,
+          });
           return { isin, response };
         } catch (error) {
           throw new Error(`ISIN ${isin} - ${(error as Error).message}`);
         }
-      })
+      }),
     );
 
     const t1 = Date.now();

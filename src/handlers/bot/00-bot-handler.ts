@@ -3,7 +3,7 @@ import { logger } from "../../logger/logger";
 import { MyMessageContext } from "../../interfaces/custom-context.interface";
 import { handleHelpCommand, handleStartCommand } from "./01-commands-basic.helper";
 import { handlePrezzoCommand, handleAlertCommand, handleAlertsAttiviCommand, handleEliminaAlertsCommand } from "./02-commands-helper";
-import { setupCallbacks } from "./03-callback-helper";
+import { setupCallbacks } from "./03-callbacks-helper";
 
 export class BotHandler {
   private readonly BOT_TOKEN: string = process.env.BOT_TOKEN!;
