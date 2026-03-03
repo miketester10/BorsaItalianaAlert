@@ -187,7 +187,8 @@ Il repository include una pipeline CI/CD in `/.github/workflows/deploy.yml` che 
 ### Come funziona
 
 - All'evento `push` su `main`, la pipeline:
-  - si connette via SSH al VPS usando le credenziali configurate nei Secrets
+  - decodifica la chiave PEM in formato Base64 configurata nei Secrets
+  - si connette via SSH al VPS (es. istanza EC2) usando la chiave PEM
   - fa `git pull` nella cartella del progetto sul server
   - riavvia il container Docker solo se ci sono modifiche
 
@@ -195,11 +196,11 @@ Il repository include una pipeline CI/CD in `/.github/workflows/deploy.yml` che 
 
 Configura questi Secrets nel repository (Settings → Secrets and variables → Actions):
 
-- `VPS_USER` — utente SSH del server (es. `root`)
-- `VPS_PASSWORD` — password SSH dell'utente
-- `VPS_HOST` — host/IP del VPS (es. `1.2.3.4`)
+- `VPS_USER` — utente SSH del server (es. `ubuntu` per macchine EC2 Ubuntu)
+- `VPS_PEM_BASE64` — il contenuto della tua chiave privata `.pem` convertita in Base64 (puoi generarlo con `cat tuachiave.pem | base64 -w 0` da terminale Linux/Mac)
+- `VPS_HOST` — host/IP pubblico del VPS (es. `1.2.3.4`)
 
-La pipeline si aspetta che il progetto sul VPS sia in `/root/BorsaItalianaAlert` e che il server abbia Docker installato.
+La pipeline si aspetta che il progetto sul VPS sia in `/home/ubuntu/BorsaItalianaAlert` e che il server abbia Docker installato (se usi un utente diverso da `ubuntu`, ad esempio, potresti dover modificare il percorso nella Action).
 
 ## Architettura
 
