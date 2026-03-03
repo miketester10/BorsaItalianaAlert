@@ -168,7 +168,9 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
 
     if (alerts.length > 0) {
       message = `⚠️ Vuoi eliminare tutti gli alerts attivi?`;
-      replyOptions.reply_markup = new InlineKeyboard().text("✅ Sì", deleteAllAlerts.pack()).text("❌ No", cancelDeleteAllAlerts.pack());
+      replyOptions.reply_markup = new InlineKeyboard()
+        .text("✅ Sì", deleteAllAlerts.pack(), { style: "success" })
+        .text("❌ No", cancelDeleteAllAlerts.pack(), { style: "danger" });
     } else {
       message = `⚠️ Non hai nessun alert attivo da eliminare.`;
     }
