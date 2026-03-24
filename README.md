@@ -12,6 +12,7 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
 - **Integrazione API sicura** con Borsa Italiana
 - **Database MongoDB** per persistenza dati
 - **CronJob automatico** per controllo prezzi periodico
+- **Graceful shutdown** con stop ordinato di bot, server, job e database
 - **Gestione utenti** con profili personalizzati
 - **Logging strutturato** con Pino
 - **Containerizzazione Docker** per deployment semplificato
@@ -29,7 +30,7 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
   - [Zod](https://zod.dev/) (Validazione runtime degli input)
 - **Database:** MongoDB con Prisma
 - **Containerizzazione:** Docker
-- **Pattern:** Singleton, Dependency Injection
+- **Pattern:** Singleton, Separation of Concerns
 
 ## Iniziare
 
@@ -99,6 +100,9 @@ BORSA_ITALIANA_JWT=your_borsa_italiana_jwt_token
 
 # Express Server
 PORT=3000
+
+# Environment
+NODE_ENV="development or production"
 ```
 
 ### Script Principali
@@ -167,6 +171,7 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 │   ├── enums/           # Enumerazioni
 │   ├── consts/          # Costanti (API endpoints)
 │   ├── jobs/            # CronJob e task schedulati
+│   ├── lifecycle/       # Lifecycle app (es. graceful shutdown)
 │   ├── logger/          # Configurazione logging
 │   ├── schemas/         # Schemi Zod per validazione input
 │   └── main.ts          # Punto di ingresso
@@ -207,7 +212,7 @@ La pipeline si aspetta che il progetto sul VPS sia in `/home/ubuntu/BorsaItalian
 ### Design Patterns
 
 - **Singleton Pattern:** Implementato in tutti gli handler per garantire istanze uniche
-- **Dependency Injection:** Uso di getter per accesso controllato alle dipendenze
+- **Service Locator leggero:** Le singleton vengono risolte tramite `getInstance()` nei moduli di orchestrazione
 - **Separation of Concerns:** Ogni handler ha responsabilità specifiche
 
 ### Gestione Errori
@@ -215,6 +220,34 @@ La pipeline si aspetta che il progetto sul VPS sia in `/home/ubuntu/BorsaItalian
 - **Error Handler centralizzato** per gestione uniforme degli errori
 - **Try-catch consistenti** in tutti i metodi
 - **Logging strutturato** con Pino per debugging
+
+### Lifecycle & Shutdown
+
+#### Flow di avvio
+
+All'avvio dell'app il flusso è il seguente:
+
+1. `main.ts` registra gli handler di shutdown (`SIGINT`, `SIGTERM`) tramite `registerProcessShutdownHandlers()`.
+2. Viene avviato il server Express per l'endpoint health-check.
+3. Viene aperta la connessione al database MongoDB tramite Prisma.
+4. Viene avviato il bot Telegram e inizializzati comandi/menu.
+5. Parte il job di monitoraggio prezzi:
+   - `NODE_ENV=development` → job test (ogni minuto)
+   - `NODE_ENV=production` → job produzione (lun-ven, 07:00-18:55, ogni 2 minuti)
+
+#### Flow di shutdown graceful
+
+Quando arriva un segnale di stop o un errore in startup:
+
+1. Viene attivato `shutdown(exitCode, reason)`.
+2. Il job di monitoraggio viene fermato.
+3. In parallelo vengono chiusi:
+   - bot Telegram
+   - server Express
+   - connessione database
+4. L'app termina con `process.exit(exitCode)`:
+   - `0` su shutdown volontario (`SIGINT`, `SIGTERM`)
+   - `1` su errore di startup
 
 ### Type Safety
 
