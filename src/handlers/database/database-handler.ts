@@ -30,6 +30,16 @@ export class DatabaseHandler {
     }
   }
 
+  async disconnect(): Promise<void> {
+    try {
+      await this.prisma.$disconnect();
+      logger.info("✅ Database MongoDB disconnesso");
+    } catch (error) {
+      logger.error(`❌ Errore durante la disconnessione dal database MongoDB`);
+      throw error;
+    }
+  }
+
   async createUser(createUsertDto: CreateUserDto): Promise<void> {
     const { telegramId, name, username } = createUsertDto;
     try {

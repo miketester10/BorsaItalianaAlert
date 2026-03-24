@@ -5,27 +5,29 @@ import { AlertHandler } from "../handlers/alert/alert-handler";
 const alertHandler: AlertHandler = AlertHandler.getInstance();
 const minutiProduzione = 2;
 const minutiTest = 1;
+let activeJob: CronJob | null = null;
 
 /* ✅ Cron: ogni 2 minuti dalle 07:00 alle 18:55, dal lunedì al venerdì */
-// export const startAlertPriceJob = async (): Promise<void> => {
-//   const job = new CronJob(
-//     `*/${minutiProduzione} 7-18 * * 1-5`,
-//     async () => {
-//       try {
-//         await alertHandler.checkAndNotifyAlerts();
-//         const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
-//         logger.info(`AlertPriceJob eseguito il: ${date}`);
-//       } catch (error) {
-//         logger.error(`Errore nell'esecuzione dell'AlertPriceJob: ${(error as Error).message}`);
-//       }
-//     },
-//     null,
-//     true,
-//     "Europe/Rome",
-//   );
-//   job.start();
-//   logger.info(`✅ AlertPriceJob attivo: ogni ${minutiProduzione} min. dalle 07:00 alle 18:55 (lun-ven).`);
-// };
+export const startAlertPriceJob = async (): Promise<void> => {
+  const job = new CronJob(
+    `*/${minutiProduzione} 7-18 * * 1-5`,
+    async () => {
+      try {
+        await alertHandler.checkAndNotifyAlerts();
+        const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
+        logger.info(`AlertPriceJob eseguito il: ${date}`);
+      } catch (error) {
+        logger.error(`Errore nell'esecuzione dell'AlertPriceJob: ${(error as Error).message}`);
+      }
+    },
+    null,
+    true,
+    "Europe/Rome",
+  );
+  job.start();
+  activeJob = job;
+  logger.info(`✅ AlertPriceJob attivo: ogni ${minutiProduzione} min. dalle 07:00 alle 18:55 (lun-ven).`);
+};
 
 /* ✅ [TEST] Cron: ogni minuto */
 export const startTestAlertPriceJob = async (): Promise<void> => {
@@ -45,5 +47,14 @@ export const startTestAlertPriceJob = async (): Promise<void> => {
     "Europe/Rome",
   );
   job.start();
+  activeJob = job;
   logger.info(`✅ TestAlertPriceJob attivo: ogni ${minutiTest} min.`);
+};
+
+export const stopAlertPriceJob = (): void => {
+  if (!activeJob) return;
+
+  activeJob.stop();
+  activeJob = null;
+  logger.info("✅ AlertPriceJob fermato");
 };

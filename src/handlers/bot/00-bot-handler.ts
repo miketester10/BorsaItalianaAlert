@@ -32,6 +32,11 @@ export class BotHandler {
     logger.info("✅ Bot Telegram avviato con successo");
   }
 
+  async stop(): Promise<void> {
+    await this.bot.stop();
+    logger.info("✅ Bot Telegram fermato");
+  }
+
   private async inizializeMenu(): Promise<boolean> {
     try {
       const commands_set = await this.bot.api.setMyCommands({

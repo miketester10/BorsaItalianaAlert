@@ -1,4 +1,5 @@
 import express, { Request, Response, Express } from "express";
+import { Server } from "http";
 import { logger } from "../../logger/logger";
 
 export class ServerHandler {
@@ -6,6 +7,7 @@ export class ServerHandler {
 
   private static _instance: ServerHandler;
   private readonly app: Express = express();
+  private server: Server | null = null;
 
   private constructor() {}
 
@@ -16,22 +18,40 @@ export class ServerHandler {
     return ServerHandler._instance;
   }
 
-  async startServer(): Promise<void> {
+  async start(): Promise<void> {
     // Setup Health route
     this.app.get("/health", (req: Request, res: Response) => {
       res.status(200).json({ status: "OK" });
     });
 
     return new Promise<void>((resolve, reject) => {
-      const server = this.app.listen(this.EXPRESS_PORT, () => {
+      this.server = this.app.listen(this.EXPRESS_PORT, () => {
         logger.info(`✅ Server ready on port ${this.EXPRESS_PORT}`);
         resolve();
       });
 
-      server.on("error", (error) => {
+      this.server.on("error", (error) => {
         logger.error(`❌ Server failed to start: ${error.message}`);
         reject(error);
       });
     });
+  }
+
+  async stop(): Promise<void> {
+    const server = this.server;
+    if (!server) return;
+
+    await new Promise<void>((resolve, reject) => {
+      server.close((error?: Error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+
+    this.server = null;
+    logger.info("✅ Server fermato");
   }
 }
