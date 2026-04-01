@@ -56,11 +56,9 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
    ```
 
 3. **Configura le variabili ambiente:**
-
    - Copia `.env.example` in `.env` nella root del progetto e compila i valori richiesti (vedi sotto)
 
 4. **Avvia MongoDB:**
-
    - Localmente: `docker-compose up -d mongodb`
    - Oppure usa la tua istanza MongoDB
 
@@ -289,6 +287,9 @@ model Alert {
   user           User       @relation(fields: [userTelegramId], references: [telegramId])
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
+
+  @@index([userTelegramId])
+  @@index([userTelegramId, isin, alertPrice])
 }
 
 enum Condition {

@@ -17,6 +17,6 @@ export const userHandler = async (ctx: MyUserSourceContext): Promise<void> => {
     logger.debug(`Utente [${name}] già registrato. ${isUpdated ? `Dati aggiornati con successo.` : `Nessun dato da aggiornare è stato trovato.`}`);
   } else {
     await dataBaseHandler.createUser({ telegramId, name, username });
-    logger.info(`Nuovo utente registrato con successo.`);
+    logger.info(`Nuovo utente [${name}] registrato con successo.`);
   }
 };
