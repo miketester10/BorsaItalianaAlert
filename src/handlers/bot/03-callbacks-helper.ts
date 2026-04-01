@@ -3,6 +3,7 @@ import { DatabaseHandler } from "../database/database-handler";
 import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./02-commands-helper";
 import { errorHandler } from "../error/error-handler";
 import { formatPrice } from "../../utils/price-formatter";
+import { userHandler } from "./05-user-handler";
 import {
   cancelDeleteAllAlerts,
   cancelDeleteAlert,
@@ -18,6 +19,7 @@ const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 export const setupCallbacks = (bot: Bot): void => {
   bot.callbackQuery(preDeleteAlert, async (ctx) => {
     try {
+      await userHandler(ctx);
       const alertId = ctx.queryData.alertId;
 
       const alert = await dataBaseHandler.findAlertById(alertId);
@@ -45,6 +47,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(deleteAlert, async (ctx) => {
     try {
+      await userHandler(ctx);
       const alertId = ctx.queryData.alertId;
 
       const alert = await dataBaseHandler.findAlertById(alertId);
@@ -62,12 +65,18 @@ export const setupCallbacks = (bot: Bot): void => {
   });
 
   bot.callbackQuery(cancelDeleteAlert, async (ctx) => {
-    await handleAlertsAttiviCommand(ctx);
+    try {
+      await userHandler(ctx);
+      await handleAlertsAttiviCommand(ctx);
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
     return ctx.answer();
   });
 
   bot.callbackQuery(deleteAllAlerts, async (ctx) => {
     try {
+      await userHandler(ctx);
       const userTelegramId = ctx.from.id;
       await dataBaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
       await ctx.editText(`✅ Tutti gli alerts sono stati eliminati con successo.`);
@@ -78,12 +87,18 @@ export const setupCallbacks = (bot: Bot): void => {
   });
 
   bot.callbackQuery(cancelDeleteAllAlerts, async (ctx) => {
-    await ctx.editText(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`);
+    try {
+      await userHandler(ctx);
+      await ctx.editText(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`);
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
     return ctx.answer();
   });
 
   bot.callbackQuery(currentPriceFromComandoPrezzo, async (ctx) => {
     try {
+      await userHandler(ctx);
       const isin = ctx.queryData.isin;
 
       const message = await handlePrezzoCommand(ctx, isin);
@@ -99,6 +114,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(currentPriceFromCallbackAlertsAttivi, async (ctx) => {
     try {
+      await userHandler(ctx);
       const isin = ctx.queryData.isin;
       const alertId = ctx.queryData.alertId;
 

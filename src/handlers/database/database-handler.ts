@@ -65,13 +65,10 @@ export class DatabaseHandler {
     }
   }
 
-  async findUserByTelegramId(telegramId: number): Promise<(User & { alerts: Alert[] }) | null> {
+  async findUserByTelegramId(telegramId: number): Promise<User | null> {
     try {
       const user = await this.prisma.user.findUnique({
         where: { telegramId },
-        include: {
-          alerts: true,
-        },
       });
       return user;
     } catch (error) {

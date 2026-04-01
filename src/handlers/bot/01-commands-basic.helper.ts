@@ -1,10 +1,10 @@
 import { blockquote, bold, code, format, italic, underline } from "gramio";
 import { MyMessageContext } from "../../interfaces/custom-context.interface";
 import { logger } from "../../logger/logger";
-import { DatabaseHandler } from "../database/database-handler";
+// import { DatabaseHandler } from "../database/database-handler";
 import { errorHandler } from "../error/error-handler";
 
-const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
+// const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 
 export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> => {
   const telegramId = ctx.from?.id!;
@@ -16,14 +16,14 @@ export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> =
 
     logger.info(`Bot avviato da: ${name} - Telegram ID: ${telegramId}`);
 
-    const user = await dataBaseHandler.findUserByTelegramId(telegramId);
-    if (user) {
-      const isUpdated = await dataBaseHandler.updateUser(telegramId, user, { name, username });
-      logger.warn(`Utente già registrato. ${isUpdated ? `Dati aggiornati con successo.` : `Nessun dato da aggiornare è stato trovato.`}`);
-    } else {
-      await dataBaseHandler.createUser({ telegramId, name, username });
-      logger.info(`Nuovo utente registrato con successo.`);
-    }
+    // const user = await dataBaseHandler.findUserByTelegramId(telegramId);
+    // if (user) {
+    //   const isUpdated = await dataBaseHandler.updateUser(telegramId, user, { name, username });
+    //   logger.warn(`Utente già registrato. ${isUpdated ? `Dati aggiornati con successo.` : `Nessun dato da aggiornare è stato trovato.`}`);
+    // } else {
+    //   await dataBaseHandler.createUser({ telegramId, name, username });
+    //   logger.info(`Nuovo utente registrato con successo.`);
+    // }
 
     const message = format`
       👋 Ciao ${name}
