@@ -15,8 +15,8 @@ services:
     restart: unless-stopped
     networks:
       - proxy-manager
-    mem_limit: 1000m
-    memswap_limit: 1000m
+    # mem_limit: 1000m
+    # memswap_limit: 1000m
 
 networks:
   proxy-manager:
