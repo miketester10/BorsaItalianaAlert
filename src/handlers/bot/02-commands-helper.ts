@@ -2,7 +2,7 @@ import { format, FormattableString, italic, TelegramParams, underline, InlineKey
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
-import { isCallbackContext, MyCallbackQueryContext, MyMessageContext } from "../../interfaces/custom-context.interface";
+import { isCallbackContext, MyCallbackQueryContext, MyMessageContext } from "../../types/custom-context.type";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
 import { ApiHandler } from "../api/api-handler";

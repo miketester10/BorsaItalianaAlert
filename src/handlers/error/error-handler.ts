@@ -2,7 +2,7 @@ import { AxiosError } from "axios";
 import { BorsaItalianaHttpErrorResponse } from "../../interfaces/borsa-italiana-response.interface";
 import { logger } from "../../logger/logger";
 import { code, format, TelegramError } from "gramio";
-import { MyCallbackQueryContext, MyMessageContext } from "../../interfaces/custom-context.interface";
+import { MyCallbackQueryContext, MyMessageContext } from "../../types/custom-context.type";
 import { replyOrEdit } from "../bot/02-commands-helper";
 
 export const errorHandler = async (error: unknown, ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {

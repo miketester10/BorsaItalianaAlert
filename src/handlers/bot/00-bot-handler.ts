@@ -1,6 +1,6 @@
 import { Bot } from "gramio";
 import { logger } from "../../logger/logger";
-import { MyMessageContext } from "../../interfaces/custom-context.interface";
+import { MyMessageContext } from "../../types/custom-context.type";
 import { handleHelpCommand, handleStartCommand } from "./01-commands-basic.helper";
 import { handlePrezzoCommand, handleAlertCommand, handleAlertsAttiviCommand, handleEliminaAlertsCommand } from "./02-commands-helper";
 import { setupCallbacks } from "./03-callbacks-helper";
@@ -71,28 +71,27 @@ export class BotHandler {
   }
 
   private async inizializeCommands(): Promise<void> {
-    this.bot.command("prezzo", async (ctx: MyMessageContext) => {
+    this.bot.on(["message", "callback_query"], async (ctx, next) => {
       await userHandler(ctx);
+      return next();
+    });
+
+    this.bot.command("prezzo", async (ctx: MyMessageContext) => {
       await handlePrezzoCommand(ctx);
     });
     this.bot.command("alert", async (ctx: MyMessageContext) => {
-      await userHandler(ctx);
       await handleAlertCommand(ctx);
     });
     this.bot.command("alerts_attivi", async (ctx: MyMessageContext) => {
-      await userHandler(ctx);
       await handleAlertsAttiviCommand(ctx);
     });
     this.bot.command("elimina_alerts", async (ctx: MyMessageContext) => {
-      await userHandler(ctx);
       await handleEliminaAlertsCommand(ctx);
     });
     this.bot.command("start", async (ctx: MyMessageContext) => {
-      await userHandler(ctx);
       await handleStartCommand(ctx);
     });
     this.bot.command("help", async (ctx: MyMessageContext) => {
-      await userHandler(ctx);
       await handleHelpCommand(ctx);
     });
     // Handle Callback
