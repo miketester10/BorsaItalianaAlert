@@ -36,6 +36,9 @@ model Alert {
   user           User      @relation(fields: [userTelegramId], references: [telegramId])
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  @@index([userTelegramId])
+  @@index([userTelegramId, isin, alertPrice])
 }
 
 enum Condition {
