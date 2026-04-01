@@ -76,13 +76,10 @@ export class DatabaseHandler {
     }
   }
 
-  async findAlert(userTelegramId: number, isin: string, alertPrice: number): Promise<(Alert & { user: User }) | null> {
+  async findAlert(userTelegramId: number, isin: string, alertPrice: number): Promise<Alert | null> {
     try {
       const alert = await this.prisma.alert.findFirst({
         where: { userTelegramId, isin, alertPrice },
-        include: {
-          user: true,
-        },
       });
       return alert;
     } catch (error) {
@@ -90,13 +87,10 @@ export class DatabaseHandler {
     }
   }
 
-  async findAlertById(alertId: string): Promise<(Alert & { user: User }) | null> {
+  async findAlertById(alertId: string): Promise<Alert | null> {
     try {
       const alert = await this.prisma.alert.findUnique({
         where: { id: alertId },
-        include: {
-          user: true,
-        },
       });
       return alert;
     } catch (error) {
@@ -104,26 +98,19 @@ export class DatabaseHandler {
     }
   }
 
-  async findAllAlerts(): Promise<(Alert & { user: User })[]> {
+  async findAllAlerts(): Promise<Alert[]> {
     try {
-      const alerts = await this.prisma.alert.findMany({
-        include: {
-          user: true,
-        },
-      });
+      const alerts = await this.prisma.alert.findMany();
       return alerts;
     } catch (error) {
       throw error;
     }
   }
 
-  async findAllAlertsByTelegramId(userTelegramId: number): Promise<(Alert & { user: User })[]> {
+  async findAllAlertsByTelegramId(userTelegramId: number): Promise<Alert[]> {
     try {
       const alerts = await this.prisma.alert.findMany({
         where: { userTelegramId },
-        include: {
-          user: true,
-        },
       });
       return alerts;
     } catch (error) {
