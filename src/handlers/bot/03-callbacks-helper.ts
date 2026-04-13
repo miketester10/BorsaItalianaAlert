@@ -1,4 +1,4 @@
-import { Bot, TelegramParams, InlineKeyboard } from "gramio";
+import { Bot, TelegramParams, InlineKeyboard, code, format, blockquote, bold } from "gramio";
 import { DatabaseHandler } from "../database/database-handler";
 import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./02-commands-helper";
 import { errorHandler } from "../error/error-handler";
@@ -22,11 +22,19 @@ export const setupCallbacks = (bot: Bot): void => {
 
       const alert = await dataBaseHandler.findAlertById(alertId);
       if (!alert) {
-        await ctx.editText(`❌ Alert non trovato.`);
+        await ctx.editText(code(`❌ Alert non trovato.`));
         return ctx.answer();
       }
 
-      const message = `⚠️ Vuoi eliminare l'alert selezionato?\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🔔 Alert Price: ${formatPrice(alert.alertPrice)}€`;
+      const message = blockquote(
+        format`
+                    ${bold("⚠️ Vuoi eliminare l'alert selezionato?")}
+
+                    ${bold("🆔 ISIN:")} ${code(alert.isin)}
+                    ${bold("🏷️ Label:")} ${code(alert.label)}
+                    ${bold("🔔 Alert Price:")} ${code(`${formatPrice(alert.alertPrice)}€`)}
+                  `,
+      );
 
       const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
         reply_markup: new InlineKeyboard()
@@ -49,7 +57,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
       const alert = await dataBaseHandler.findAlertById(alertId);
       if (!alert) {
-        await ctx.editText(`❌ Alert non trovato.`);
+        await ctx.editText(code(`❌ Alert non trovato.`));
         return ctx.answer();
       }
 
@@ -74,7 +82,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       const userTelegramId = ctx.from.id;
       await dataBaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
-      await ctx.editText(`✅ Tutti gli alerts sono stati eliminati con successo.`);
+      await ctx.editText(code(`✅ Tutti gli alerts sono stati eliminati con successo.`));
     } catch (error) {
       errorHandler(error, ctx);
     }
@@ -83,7 +91,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(cancelDeleteAllAlerts, async (ctx) => {
     try {
-      await ctx.editText(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`);
+      await ctx.editText(code(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`));
     } catch (error) {
       errorHandler(error, ctx);
     }

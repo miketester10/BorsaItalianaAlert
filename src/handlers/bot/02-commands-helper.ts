@@ -1,4 +1,4 @@
-import { format, FormattableString, italic, TelegramParams, underline, InlineKeyboard } from "gramio";
+import { format, FormattableString, italic, TelegramParams, underline, InlineKeyboard, blockquote, code, bold } from "gramio";
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
@@ -19,11 +19,11 @@ const apiHandler: ApiHandler = ApiHandler.getInstance();
 const alertHandler: AlertHandler = AlertHandler.getInstance();
 
 export async function handlePrezzoCommand(ctx: MyMessageContext): Promise<void>;
-export async function handlePrezzoCommand(ctx: MyCallbackQueryContext, isinFromCallback: string): Promise<string>;
-export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQueryContext, isinFromCallback?: string): Promise<string | void> {
+export async function handlePrezzoCommand(ctx: MyCallbackQueryContext, isinFromCallback: string): Promise<FormattableString>;
+export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQueryContext, isinFromCallback?: string): Promise<FormattableString | void> {
   const isinRaw = ctx.update?.message?.text?.trim().split(/\s+/)[1]?.toUpperCase();
   let isin: string;
-  let message: string;
+  let message: FormattableString;
 
   try {
     if (!isCallbackContext(ctx)) {
@@ -33,7 +33,8 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
 
       if (!validation.success) {
         logger.error(validation.errors);
-        await ctx.reply(`⚠️ Inserisci un ISIN valido.`);
+        message = code(`⚠️ Inserisci un ISIN valido.`);
+        await ctx.reply(message);
         return;
       } else {
         isin = validation.data;
@@ -48,13 +49,21 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
     });
 
     if (isBorsaItalianaValidResponse(response)) {
-      const price = response.intradayPoint.at(-1)?.endPx;
+      const price = response.intradayPoint.at(-1)?.endPx!;
       const label = response.label;
-      message = `ISIN: ${isin}\nLabel: ${label}\n💰 Prezzo: ${price}€`;
+      message = blockquote(
+        format`
+                    ${bold("🆔 ISIN:")} ${code(isin)}
+                    ${bold("🏷️ Label:")} ${code(label)}
+                    ${bold("💰 Prezzo:")} ${code(`${formatPrice(price)}€`)}
+                  `,
+      );
       logger.info(`Ultimo prezzo: ${price}€`);
     } else {
-      message = `⚠️ ISIN non valido o non trovato.`;
+      message = code(`⚠️ ISIN non valido o non trovato.`);
       logger.warn(`ISIN ${isin} non valido o non trovato.`);
+      await replyOrEdit(ctx, message);
+      return;
     }
 
     if (isCallbackContext(ctx)) {
@@ -73,7 +82,7 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
 export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> => {
   const userTelegramId = ctx.from?.id!;
   const [command, isinRaw, priceRaw] = ctx.update?.message?.text?.trim().split(/\s+/) as [string, string | undefined, string | undefined];
-  let message: string;
+  let message: FormattableString;
 
   try {
     await ctx.sendChatAction("typing");
@@ -82,7 +91,8 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
 
     if (!validation.success) {
       logger.error(validation.errors);
-      await ctx.reply(`⚠️ Inserisci un ISIN ed un prezzo valido.`);
+      message = code(`⚠️ Inserisci un ISIN ed un prezzo valido.`);
+      await ctx.reply(message);
       return;
     }
 
@@ -95,18 +105,18 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
     if (isBorsaItalianaValidResponse(response)) {
       const alert = await dataBaseHandler.findAlert(userTelegramId, isin, alertPrice);
       if (alert) {
-        message = `⚠️ Alert già registrato.`;
+        message = code(`⚠️ Alert già registrato.`);
         logger.warn(`Alert già registrato.`);
       } else {
         const label = response.label;
         const lastCheckPrice = response.intradayPoint.at(-1)?.endPx!;
         const lastCondition = alertHandler.calculateCondition(lastCheckPrice, alertPrice);
         await dataBaseHandler.createAlert({ userTelegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
-        message = `✅ Alert registrato con successo.`;
+        message = code(`✅ Alert registrato con successo.`);
         logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${formatPrice(alertPrice)}€`);
       }
     } else {
-      message = `⚠️ ISIN non trovato. Nessun alert è stato registrato.`;
+      message = code(`⚠️ ISIN non trovato. Nessun alert è stato registrato.`);
       logger.warn(`ISIN ${isin} non trovato. Nessun alert è stato registrato.`);
     }
 
@@ -136,7 +146,13 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
         return b.alertPrice - a.alertPrice;
       });
 
-      message = format`📋 Lista degli alerts attivi\n\n${underline(italic(`Seleziona un alert per eliminarlo \no per controllare il prezzo attuale`))}`;
+      message = blockquote(
+        format`
+                    ${bold("📋 Lista degli alerts attivi")}
+
+                    ${underline(italic("Seleziona un alert per eliminarlo \no per controllare il prezzo attuale"))}
+                  `,
+      );
 
       // Creo i pulsanti inline per ogni alert
       const keyboard = new InlineKeyboard();
@@ -147,7 +163,7 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
 
       replyOptions = { reply_markup: keyboard };
     } else {
-      message = `⚠️ Non hai nessun alert attivo.`;
+      message = code(`⚠️ Non hai nessun alert attivo.`);
     }
 
     await replyOrEdit(ctx, message, replyOptions);
@@ -167,12 +183,16 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
 
     if (alerts.length > 0) {
-      message = `⚠️ Vuoi eliminare tutti gli alerts attivi?`;
+      message = blockquote(
+        format`
+                    ${bold("⚠️ Vuoi eliminare tutti gli alerts attivi?")}
+                  `,
+      );
       replyOptions.reply_markup = new InlineKeyboard()
         .text("✅ Sì", deleteAllAlerts.pack(), { style: "success" })
         .text("❌ No", cancelDeleteAllAlerts.pack(), { style: "danger" });
     } else {
-      message = `⚠️ Non hai nessun alert attivo da eliminare.`;
+      message = code(`⚠️ Non hai nessun alert attivo da eliminare.`);
     }
 
     await ctx.reply(message, replyOptions);
