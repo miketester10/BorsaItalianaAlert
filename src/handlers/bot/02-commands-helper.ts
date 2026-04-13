@@ -52,8 +52,7 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
       const price = response.intradayPoint.at(-1)?.endPx!;
       const label = response.label;
       message = blockquote(
-        format`
-                    ${bold("🆔 ISIN:")} ${code(isin)}
+        format`${bold("🆔 ISIN:")} ${code(isin)}
                     ${bold("🏷️ Label:")} ${code(label)}
                     ${bold("💰 Prezzo:")} ${code(`${formatPrice(price)}€`)}
                   `,
@@ -147,8 +146,7 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
       });
 
       message = blockquote(
-        format`
-                    ${bold("📋 Lista degli alerts attivi")}
+        format`${bold("📋 Lista degli alerts attivi")}
 
                     ${underline(italic("Seleziona un alert per eliminarlo \no per controllare il prezzo attuale"))}
                   `,
@@ -183,11 +181,7 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
     const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
 
     if (alerts.length > 0) {
-      message = blockquote(
-        format`
-                    ${bold("⚠️ Vuoi eliminare tutti gli alerts attivi?")}
-                  `,
-      );
+      message = blockquote(format`${bold("⚠️ Vuoi eliminare tutti gli alerts attivi?")}`);
       replyOptions.reply_markup = new InlineKeyboard()
         .text("✅ Sì", deleteAllAlerts.pack(), { style: "success" })
         .text("❌ No", cancelDeleteAllAlerts.pack(), { style: "danger" });

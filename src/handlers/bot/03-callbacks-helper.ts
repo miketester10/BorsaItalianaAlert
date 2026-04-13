@@ -1,4 +1,4 @@
-import { Bot, TelegramParams, InlineKeyboard, code, format, blockquote, bold } from "gramio";
+import { Bot, TelegramParams, InlineKeyboard, code, format, blockquote, bold, underline } from "gramio";
 import { DatabaseHandler } from "../database/database-handler";
 import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./02-commands-helper";
 import { errorHandler } from "../error/error-handler";
@@ -27,8 +27,7 @@ export const setupCallbacks = (bot: Bot): void => {
       }
 
       const message = blockquote(
-        format`
-                    ${bold("⚠️ Vuoi eliminare l'alert selezionato?")}
+        format`⚠️ ${bold(format`${underline("Vuoi eliminare l'alert selezionato?")}`)}
 
                     ${bold("🆔 ISIN:")} ${code(alert.isin)}
                     ${bold("🏷️ Label:")} ${code(alert.label)}
