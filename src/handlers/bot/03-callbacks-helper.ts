@@ -104,7 +104,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
       const message = await handlePrezzoCommand(ctx, isin);
       const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
-        reply_markup: new InlineKeyboard().text("🔄 Aggiorna prezzo", currentPriceFromComandoPrezzo.pack({ isin })),
+        reply_markup: new InlineKeyboard().text("🔄 Aggiorna prezzo", currentPriceFromComandoPrezzo.pack({ isin }), { style: "primary" }),
       };
       await ctx.editText(message, replyOptions);
     } catch (error) {
@@ -121,7 +121,7 @@ export const setupCallbacks = (bot: Bot): void => {
       const message = await handlePrezzoCommand(ctx, isin);
       const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
         reply_markup: new InlineKeyboard()
-          .text("🔄 Aggiorna prezzo", currentPriceFromCallbackAlertsAttivi.pack({ isin, alertId }))
+          .text("🔄 Aggiorna prezzo", currentPriceFromCallbackAlertsAttivi.pack({ isin, alertId }), { style: "primary" })
           .row()
           .text("⬅️ Indietro", preDeleteAlert.pack({ alertId })),
       };
