@@ -7,7 +7,7 @@ import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { UpdateAlertDto } from "../../dto/update-alert.dto";
 import { BotHandler } from "../bot/00-bot-handler";
-import { Bot } from "gramio";
+import { Bot, blockquote, bold, code, format, underline } from "gramio";
 import pLimit from "p-limit";
 import { formatPrice } from "../../utils/price-formatter";
 
@@ -148,10 +148,17 @@ export class AlertHandler {
    * Invia la notifica a Telegram
    */
   private async sendNotification(alert: Alert, price: number, condition: Condition): Promise<void> {
-    const message =
-      condition === Condition.above
-        ? `🚨 ALERT\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🟢 Il prezzo ha SUPERATO ${formatPrice(alert.alertPrice)}€\n💰 Prezzo attuale: ${price}€`
-        : `🚨 ALERT\n\nISIN: ${alert.isin}\nLabel: ${alert.label}\n🔴 Il prezzo è SCESO sotto ${formatPrice(alert.alertPrice)}€\n💰 Prezzo attuale: ${price}€`;
+    const priceMovementLine = condition === Condition.above ? format`🟢 Il prezzo ha ${bold("SUPERATO")}` : format`🔴 Il prezzo è ${bold("SCESO")} sotto`;
+
+    const message = blockquote(
+      format`🚨 ${bold(format`${underline("ALERT")}`)}
+
+                    ${bold("🆔 ISIN:")} ${code(alert.isin)}
+                    ${bold("🏷️ Label:")} ${code(alert.label)}
+                    ${priceMovementLine} ${code(`${formatPrice(alert.alertPrice)}€`)}
+                    ${bold("💰 Prezzo attuale:")} ${code(`${price}€`)}
+                `,
+    );
 
     await this.bot.api.sendMessage({
       chat_id: alert.userTelegramId,
