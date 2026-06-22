@@ -118,6 +118,15 @@ export class DatabaseHandler {
     }
   }
 
+  async findAllUsers(): Promise<User[]> {
+    try {
+      const users = await this.prisma.user.findMany();
+      return users;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async updateUser(telegramId: number, user: User, updateUserDto: UpdateUserDto): Promise<boolean> {
     const { name, username } = updateUserDto;
     try {
