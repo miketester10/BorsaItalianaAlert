@@ -189,9 +189,9 @@ export const setupCallbacks = (bot: Bot): void => {
         ${bold("✅ Report invio caffè:")}
 
         ${blockquote(format`${bold("Inviati con successo:")} ${sent}
-          ${bold("Falliti:")} ${failed}
-          ${bold("Saltati (admin):")} ${skipped}
-          ${bold("Totale utenti:")} ${users.length}`)}
+        ${bold("Falliti:")} ${failed}
+        ${bold("Saltati (admin):")} ${skipped}
+        ${bold("Totale utenti:")} ${users.length}`)}
       `;
 
       await ctx.editText(reportMessage);

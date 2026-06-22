@@ -35,9 +35,11 @@ export const handleKofiAllCommand = async (ctx: MyMessageContext): Promise<void>
 
     const label = filteredUsers.length === 1 ? "utente" : "utenti";
 
+    const confirmMessage = blockquote(format`${bold(`⚠️ Sei sicuro di voler inviare il messaggio a ${filteredUsers.length} ${label}?`)}`);
+
     const keyboard = new InlineKeyboard().text("✅ Invia", confirmKofiAll.pack(), { style: "success" }).text("❌ Annulla", cancelKofiAll.pack(), { style: "danger" });
 
-    await ctx.reply(blockquote(format`${bold(`⚠️ Sei sicuro di voler inviare il messaggio a ${filteredUsers.length} ${label}?`)}`), { reply_markup: keyboard });
+    await ctx.reply(confirmMessage, { reply_markup: keyboard });
   } catch (error) {
     errorHandler(error, ctx);
   }
