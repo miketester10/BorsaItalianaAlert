@@ -6,4 +6,6 @@ export enum CallbackId {
   CANCEL_DELETE_ALL_ALERTS = "cancel_delete_all_alerts",
   CURRENT_PRICE_FROM_CALLBACK_ALERTS_ATTIVI = "current_price_from_callback_aa",
   CURRENT_PRICE_FROM_COMANDO_PREZZO = "current_price_from_cp",
+  CONFIRM_KOFI_ALL = "confirm_kofi_all",
+  CANCEL_KOFI_ALL = "cancel_kofi_all",
 }
