@@ -70,20 +70,19 @@ export const handleKofiAllCommand = async (ctx: MyMessageContext): Promise<void>
       await delay(delayMs);
     }
 
-    await ctx.editMessageText(
-      format`
-        ${bold("✅ Report invio caffè:")}
+    const reportMessage = format`
+      ${bold("✅ Report invio caffè:")}
 
-        ${blockquote(format`${bold("Inviati con successo:")} ${sent}
-          ${bold("Falliti:")} ${failed}
-          ${bold("Saltati (admin):")} ${skipped}
-          ${bold("Totale utenti:")} ${users.length}`)}
-      `,
-      {
-        chat_id: statusMessage.chat.id,
-        message_id: statusMessage.id,
-      },
-    );
+      ${blockquote(format`${bold("Inviati con successo:")} ${sent}
+      ${bold("Falliti:")} ${failed}
+      ${bold("Saltati (admin):")} ${skipped}
+      ${bold("Totale utenti:")} ${users.length}`)}
+    `;
+
+    await ctx.editMessageText(reportMessage, {
+      chat_id: statusMessage.chat.id,
+      message_id: statusMessage.id,
+    });
   } catch (error) {
     errorHandler(error, ctx);
   }
