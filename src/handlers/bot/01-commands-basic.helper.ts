@@ -1,4 +1,4 @@
-import { blockquote, bold, code, format, italic, underline } from "gramio";
+import { blockquote, bold, code, format, italic, underline, InlineKeyboard } from "gramio";
 import { MyMessageContext } from "../../types/custom-context.type";
 import { logger } from "../../logger/logger";
 import { errorHandler } from "../error/error-handler";
@@ -23,7 +23,9 @@ export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> =
       ${blockquote(`⚠️ Per maggiori informazioni contatta lo sviluppatore:\n@m1keehrmantraut`)}
     `;
 
-    await ctx.reply(message, { link_preview_options: { is_disabled: true } });
+    const kofiKeyboard = new InlineKeyboard().url("☕ Offrimi un caffè", "https://ko-fi.com/borsaitalianabot", { style: "primary" });
+
+    await ctx.reply(message, { reply_markup: kofiKeyboard });
   } catch (error) {
     errorHandler(error, ctx);
   }
@@ -55,7 +57,9 @@ export const handleHelpCommand = async (ctx: MyMessageContext): Promise<void> =>
       ${code("99,50 -> errato ❌")}
     `;
 
-    await ctx.reply(message);
+    const kofiKeyboard = new InlineKeyboard().url("☕ Offrimi un caffè", "https://ko-fi.com/borsaitalianabot", { style: "primary" });
+
+    await ctx.reply(message, { reply_markup: kofiKeyboard });
   } catch (error) {
     errorHandler(error, ctx);
   }
