@@ -24,7 +24,7 @@ const buildKofiMessage = (userName: string): FormattableString => format`
 
 export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: boolean): Promise<void> => {
   try {
-    const users = await databaseHandler.findAllUsers(isNewUsers);
+    const users = await databaseHandler.findAllUsers(isNewUsers, true);
     const filteredUsers = users.filter((user) => user.telegramId !== OWNER_TELEGRAM_ID);
     const skipped = users.length - filteredUsers.length;
 
@@ -91,7 +91,7 @@ const showKofiConfirmPrompt = async (ctx: MyMessageContext, isNewUsers: boolean)
   try {
     await ctx.sendChatAction("typing");
 
-    const users = await databaseHandler.findAllUsers(isNewUsers);
+    const users = await databaseHandler.findAllUsers(isNewUsers, true);
     const filteredUsers = users.filter((user) => user.telegramId !== OWNER_TELEGRAM_ID);
 
     if (filteredUsers.length === 0) {

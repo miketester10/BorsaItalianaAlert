@@ -1,4 +1,4 @@
-import { Alert, PrismaClient, User } from "@prisma/client";
+import { Alert, Prisma, PrismaClient, User } from "@prisma/client";
 import { logger } from "../../logger/logger";
 import { CreateUserDto } from "../../dto/create-user.dto";
 import { UpdateUserDto } from "../../dto/update-user.dto";
@@ -118,11 +118,20 @@ export class DatabaseHandler {
     }
   }
 
-  async findAllUsers(onlyNotNotified?: boolean): Promise<User[]> {
+  async findAllUsers(onlyNotNotified?: boolean, excludeRecent?: boolean): Promise<User[]> {
     try {
-      const users = await this.prisma.user.findMany({
-        where: onlyNotNotified ? { kofiNotified: { not: true } } : undefined,
-      });
+      const where: Prisma.UserWhereInput = {};
+
+      if (onlyNotNotified) {
+        where.kofiNotified = { not: true };
+      }
+
+      if (excludeRecent) {
+        const cutoffDate = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
+        where.createdAt = { lt: cutoffDate };
+      }
+
+      const users = await this.prisma.user.findMany({ where });
       return users;
     } catch (error) {
       throw error;
