@@ -118,10 +118,24 @@ export class DatabaseHandler {
     }
   }
 
-  async findAllUsers(): Promise<User[]> {
+  async findAllUsers(onlyNotNotified?: boolean): Promise<User[]> {
     try {
-      const users = await this.prisma.user.findMany();
+      const users = await this.prisma.user.findMany({
+        where: onlyNotNotified ? { kofiNotified: { not: true } } : undefined,
+      });
       return users;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateKofiNotifiedBatch(telegramIds: number[]): Promise<void> {
+    if (telegramIds.length === 0) return;
+    try {
+      await this.prisma.user.updateMany({
+        where: { telegramId: { in: telegramIds } },
+        data: { kofiNotified: true },
+      });
     } catch (error) {
       throw error;
     }

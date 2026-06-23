@@ -1,4 +1,5 @@
 import { Bot, TelegramParams, InlineKeyboard, code, format, blockquote, bold, underline, italic } from "gramio";
+import { MyCallbackQueryContext } from "../../types/custom-context.type";
 import { DatabaseHandler } from "../database/database-handler";
 import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./02-commands-helper";
 import { errorHandler } from "../error/error-handler";
@@ -7,14 +8,17 @@ import { formatPrice } from "../../utils/price-formatter";
 import {
   cancelDeleteAllAlerts,
   cancelDeleteAlert,
-  cancelKofiAll,
-  confirmKofiAll,
   currentPriceFromCallbackAlertsAttivi,
   currentPriceFromComandoPrezzo,
   deleteAllAlerts,
   deleteAlert,
   preDeleteAlert,
+  confirmKofiAll,
+  confirmKofiNewUsers,
+  cancelKofiAll,
+  cancelKofiNewUsers,
 } from "./04-callbacks-data";
+import { sendKofiMessages } from "./06-kofi-commands";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 
@@ -134,79 +138,33 @@ export const setupCallbacks = (bot: Bot): void => {
     return ctx.answer();
   });
 
-  bot.callbackQuery(confirmKofiAll, async (ctx) => {
-    try {
-      const OWNER_TELEGRAM_ID = Number(process.env.OWNER_TELEGRAM_ID);
-
-      await ctx.editText(code("⏳ Preparazione invio..."));
-
-      const users = await dataBaseHandler.findAllUsers();
-      const filteredUsers = users.filter((user) => user.telegramId !== OWNER_TELEGRAM_ID);
-      const skipped = users.length - filteredUsers.length;
-
-      if (filteredUsers.length === 0) {
-        await ctx.editText(code("⚠️ Non è stato trovato nessun utente oltre all'admin."));
-        return ctx.answer();
-      }
-
-      const label = filteredUsers.length === 1 ? "utente" : "utenti";
-      await ctx.editText(format`${bold(`📬 Invio invito caffè a ${filteredUsers.length} ${label}...`)}`);
-
-      const delayMs = Math.max(100, Number(process.env.KOFI_DELAY_MS) || 500);
-      const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-      let sent = 0;
-      let failed = 0;
-
-      for (const user of filteredUsers) {
-        try {
-          const message = format`
-            Ciao ${bold(user.name)}! 👋
-
-            Se il bot ti piace e lo ritieni funzionale, sentiti libero di offrirmi un caffè! ☕
-
-            ${blockquote(format`${italic("Il tuo supporto mi aiuta a mantenere il bot attivo ed a migliorarlo.")}`)}
-
-            👉 ${bold("https://ko-fi.com/borsaitalianabot")}
-
-            Grazie mille! 🙏
-          `;
-
-          await ctx.send(message, {
-            chat_id: user.telegramId,
-            link_preview_options: { is_disabled: true },
-          });
-          sent++;
-        } catch (error) {
-          logger.error(`Errore invio a ${user.name} (ID: ${user.telegramId}): ${(error as Error).message}`);
-          failed++;
-        }
-
-        await delay(delayMs);
-      }
-
-      const reportMessage = format`
-        ${bold("✅ Report invio caffè:")}
-
-        ${blockquote(format`${bold("Inviati con successo:")} ${sent}
-        ${bold("Falliti:")} ${failed}
-        ${bold("Saltati (admin):")} ${skipped}
-        ${bold("Totale utenti:")} ${users.length}`)}
-      `;
-
-      await ctx.editText(reportMessage);
-    } catch (error) {
-      errorHandler(error, ctx);
-    }
-    return ctx.answer();
-  });
-
-  bot.callbackQuery(cancelKofiAll, async (ctx) => {
+  const handleCancelKofi = async (ctx: MyCallbackQueryContext) => {
     try {
       await ctx.editText(code("❌ Comando annullato."));
     } catch (error) {
       errorHandler(error, ctx);
     }
     return ctx.answer();
+  };
+
+  bot.callbackQuery(confirmKofiAll, async (ctx) => {
+    try {
+      await sendKofiMessages(ctx, false);
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
+    return ctx.answer();
   });
+
+  bot.callbackQuery(confirmKofiNewUsers, async (ctx) => {
+    try {
+      await sendKofiMessages(ctx, true);
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
+    return ctx.answer();
+  });
+
+  bot.callbackQuery(cancelKofiAll, handleCancelKofi);
+  bot.callbackQuery(cancelKofiNewUsers, handleCancelKofi);
 };

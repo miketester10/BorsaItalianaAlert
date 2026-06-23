@@ -19,10 +19,11 @@ datasource db {
 model User {
   telegramId Int      @id @map("_id")
   name       String
-  username   String?
-  alerts     Alert[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  username      String?
+  kofiNotified  Boolean  @default(false)
+  alerts        Alert[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Alert {
