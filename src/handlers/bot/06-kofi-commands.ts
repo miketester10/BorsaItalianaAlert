@@ -83,7 +83,7 @@ const showKofiConfirmPrompt = async (ctx: MyMessageContext, isNewUsers: boolean)
   const telegramId = ctx.from?.id!;
 
   if (telegramId !== OWNER_TELEGRAM_ID) {
-    logger.warn(`Tentativo non autorizzato comando [ ${isNewUsers ? "/kofi_new_user" : "/kofi_all"} ] da ${ctx.from?.firstName} (ID: ${telegramId})`);
+    logger.warn(`Tentativo non autorizzato comando [ ${isNewUsers ? "/kofi_new_users" : "/kofi_all"} ] da ${ctx.from?.firstName} (ID: ${telegramId})`);
     return;
   }
 

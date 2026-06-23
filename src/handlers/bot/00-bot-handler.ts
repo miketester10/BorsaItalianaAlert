@@ -98,7 +98,7 @@ export class BotHandler {
     this.bot.command("kofi_all", async (ctx: MyMessageContext) => {
       await handleKofiAllCommand(ctx);
     });
-    this.bot.command("kofi_new_user", async (ctx: MyMessageContext) => {
+    this.bot.command("kofi_new_users", async (ctx: MyMessageContext) => {
       await handleKofiNewUsersCommand(ctx);
     });
     // Handle Callback
