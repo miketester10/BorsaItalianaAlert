@@ -13,13 +13,13 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const buildKofiMessage = (userName: string): FormattableString => format`
   Ciao ${bold(userName)}! 👋
 
-  Se il bot ti piace e lo ritieni funzionale, sentiti libero di offrirmi un caffè! ☕
+  Se il bot ti fa risparmiare tempo e ti è utile ogni giorno, puoi supportarne lo sviluppo con un semplice ${bold("caffè")} ☕
 
-  ${blockquote(format`${italic("Il tuo supporto mi aiuta a mantenere il bot attivo ed a migliorarlo.")}`)}
+  Ogni contributo aiuta a ${bold("mantenere il servizio online")} e a ${bold("introdurre nuove funzionalità")}.
 
-  👉 ${bold("https://ko-fi.com/borsaitalianabot")}
+  ${bold("Anche un piccolo contributo fa la differenza.")}
 
-  Grazie mille! 🙏
+  Grazie per il supporto! 🙏
 `;
 
 export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: boolean): Promise<void> => {
