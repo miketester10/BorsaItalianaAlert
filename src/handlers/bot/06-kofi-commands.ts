@@ -15,7 +15,7 @@ const buildKofiMessage = (userName: string): FormattableString => format`
 
   Se il bot ti fa risparmiare tempo e ti è utile ogni giorno, puoi supportarne lo sviluppo con un semplice ${bold("caffè")} ☕
 
-  Ogni contributo aiuta a ${bold("mantenere il servizio online")} e a ${bold("introdurre nuove funzionalità")}.
+  Ogni contributo aiuta a ${bold("mantenere il servizio online")} ed ${bold("introdurre nuove funzionalità")}.
 
   ${bold("Anche un piccolo contributo fa la differenza.")}
 
@@ -24,8 +24,6 @@ const buildKofiMessage = (userName: string): FormattableString => format`
 
 export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: boolean): Promise<void> => {
   try {
-    await ctx.editText(code("⏳ Preparazione invio..."));
-
     const users = await databaseHandler.findAllUsers(isNewUsers);
     const filteredUsers = users.filter((user) => user.telegramId !== OWNER_TELEGRAM_ID);
     const skipped = users.length - filteredUsers.length;
@@ -44,11 +42,14 @@ export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: 
     let failed = 0;
     const sentIds: number[] = [];
 
+    const kofiKeyboard = new InlineKeyboard().url("☕ Offrimi un caffè", "https://ko-fi.com/borsaitalianabot", { style: "primary" });
+
     for (const user of filteredUsers) {
       try {
         await ctx.send(buildKofiMessage(user.name), {
           chat_id: user.telegramId,
           link_preview_options: { is_disabled: true },
+          reply_markup: kofiKeyboard,
         });
         sent++;
         sentIds.push(user.telegramId);
