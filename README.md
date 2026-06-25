@@ -47,8 +47,8 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
 1. **Clona il repository:**
 
    ```bash
-   git clone https://github.com/tuousername/bot_borsa_italiana_alert.git
-   cd bot_borsa_italiana_alert
+   git clone https://github.com/miketester10/BorsaItalianaAlert.git
+   cd BorsaItalianaAlert
    ```
 
 2. **Installa le dipendenze:**
@@ -61,7 +61,7 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
    - Copia `.env.example` in `.env` nella root del progetto e compila i valori richiesti (vedi sotto)
 
 4. **Avvia MongoDB:**
-   - Localmente: `docker-compose up -d mongodb`
+   - Localmente: `docker compose up -d mongodb`
    - Oppure usa la tua istanza MongoDB
 
 5. **Esegui le migrazioni del database:**
@@ -79,7 +79,7 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
 
 7. **Oppure avvia con Docker:**
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 ### Variabili Ambiente
@@ -116,8 +116,8 @@ KOFI_DELAY_MS=500
 
 ### Docker
 
-- `docker-compose up -d` — Avvia bot e MongoDB in container
-- `docker-compose down` — Ferma e rimuove i container
+- `docker compose up -d` — Avvia bot e MongoDB in container
+- `docker compose down` — Ferma e rimuove i container
 
 ## Comandi del Bot
 
