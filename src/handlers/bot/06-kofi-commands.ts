@@ -167,6 +167,11 @@ export const handleMarkKofiDonorCommand = async (ctx: MyMessageContext): Promise
       return;
     }
 
+    if (user.kofiDonatedAt) {
+      await ctx.reply(code("⚠️ Questo utente è già stato marcato come donatore."));
+      return;
+    }
+
     const confirmMessage = blockquote(
       format`${bold("⚠️ Vuoi marcare come donatore il seguente utente?")}
 
