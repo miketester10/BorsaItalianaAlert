@@ -166,7 +166,7 @@ export const handleKofiDonorCommand = async (ctx: MyMessageContext): Promise<voi
       format`${bold("⚠️ Vuoi marcare come donatore il seguente utente?")}
 
         ${bold("Name:")} ${code(user.name)}
-        ${bold("Username:")} ${code(user.username)}`,
+        ${bold("Username:")} ${code(user.username ?? "null")}`,
     );
 
     const keyboard = new InlineKeyboard().text("✅ Conferma", confirmMarkKofiDonor.pack({ donorTelegramId }), { style: "success" }).text("❌ Annulla", cancelMarkKofiDonor.pack(), { style: "danger" });
