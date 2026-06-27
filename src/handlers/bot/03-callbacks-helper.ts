@@ -140,15 +140,6 @@ export const setupCallbacks = (bot: Bot): void => {
     return ctx.answer();
   });
 
-  const handleCancelKofi = async (ctx: MyCallbackQueryContext) => {
-    try {
-      await ctx.editText(code("❌ Comando annullato."));
-    } catch (error) {
-      errorHandler(error, ctx);
-    }
-    return ctx.answer();
-  };
-
   bot.callbackQuery(confirmKofiAll, async (ctx) => {
     try {
       await sendKofiMessages(ctx, false);
@@ -167,9 +158,6 @@ export const setupCallbacks = (bot: Bot): void => {
     return ctx.answer();
   });
 
-  bot.callbackQuery(cancelKofiAll, handleCancelKofi);
-  bot.callbackQuery(cancelKofiNewUsers, handleCancelKofi);
-
   bot.callbackQuery(confirmMarkKofiDonor, async (ctx) => {
     try {
       const donorTelegramId = ctx.queryData.donorTelegramId;
@@ -181,12 +169,16 @@ export const setupCallbacks = (bot: Bot): void => {
     return ctx.answer();
   });
 
-  bot.callbackQuery(cancelMarkKofiDonor, async (ctx) => {
+  const handleCancelKofi = async (ctx: MyCallbackQueryContext) => {
     try {
       await ctx.editText(code("❌ Comando annullato."));
     } catch (error) {
       errorHandler(error, ctx);
     }
     return ctx.answer();
-  });
+  };
+
+  bot.callbackQuery(cancelKofiAll, handleCancelKofi);
+  bot.callbackQuery(cancelKofiNewUsers, handleCancelKofi);
+  bot.callbackQuery(cancelMarkKofiDonor, handleCancelKofi);
 };
