@@ -135,7 +135,7 @@ export const handleKofiNewUsersCommand = async (ctx: MyMessageContext): Promise<
   await showKofiConfirmPrompt(ctx, true);
 };
 
-export const handleKofiDonorCommand = async (ctx: MyMessageContext): Promise<void> => {
+export const handleMarkKofiDonorCommand = async (ctx: MyMessageContext): Promise<void> => {
   const telegramId = ctx.from?.id;
 
   if (telegramId !== OWNER_TELEGRAM_ID) {
