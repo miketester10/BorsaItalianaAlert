@@ -47,7 +47,7 @@ export class DatabaseHandler {
         data: {
           telegramId,
           name,
-          username: username ?? null, // Assicuro che username sia sempre null se non fornito
+          username: username,
         },
       });
     } catch (error) {
@@ -160,7 +160,7 @@ export class DatabaseHandler {
           where: { telegramId },
           data: {
             name: name,
-            username: username ?? null, // Assicuro che username sia sempre null se non fornito
+            username: username ?? null, // Assicuro che username sia sempre null se non fornito (undefined)
           },
         });
         return true;
