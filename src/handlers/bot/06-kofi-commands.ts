@@ -162,6 +162,11 @@ export const handleKofiDonorCommand = async (ctx: MyMessageContext): Promise<voi
       return;
     }
 
+    if (!user.kofiNotified) {
+      await ctx.reply(code("⚠️ Questo utente non ha ancora ricevuto la notifica caffè. Impossibile marcare come donatore."));
+      return;
+    }
+
     const confirmMessage = blockquote(
       format`${bold("⚠️ Vuoi marcare come donatore il seguente utente?")}
 
