@@ -163,7 +163,7 @@ export const handleMarkKofiDonorCommand = async (ctx: MyMessageContext): Promise
     }
 
     if (!user.kofiNotified) {
-      await ctx.reply(code("⚠️ Questo utente non ha ancora ricevuto la notifica caffè. Impossibile marcare come donatore."));
+      await ctx.reply(code("⚠️ Questo utente non ha ancora ricevuto la notifica Kofi. Impossibile marcare come donatore."));
       return;
     }
 
