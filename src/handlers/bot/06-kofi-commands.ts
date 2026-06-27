@@ -1,5 +1,6 @@
 import { format, blockquote, bold, italic, code, InlineKeyboard, FormattableString } from "gramio";
-import { MyMessageContext, MyCallbackQueryContext } from "../../types/custom-context.type";
+import { MyMessageContext, MyCallbackQueryContext, isCallbackContext } from "../../types/custom-context.type";
+import { KofiUsersResult } from "../../interfaces/kofi-users-result.interface";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
 import { errorHandler } from "../error/error-handler";
@@ -11,6 +12,26 @@ const databaseHandler = DatabaseHandler.getInstance();
 const OWNER_TELEGRAM_ID = Number(process.env.OWNER_TELEGRAM_ID);
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const fetchKofiUsers = async (isNewUsers: boolean): Promise<KofiUsersResult> => {
+  const users = await databaseHandler.findAllUsers({ onlyNotNotified: isNewUsers, excludeRecent: true, excludeDonors: true });
+  const filteredUsers = users.filter((user) => user.telegramId !== OWNER_TELEGRAM_ID);
+  return { users, filteredUsers, skipped: users.length - filteredUsers.length };
+};
+
+const checkKofiUsersExist = async (ctx: MyMessageContext | MyCallbackQueryContext, isNewUsers: boolean): Promise<KofiUsersResult | null> => {
+  const result = await fetchKofiUsers(isNewUsers);
+  if (result.filteredUsers.length === 0) {
+    const msg = code("⚠️ Nessun utente da notificare trovato.");
+    if (isCallbackContext(ctx)) {
+      await ctx.editText(msg);
+    } else {
+      await ctx.reply(msg);
+    }
+    return null;
+  }
+  return result;
+};
 
 const buildKofiMessage = (userName: string): FormattableString => format`
   Ciao ${bold(userName)}! 👋
@@ -26,14 +47,9 @@ const buildKofiMessage = (userName: string): FormattableString => format`
 
 export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: boolean): Promise<void> => {
   try {
-    const users = await databaseHandler.findAllUsers({ onlyNotNotified: isNewUsers, excludeRecent: true, excludeDonors: true });
-    const filteredUsers = users.filter((user) => user.telegramId !== OWNER_TELEGRAM_ID);
-    const skipped = users.length - filteredUsers.length;
-
-    if (filteredUsers.length === 0) {
-      await ctx.editText(code("⚠️ Nessun utente da notificare trovato."));
-      return;
-    }
+    const result = await checkKofiUsersExist(ctx, isNewUsers);
+    if (!result) return;
+    const { users, filteredUsers, skipped } = result;
 
     const label = filteredUsers.length === 1 ? "utente" : "utenti";
     await ctx.editText(format`${bold(`📬 Invio invito caffè a ${filteredUsers.length} ${label}...`)}`);
@@ -93,13 +109,9 @@ const showKofiConfirmPrompt = async (ctx: MyMessageContext, isNewUsers: boolean)
   try {
     await ctx.sendChatAction("typing");
 
-    const users = await databaseHandler.findAllUsers({ onlyNotNotified: isNewUsers, excludeRecent: true, excludeDonors: true });
-    const filteredUsers = users.filter((user) => user.telegramId !== OWNER_TELEGRAM_ID);
-
-    if (filteredUsers.length === 0) {
-      await ctx.reply(code("⚠️ Nessun utente da notificare trovato."));
-      return;
-    }
+    const result = await checkKofiUsersExist(ctx, isNewUsers);
+    if (!result) return;
+    const { filteredUsers } = result;
 
     const label = filteredUsers.length === 1 ? "utente" : "utenti";
     const confirmData = isNewUsers ? confirmKofiNewUsers : confirmKofiAll;
