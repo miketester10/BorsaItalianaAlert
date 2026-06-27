@@ -17,3 +17,6 @@ export const confirmKofiNewUsers = new CallbackData(CallbackId.CONFIRM_KOFI_NEW_
 
 export const cancelKofiAll = new CallbackData(CallbackId.CANCEL_KOFI_ALL);
 export const cancelKofiNewUsers = new CallbackData(CallbackId.CANCEL_KOFI_NEW_USERS);
+
+export const confirmMarkKofiDonor = new CallbackData(CallbackId.CONFIRM_MARK_KOFI_DONOR).number(CallbackKey.KOFI_DONOR_TELEGRAM_ID);
+export const cancelMarkKofiDonor = new CallbackData(CallbackId.CANCEL_MARK_KOFI_DONOR);

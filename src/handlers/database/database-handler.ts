@@ -4,6 +4,7 @@ import { CreateUserDto } from "../../dto/create-user.dto";
 import { UpdateUserDto } from "../../dto/update-user.dto";
 import { CreateAlertDto } from "../../dto/create-alert.dto";
 import { UpdateAlertDto } from "../../dto/update-alert.dto";
+import { FindAllUsersOptions } from "../../interfaces/find-all-users-options.interface";
 
 export class DatabaseHandler {
   private static _instance: DatabaseHandler;
@@ -118,21 +119,44 @@ export class DatabaseHandler {
     }
   }
 
-  async findAllUsers(onlyNotNotified?: boolean, excludeRecent?: boolean): Promise<User[]> {
+  /**
+   * Recupera gli utenti con filtri opzionali.
+   * @param options - Oggetto opzioni con i filtri da applicare
+   * @param options.onlyNotNotified - Se true, esclude utenti con kofiNotified = true
+   * @param options.excludeRecent - Se true, esclude utenti registrati da meno di 31 giorni
+   * @param options.excludeDonors - Se true, esclude utenti che hanno già donato (kofiDonatedAt != null)
+   * @returns Promise<User[]>
+   */
+  async findAllUsers(options?: FindAllUsersOptions): Promise<User[]> {
     try {
       const where: Prisma.UserWhereInput = {};
 
-      if (onlyNotNotified) {
+      if (options?.onlyNotNotified) {
         where.kofiNotified = { not: true };
       }
 
-      if (excludeRecent) {
+      if (options?.excludeRecent) {
         const cutoffDate = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
         where.createdAt = { lt: cutoffDate };
       }
 
+      if (options?.excludeDonors) {
+        where.kofiDonatedAt = null;
+      }
+
       const users = await this.prisma.user.findMany({ where });
       return users;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async markKofiDonor(telegramId: number): Promise<void> {
+    try {
+      await this.prisma.user.update({
+        where: { telegramId },
+        data: { kofiDonatedAt: new Date() },
+      });
     } catch (error) {
       throw error;
     }

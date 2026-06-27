@@ -3,7 +3,9 @@ import { MyMessageContext, MyCallbackQueryContext } from "../../types/custom-con
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
 import { errorHandler } from "../error/error-handler";
-import { confirmKofiAll, cancelKofiAll, confirmKofiNewUsers, cancelKofiNewUsers } from "./04-callbacks-data";
+import { CommandType } from "../../enums/command-type.enum";
+import { validateInput } from "../../schemas/input-validator.schema";
+import { confirmKofiAll, cancelKofiAll, confirmKofiNewUsers, cancelKofiNewUsers, confirmMarkKofiDonor, cancelMarkKofiDonor } from "./04-callbacks-data";
 
 const databaseHandler = DatabaseHandler.getInstance();
 const OWNER_TELEGRAM_ID = Number(process.env.OWNER_TELEGRAM_ID);
@@ -24,7 +26,7 @@ const buildKofiMessage = (userName: string): FormattableString => format`
 
 export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: boolean): Promise<void> => {
   try {
-    const users = await databaseHandler.findAllUsers(isNewUsers, true);
+    const users = await databaseHandler.findAllUsers({ onlyNotNotified: isNewUsers, excludeRecent: true, excludeDonors: true });
     const filteredUsers = users.filter((user) => user.telegramId !== OWNER_TELEGRAM_ID);
     const skipped = users.length - filteredUsers.length;
 
@@ -81,7 +83,7 @@ export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: 
 };
 
 const showKofiConfirmPrompt = async (ctx: MyMessageContext, isNewUsers: boolean): Promise<void> => {
-  const telegramId = ctx.from?.id!;
+  const telegramId = ctx.from?.id;
 
   if (telegramId !== OWNER_TELEGRAM_ID) {
     logger.warn(`Tentativo non autorizzato comando [ ${isNewUsers ? "/kofi_new_users" : "/kofi_all"} ] da ${ctx.from?.firstName} (ID: ${telegramId})`);
@@ -91,7 +93,7 @@ const showKofiConfirmPrompt = async (ctx: MyMessageContext, isNewUsers: boolean)
   try {
     await ctx.sendChatAction("typing");
 
-    const users = await databaseHandler.findAllUsers(isNewUsers, true);
+    const users = await databaseHandler.findAllUsers({ onlyNotNotified: isNewUsers, excludeRecent: true, excludeDonors: true });
     const filteredUsers = users.filter((user) => user.telegramId !== OWNER_TELEGRAM_ID);
 
     if (filteredUsers.length === 0) {
@@ -119,4 +121,46 @@ export const handleKofiAllCommand = async (ctx: MyMessageContext): Promise<void>
 
 export const handleKofiNewUsersCommand = async (ctx: MyMessageContext): Promise<void> => {
   await showKofiConfirmPrompt(ctx, true);
+};
+
+export const handleKofiDonorCommand = async (ctx: MyMessageContext): Promise<void> => {
+  const telegramId = ctx.from?.id;
+
+  if (telegramId !== OWNER_TELEGRAM_ID) {
+    logger.warn(`Tentativo non autorizzato comando [ /mark_kofi_donor ] da ${ctx.from?.firstName} (ID: ${telegramId})`);
+    return;
+  }
+
+  try {
+    await ctx.sendChatAction("typing");
+
+    const rawId = ctx.update?.message?.text?.trim().split(/\s+/)[1];
+    const validation = validateInput(CommandType.KOFI_DONOR, rawId);
+
+    if (!validation.success) {
+      await ctx.reply(code("⚠️ Inserisci un Telegram ID valido."));
+      return;
+    }
+
+    const donorTelegramId = validation.data;
+    const user = await databaseHandler.findUserByTelegramId(donorTelegramId);
+
+    if (!user) {
+      await ctx.reply(code("⚠️ Utente non trovato."));
+      return;
+    }
+
+    const confirmMessage = blockquote(
+      format`${bold("⚠️ Vuoi marcare come donatore il seguente utente?")}
+
+        ${bold("Name:")} ${code(user.name)}
+        ${bold("Username:")} ${code(user.username)}`,
+    );
+
+    const keyboard = new InlineKeyboard().text("✅ Conferma", confirmMarkKofiDonor.pack({ donorTelegramId }), { style: "success" }).text("❌ Annulla", cancelMarkKofiDonor.pack(), { style: "danger" });
+
+    await ctx.reply(confirmMessage, { reply_markup: keyboard });
+  } catch (error) {
+    errorHandler(error, ctx);
+  }
 };

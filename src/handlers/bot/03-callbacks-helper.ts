@@ -8,15 +8,17 @@ import { formatPrice } from "../../utils/price-formatter";
 import {
   cancelDeleteAllAlerts,
   cancelDeleteAlert,
+  cancelKofiAll,
+  cancelKofiNewUsers,
+  cancelMarkKofiDonor,
+  confirmKofiAll,
+  confirmKofiNewUsers,
+  confirmMarkKofiDonor,
   currentPriceFromCallbackAlertsAttivi,
   currentPriceFromComandoPrezzo,
   deleteAllAlerts,
   deleteAlert,
   preDeleteAlert,
-  confirmKofiAll,
-  confirmKofiNewUsers,
-  cancelKofiAll,
-  cancelKofiNewUsers,
 } from "./04-callbacks-data";
 import { sendKofiMessages } from "./06-kofi-commands";
 
@@ -167,4 +169,24 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(cancelKofiAll, handleCancelKofi);
   bot.callbackQuery(cancelKofiNewUsers, handleCancelKofi);
+
+  bot.callbackQuery(confirmMarkKofiDonor, async (ctx) => {
+    try {
+      const donorTelegramId = ctx.queryData.donorTelegramId;
+      await dataBaseHandler.markKofiDonor(donorTelegramId);
+      await ctx.editText(code("✅ Donatore registrato con successo."));
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
+    return ctx.answer();
+  });
+
+  bot.callbackQuery(cancelMarkKofiDonor, async (ctx) => {
+    try {
+      await ctx.editText(code("❌ Comando annullato."));
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
+    return ctx.answer();
+  });
 };

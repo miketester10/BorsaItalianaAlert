@@ -10,4 +10,6 @@ export enum CallbackId {
   CONFIRM_KOFI_NEW_USERS = "confirm_kofi_new_user",
   CANCEL_KOFI_ALL = "cancel_kofi_all",
   CANCEL_KOFI_NEW_USERS = "cancel_kofi_new_user",
+  CONFIRM_MARK_KOFI_DONOR = "confirm_mark_kofi_donor",
+  CANCEL_MARK_KOFI_DONOR = "cancel_mark_kofi_donor",
 }

@@ -6,6 +6,7 @@ import { handlePrezzoCommand, handleAlertCommand, handleAlertsAttiviCommand, han
 import { setupCallbacks } from "./03-callbacks-helper";
 import { userHandler } from "./05-user-handler";
 import { handleKofiAllCommand, handleKofiNewUsersCommand } from "./06-kofi-commands";
+import { handleKofiDonorCommand } from "./06-kofi-commands";
 
 export class BotHandler {
   private readonly BOT_TOKEN: string = process.env.BOT_TOKEN!;
@@ -100,6 +101,9 @@ export class BotHandler {
     });
     this.bot.command("kofi_new_users", async (ctx: MyMessageContext) => {
       await handleKofiNewUsersCommand(ctx);
+    });
+    this.bot.command("mark_kofi_donor", async (ctx: MyMessageContext) => {
+      await handleKofiDonorCommand(ctx);
     });
     // Handle Callback
     setupCallbacks(this.bot);

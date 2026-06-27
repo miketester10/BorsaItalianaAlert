@@ -23,6 +23,19 @@ const alertPriceSchema = z
   })
   .refine((num) => num > 0, "Il prezzo deve essere maggiore di zero");
 
+const telegramIdSchema = z
+  .string()
+  .trim()
+  .nonempty("Telegram ID non può essere vuoto")
+  .transform((val, ctx) => {
+    const num = Number(val);
+    if (isNaN(num) || !Number.isInteger(num) || num <= 0) {
+      ctx.addIssue({ code: "custom", message: "Telegram ID non valido" });
+      return z.NEVER;
+    }
+    return num;
+  });
+
 // Comando /alert [ISIN] [ALERT_PRICE]
 const alertSchema = z.object({
   isin: isinSchema,
@@ -37,6 +50,7 @@ type ValidateResult<T> = { success: true; data: T } | { success: false; errors: 
 // Overload
 export function validateInput(command: CommandType.PREZZO, isin: string | undefined): ValidateResult<IsinValidated>;
 export function validateInput(command: CommandType.ALERT, isin: string | undefined, alertPrice: string | undefined): ValidateResult<AlertValidated>;
+export function validateInput(command: CommandType.KOFI_DONOR, telegramId: string | undefined): ValidateResult<number>;
 // Implementazione concreta
 export function validateInput(command: CommandType, isin: string | undefined, alertPrice?: string): ValidateResult<any> {
   if (command === CommandType.PREZZO) {
@@ -52,6 +66,13 @@ export function validateInput(command: CommandType, isin: string | undefined, al
       return { success: false, errors: ["Il prezzo è richiesto per il comando /alert"] };
     }
     const result = alertSchema.safeParse({ isin, alertPrice });
+    if (!result.success) {
+      return { success: false, errors: result.error.issues.map((e) => e.message) };
+    }
+    return { success: true, data: result.data };
+  }
+  if (command === CommandType.KOFI_DONOR) {
+    const result = telegramIdSchema.safeParse(isin);
     if (!result.success) {
       return { success: false, errors: result.error.issues.map((e) => e.message) };
     }
