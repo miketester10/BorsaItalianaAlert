@@ -70,7 +70,10 @@ export const handleHelpCommand = async (ctx: MyMessageContext): Promise<void> =>
 export const handleAdminCommand = async (ctx: MyMessageContext): Promise<void> => {
   const telegramId = ctx.from?.id;
 
-  if (telegramId !== OWNER_TELEGRAM_ID) return;
+  if (telegramId !== OWNER_TELEGRAM_ID) {
+    await ctx.reply(code("⚠️ Comando riservato all'admin."));
+    return;
+  }
 
   try {
     await ctx.sendChatAction("typing");
