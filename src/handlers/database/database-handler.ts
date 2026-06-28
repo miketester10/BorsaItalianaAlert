@@ -42,13 +42,11 @@ export class DatabaseHandler {
   }
 
   async createUser(createUsertDto: CreateUserDto): Promise<void> {
-    const { telegramId, name, username } = createUsertDto;
     try {
       await this.prisma.user.create({
         data: {
-          telegramId,
-          name,
-          username: username,
+          ...createUsertDto,
+          kofiDonatedAt: null,
         },
       });
     } catch (error) {
