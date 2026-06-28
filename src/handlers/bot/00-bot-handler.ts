@@ -1,7 +1,7 @@
 import { Bot } from "gramio";
 import { logger } from "../../logger/logger";
 import { MyMessageContext } from "../../types/custom-context.type";
-import { handleHelpCommand, handleStartCommand } from "./01-commands-basic.helper";
+import { handleHelpCommand, handleStartCommand, handleAdminCommand } from "./01-commands-basic.helper";
 import { handlePrezzoCommand, handleAlertCommand, handleAlertsAttiviCommand, handleEliminaAlertsCommand } from "./02-commands-helper";
 import { setupCallbacks } from "./03-callbacks-helper";
 import { userHandler } from "./05-user-handler";
@@ -61,6 +61,7 @@ export class BotHandler {
           },
           { command: "start", description: "Avvia il bot" },
           { command: "help", description: "Mostra l'elenco dei comandi disponibili" },
+          { command: "admin", description: "Mostra i comandi riservati all'admin" },
         ],
       });
       return commands_set;
@@ -94,6 +95,9 @@ export class BotHandler {
     });
     this.bot.command("help", async (ctx: MyMessageContext) => {
       await handleHelpCommand(ctx);
+    });
+    this.bot.command("admin", async (ctx: MyMessageContext) => {
+      await handleAdminCommand(ctx);
     });
     this.bot.command("kofi_all", async (ctx: MyMessageContext) => {
       await handleKofiAllCommand(ctx);

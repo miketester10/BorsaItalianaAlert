@@ -3,6 +3,8 @@ import { MyMessageContext } from "../../types/custom-context.type";
 import { logger } from "../../logger/logger";
 import { errorHandler } from "../error/error-handler";
 
+const OWNER_TELEGRAM_ID = Number(process.env.OWNER_TELEGRAM_ID);
+
 export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> => {
   const telegramId = ctx.from?.id!;
   const name = ctx.from?.firstName!;
@@ -60,6 +62,29 @@ export const handleHelpCommand = async (ctx: MyMessageContext): Promise<void> =>
     const kofiKeyboard = new InlineKeyboard().url("☕ Offrimi un caffè", "https://ko-fi.com/borsaitalianabot", { style: "primary" });
 
     await ctx.reply(message, { reply_markup: kofiKeyboard });
+  } catch (error) {
+    errorHandler(error, ctx);
+  }
+};
+
+export const handleAdminCommand = async (ctx: MyMessageContext): Promise<void> => {
+  const telegramId = ctx.from?.id;
+
+  if (telegramId !== OWNER_TELEGRAM_ID) return;
+
+  try {
+    await ctx.sendChatAction("typing");
+    const message = format`
+      ${bold("🛠️ COMANDI ADMIN 🛠️")}
+
+      ${blockquote(
+        format`🔹${code("/kofi_all")} - Invia il messaggio Kofi a tutti gli utenti (non donatori).
+      🔹${code("/kofi_new_users")} - Invia il messaggio Kofi ai nuovi utenti (non donatori, non notificati).
+      🔹${code("/mark_kofi_donor <telegramId>")} - Marca un utente come donatore Kofi.`,
+      )}
+    `;
+
+    await ctx.reply(message);
   } catch (error) {
     errorHandler(error, ctx);
   }
