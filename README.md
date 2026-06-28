@@ -277,27 +277,27 @@ Gli input provenienti dagli utenti (comandi Telegram e parametri) sono validati 
 
 ```prisma
 model User {
-  telegramId    Int      @id
+  telegramId    Int       @id @map("_id")
   name          String
   username      String?
   kofiNotified  Boolean   @default(false)
   kofiDonatedAt DateTime?
   alerts        Alert[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Alert {
-  id             String     @id @default(auto()) @map("_id")
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
   isin           String
   label          String
   alertPrice     Float
   lastCondition  Condition
   lastCheckPrice Float
   userTelegramId Int
-  user           User       @relation(fields: [userTelegramId], references: [telegramId])
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  user           User      @relation(fields: [userTelegramId], references: [telegramId])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([userTelegramId])
   @@index([userTelegramId, isin, alertPrice])
