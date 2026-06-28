@@ -13,9 +13,7 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
 - **Database MongoDB** per persistenza dati
 - **CronJob automatico** per controllo prezzi periodico
 - **Graceful shutdown** con stop ordinato di bot, server, job e database
-- **Gestione utenti** con profili personalizzati e tracciamento notifiche caffè
-- **Comandi admin nascosti** (`/kofi_all`, `/kofi_new_users`) per invitare al supporto
-- **Bottone Ko-fi** nei messaggi `/start`, `/help` e messaggi caffè
+- **Gestione utenti** con profili personalizzati e tracciamento notifiche Kofi
 - **Logging strutturato** con Pino
 - **Containerizzazione Docker** per deployment semplificato
 
@@ -128,11 +126,11 @@ KOFI_DELAY_MS=500
 - `/alert <ISIN> <prezzo>` — Crea un alert per un titolo
 - `/alerts_attivi` — Lista tutti gli alert attivi dell'utente
 - `/elimina_alerts` — Elimina tutti gli alert dell'utente
+- `/help` — Mostra l'elenco dei comandi disponibili per gli utenti
 
-### Comandi Admin (nascosti, non nel menu Telegram)
+### Comandi Admin
 
-- `/kofi_all` — Invia il messaggio caffè a tutti gli utenti registrati (conferma richiesta)
-- `/kofi_new_users` — Invia il messaggio caffè solo agli utenti mai notificati (conferma richiesta)
+- `/admin` — Mostra l'elenco dei comandi riservati all'amministratore
 
 ### Esempi di Utilizzo
 
@@ -282,7 +280,8 @@ model User {
   telegramId    Int      @id
   name          String
   username      String?
-  kofiNotified  Boolean  @default(false)
+  kofiNotified  Boolean   @default(false)
+  kofiDonatedAt DateTime?
   alerts        Alert[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
