@@ -169,7 +169,7 @@ export const handleKofiUserCommand = async (ctx: MyMessageContext): Promise<void
         ${bold("Username:")} ${code(user.username ?? "null")}
         ${bold("CreatedAt:")} ${code(user.createdAt)}
         ${bold("KofiNotified:")} ${code(user.kofiNotified)}
-        ${bold("kofiNotifiedAt:")} ${code("Aggiungere colonna sul DB")}`,
+        ${bold("kofiNotifiedAt:")} ${code(user.kofiNotifiedAt ?? "null")}`,
     );
 
     const keyboard = new InlineKeyboard()

@@ -46,6 +46,7 @@ export class DatabaseHandler {
       await this.prisma.user.create({
         data: {
           ...createUsertDto,
+          kofiNotifiedAt: null,
           kofiDonatedAt: null,
         },
       });
@@ -165,7 +166,10 @@ export class DatabaseHandler {
     try {
       await this.prisma.user.updateMany({
         where: { telegramId: { in: telegramIds } },
-        data: { kofiNotified: true },
+        data: {
+          kofiNotified: true,
+          kofiNotifiedAt: new Date(),
+        },
       });
     } catch (error) {
       throw error;

@@ -277,14 +277,15 @@ Gli input provenienti dagli utenti (comandi Telegram e parametri) sono validati 
 
 ```prisma
 model User {
-  telegramId    Int       @id @map("_id")
-  name          String
-  username      String?
-  kofiNotified  Boolean   @default(false)
-  kofiDonatedAt DateTime?
-  alerts        Alert[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  telegramId     Int       @id @map("_id")
+  name           String
+  username       String?
+  kofiNotified   Boolean   @default(false)
+  kofiNotifiedAt DateTime?
+  kofiDonatedAt  DateTime?
+  alerts         Alert[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 model Alert {
