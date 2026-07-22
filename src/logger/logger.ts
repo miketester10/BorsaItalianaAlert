@@ -1,6 +1,7 @@
 import pino from "pino";
 
-const logger = pino({
+export const logger = pino({
+  base: null,
   transport: {
     target: "pino-pretty",
     options: {
@@ -10,5 +11,3 @@ const logger = pino({
   },
   level: "debug",
 });
-
-export { logger };
