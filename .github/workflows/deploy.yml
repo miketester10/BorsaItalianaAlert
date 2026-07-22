@@ -21,7 +21,7 @@ jobs:
           chmod 600 vps_key.pem
 
           echo "📦 Connessione SSH al VPS..."
-          ssh -i ./vps_key.pem -o StrictHostKeyChecking=no "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << 'EOF'
+          ssh -i ./vps_key.pem -o StrictHostKeyChecking=no "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" 'bash -s' << 'EOF'
             PROJECT_DIR="/home/ubuntu/BorsaItalianaAlert"
 
             echo "📁 [1/4] Verifico/creo la cartella del progetto..."
