@@ -3,7 +3,6 @@ import { MyCallbackQueryContext } from "../../types/custom-context.type";
 import { DatabaseHandler } from "../database/database-handler";
 import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./02-commands-helper";
 import { errorHandler } from "../error/error-handler";
-import { logger } from "../../logger/logger";
 import { formatPrice } from "../../utils/price-formatter";
 import {
   cancelDeleteAllAlerts,

@@ -1,4 +1,4 @@
-import { format, blockquote, bold, italic, code, InlineKeyboard, FormattableString } from "gramio";
+import { format, blockquote, bold, code, InlineKeyboard, FormattableString } from "gramio";
 import { MyMessageContext, MyCallbackQueryContext, isCallbackContext } from "../../types/custom-context.type";
 import { KofiUsersResult } from "../../interfaces/kofi-users-result.interface";
 import { logger } from "../../logger/logger";
