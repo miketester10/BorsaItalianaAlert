@@ -6,7 +6,7 @@ import { DatabaseHandler } from "../database/database-handler";
 import { errorHandler } from "../error/error-handler";
 import { CommandType } from "../../enums/command-type.enum";
 import { validateInput } from "../../schemas/input-validator.schema";
-import { confirmKofiAll, cancelKofiAll, confirmKofiNewUsers, cancelKofiNewUsers, confirmMarkKofiDonor, cancelMarkKofiDonor } from "./04-callbacks-data";
+import { confirmKofiAll, confirmKofiUser, confirmKofiNewUsers, confirmMarkKofiDonor, cancelKofiAll, cancelKofiUser, cancelKofiNewUsers, cancelMarkKofiDonor } from "./04-callbacks-data";
 
 const databaseHandler = DatabaseHandler.getInstance();
 const OWNER_TELEGRAM_ID = Number(process.env.OWNER_TELEGRAM_ID);
@@ -45,6 +45,16 @@ const buildKofiMessage = (userName: string): FormattableString => format`
   Grazie per il supporto! 🙏
 `;
 
+export const kofiKeyboard = new InlineKeyboard().url("☕ Offrimi un caffè", "https://ko-fi.com/borsaitalianabot", { style: "primary" });
+
+export const sendKofiMessageToUser = async (ctx: MyCallbackQueryContext, telegramId: number, userName: string): Promise<void> => {
+  await ctx.send(buildKofiMessage(userName), {
+    chat_id: telegramId,
+    link_preview_options: { is_disabled: true },
+    reply_markup: kofiKeyboard,
+  });
+};
+
 export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: boolean): Promise<void> => {
   try {
     const result = await checkKofiUsersExist(ctx, isNewUsers);
@@ -60,15 +70,9 @@ export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: 
     let failed = 0;
     const sentIds: number[] = [];
 
-    const kofiKeyboard = new InlineKeyboard().url("☕ Offrimi un caffè", "https://ko-fi.com/borsaitalianabot", { style: "primary" });
-
     for (const user of filteredUsers) {
       try {
-        await ctx.send(buildKofiMessage(user.name), {
-          chat_id: user.telegramId,
-          link_preview_options: { is_disabled: true },
-          reply_markup: kofiKeyboard,
-        });
+        await sendKofiMessageToUser(ctx, user.telegramId, user.name);
         sent++;
         sentIds.push(user.telegramId);
       } catch (error) {
@@ -131,6 +135,53 @@ export const handleKofiAllCommand = async (ctx: MyMessageContext): Promise<void>
   await showKofiConfirmPrompt(ctx, false);
 };
 
+export const handleKofiUserCommand = async (ctx: MyMessageContext): Promise<void> => {
+  const telegramId = ctx.from?.id;
+
+  if (telegramId !== OWNER_TELEGRAM_ID) {
+    logger.warn(`Tentativo non autorizzato comando [ /kofi_user ] da ${ctx.from?.firstName} (ID: ${telegramId})`);
+    return;
+  }
+
+  try {
+    await ctx.sendChatAction("typing");
+
+    const rawId = ctx.update?.message?.text?.trim().split(/\s+/)[1];
+    const validation = validateInput(CommandType.KOFI_DONOR, rawId);
+
+    if (!validation.success) {
+      await ctx.reply(code("⚠️ Inserisci un Telegram ID valido."));
+      return;
+    }
+
+    const targetTelegramId = validation.data;
+    const user = await databaseHandler.findUserByTelegramId(targetTelegramId);
+
+    if (!user) {
+      await ctx.reply(code("⚠️ Utente non trovato."));
+      return;
+    }
+
+    const confirmMessage = blockquote(
+      format`${bold("⚠️ Sei sicuro di voler inviare il messaggio al seguente utente?")}
+
+        ${bold("Name:")} ${code(user.name)}
+        ${bold("Username:")} ${code(user.username ?? "null")}
+        ${bold("CreatedAt:")} ${code(user.createdAt)}
+        ${bold("KofiNotified:")} ${code(user.kofiNotified)}
+        ${bold("kofiNotifiedAt:")} ${code("Aggiungere colonna sul DB")}`,
+    );
+
+    const keyboard = new InlineKeyboard()
+      .text("✅ Invia", confirmKofiUser.pack({ kofiUserTelegramId: targetTelegramId }), { style: "success" })
+      .text("❌ Annulla", cancelKofiUser.pack(), { style: "danger" });
+
+    await ctx.reply(confirmMessage, { reply_markup: keyboard });
+  } catch (error) {
+    errorHandler(error, ctx);
+  }
+};
+
 export const handleKofiNewUsersCommand = async (ctx: MyMessageContext): Promise<void> => {
   await showKofiConfirmPrompt(ctx, true);
 };
@@ -154,8 +205,8 @@ export const handleMarkKofiDonorCommand = async (ctx: MyMessageContext): Promise
       return;
     }
 
-    const donorTelegramId = validation.data;
-    const user = await databaseHandler.findUserByTelegramId(donorTelegramId);
+    const targetTelegramId = validation.data;
+    const user = await databaseHandler.findUserByTelegramId(targetTelegramId);
 
     if (!user) {
       await ctx.reply(code("⚠️ Utente non trovato."));
@@ -179,7 +230,9 @@ export const handleMarkKofiDonorCommand = async (ctx: MyMessageContext): Promise
         ${bold("Username:")} ${code(user.username ?? "null")}`,
     );
 
-    const keyboard = new InlineKeyboard().text("✅ Conferma", confirmMarkKofiDonor.pack({ donorTelegramId }), { style: "success" }).text("❌ Annulla", cancelMarkKofiDonor.pack(), { style: "danger" });
+    const keyboard = new InlineKeyboard()
+      .text("✅ Conferma", confirmMarkKofiDonor.pack({ donorTelegramId: targetTelegramId }), { style: "success" })
+      .text("❌ Annulla", cancelMarkKofiDonor.pack(), { style: "danger" });
 
     await ctx.reply(confirmMessage, { reply_markup: keyboard });
   } catch (error) {

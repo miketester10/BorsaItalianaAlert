@@ -2,6 +2,7 @@ import { blockquote, bold, code, format, italic, underline, InlineKeyboard } fro
 import { MyMessageContext } from "../../types/custom-context.type";
 import { logger } from "../../logger/logger";
 import { errorHandler } from "../error/error-handler";
+import { kofiKeyboard } from "./06-kofi-commands";
 
 const OWNER_TELEGRAM_ID = Number(process.env.OWNER_TELEGRAM_ID);
 
@@ -24,8 +25,6 @@ export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> =
 
       ${blockquote(`⚠️ Per maggiori informazioni contatta lo sviluppatore:\n@m1keehrmantraut`)}
     `;
-
-    const kofiKeyboard = new InlineKeyboard().url("☕ Offrimi un caffè", "https://ko-fi.com/borsaitalianabot", { style: "primary" });
 
     await ctx.reply(message, { reply_markup: kofiKeyboard });
   } catch (error) {
@@ -58,8 +57,6 @@ export const handleHelpCommand = async (ctx: MyMessageContext): Promise<void> =>
       ${code("99.50 -> corretto ✅")}
       ${code("99,50 -> errato ❌")}
     `;
-
-    const kofiKeyboard = new InlineKeyboard().url("☕ Offrimi un caffè", "https://ko-fi.com/borsaitalianabot", { style: "primary" });
 
     await ctx.reply(message, { reply_markup: kofiKeyboard });
   } catch (error) {

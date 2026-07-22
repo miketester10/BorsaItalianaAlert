@@ -130,7 +130,7 @@ export class DatabaseHandler {
       const where: Prisma.UserWhereInput = {};
 
       if (options?.onlyNotNotified) {
-        where.kofiNotified = { not: true };
+        where.kofiNotified = false;
       }
 
       if (options?.excludeRecent) {

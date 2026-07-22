@@ -13,10 +13,11 @@ export const currentPriceFromComandoPrezzo = new CallbackData(CallbackId.CURRENT
 export const currentPriceFromCallbackAlertsAttivi = new CallbackData(CallbackId.CURRENT_PRICE_FROM_CALLBACK_ALERTS_ATTIVI).string(CallbackKey.ISIN).string(CallbackKey.ALERT_ID);
 
 export const confirmKofiAll = new CallbackData(CallbackId.CONFIRM_KOFI_ALL);
+export const confirmKofiUser = new CallbackData(CallbackId.CONFIRM_KOFI_USER).number(CallbackKey.KOFI_USER_TELEGRAM_ID);
 export const confirmKofiNewUsers = new CallbackData(CallbackId.CONFIRM_KOFI_NEW_USERS);
+export const confirmMarkKofiDonor = new CallbackData(CallbackId.CONFIRM_MARK_KOFI_DONOR).number(CallbackKey.KOFI_DONOR_TELEGRAM_ID);
 
 export const cancelKofiAll = new CallbackData(CallbackId.CANCEL_KOFI_ALL);
+export const cancelKofiUser = new CallbackData(CallbackId.CANCEL_KOFI_USER);
 export const cancelKofiNewUsers = new CallbackData(CallbackId.CANCEL_KOFI_NEW_USERS);
-
-export const confirmMarkKofiDonor = new CallbackData(CallbackId.CONFIRM_MARK_KOFI_DONOR).number(CallbackKey.KOFI_DONOR_TELEGRAM_ID);
 export const cancelMarkKofiDonor = new CallbackData(CallbackId.CANCEL_MARK_KOFI_DONOR);

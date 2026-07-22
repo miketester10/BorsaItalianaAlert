@@ -8,9 +8,11 @@ import {
   cancelDeleteAllAlerts,
   cancelDeleteAlert,
   cancelKofiAll,
+  cancelKofiUser,
   cancelKofiNewUsers,
   cancelMarkKofiDonor,
   confirmKofiAll,
+  confirmKofiUser,
   confirmKofiNewUsers,
   confirmMarkKofiDonor,
   currentPriceFromCallbackAlertsAttivi,
@@ -19,7 +21,7 @@ import {
   deleteAlert,
   preDeleteAlert,
 } from "./04-callbacks-data";
-import { sendKofiMessages } from "./06-kofi-commands";
+import { sendKofiMessages, sendKofiMessageToUser } from "./06-kofi-commands";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 
@@ -148,6 +150,23 @@ export const setupCallbacks = (bot: Bot): void => {
     return ctx.answer();
   });
 
+  bot.callbackQuery(confirmKofiUser, async (ctx) => {
+    try {
+      const targetTelegramId = ctx.queryData.kofiUserTelegramId;
+      const user = await dataBaseHandler.findUserByTelegramId(targetTelegramId);
+      if (!user) {
+        await ctx.editText(code("❌ Utente non trovato."));
+        return ctx.answer();
+      }
+      await sendKofiMessageToUser(ctx, targetTelegramId, user.name);
+      await dataBaseHandler.updateKofiNotifiedBatch([targetTelegramId]);
+      await ctx.editText(code(`✅ Messaggio inviato a ${user.name}.`));
+    } catch (error) {
+      errorHandler(error, ctx);
+    }
+    return ctx.answer();
+  });
+
   bot.callbackQuery(confirmKofiNewUsers, async (ctx) => {
     try {
       await sendKofiMessages(ctx, true);
@@ -159,8 +178,13 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(confirmMarkKofiDonor, async (ctx) => {
     try {
-      const donorTelegramId = ctx.queryData.donorTelegramId;
-      await dataBaseHandler.markKofiDonor(donorTelegramId);
+      const targetTelegramId = ctx.queryData.donorTelegramId;
+      const user = await dataBaseHandler.findUserByTelegramId(targetTelegramId);
+      if (!user) {
+        await ctx.editText(code("❌ Utente non trovato."));
+        return ctx.answer();
+      }
+      await dataBaseHandler.markKofiDonor(targetTelegramId);
       await ctx.editText(code("✅ Donatore registrato con successo."));
     } catch (error) {
       errorHandler(error, ctx);
@@ -178,6 +202,7 @@ export const setupCallbacks = (bot: Bot): void => {
   };
 
   bot.callbackQuery(cancelKofiAll, handleCancelKofi);
+  bot.callbackQuery(cancelKofiUser, handleCancelKofi);
   bot.callbackQuery(cancelKofiNewUsers, handleCancelKofi);
   bot.callbackQuery(cancelMarkKofiDonor, handleCancelKofi);
 };

@@ -7,9 +7,11 @@ export enum CallbackId {
   CURRENT_PRICE_FROM_COMANDO_PREZZO = "current_price_from_cp",
   CURRENT_PRICE_FROM_CALLBACK_ALERTS_ATTIVI = "current_price_from_callback_aa",
   CONFIRM_KOFI_ALL = "confirm_kofi_all",
+  CONFIRM_KOFI_USER = "confirm_kofi_user",
   CONFIRM_KOFI_NEW_USERS = "confirm_kofi_new_user",
-  CANCEL_KOFI_ALL = "cancel_kofi_all",
-  CANCEL_KOFI_NEW_USERS = "cancel_kofi_new_user",
   CONFIRM_MARK_KOFI_DONOR = "confirm_mark_kofi_donor",
+  CANCEL_KOFI_ALL = "cancel_kofi_all",
+  CANCEL_KOFI_USER = "cancel_kofi_user",
+  CANCEL_KOFI_NEW_USERS = "cancel_kofi_new_user",
   CANCEL_MARK_KOFI_DONOR = "cancel_mark_kofi_donor",
 }

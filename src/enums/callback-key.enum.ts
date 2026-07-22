@@ -2,4 +2,5 @@ export enum CallbackKey {
   ALERT_ID = "alertId",
   ISIN = "isin",
   KOFI_DONOR_TELEGRAM_ID = "donorTelegramId",
+  KOFI_USER_TELEGRAM_ID = "kofiUserTelegramId",
 }

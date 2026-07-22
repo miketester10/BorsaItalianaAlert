@@ -5,7 +5,7 @@ import { handleHelpCommand, handleStartCommand, handleAdminCommand } from "./01-
 import { handlePrezzoCommand, handleAlertCommand, handleAlertsAttiviCommand, handleEliminaAlertsCommand } from "./02-commands-helper";
 import { setupCallbacks } from "./03-callbacks-helper";
 import { userHandler } from "./05-user-handler";
-import { handleKofiAllCommand, handleKofiNewUsersCommand, handleMarkKofiDonorCommand } from "./06-kofi-commands";
+import { handleKofiAllCommand, handleKofiNewUsersCommand, handleMarkKofiDonorCommand, handleKofiUserCommand } from "./06-kofi-commands";
 
 export class BotHandler {
   private readonly BOT_TOKEN: string = process.env.BOT_TOKEN!;
@@ -101,6 +101,9 @@ export class BotHandler {
     });
     this.bot.command("kofi_all", async (ctx: MyMessageContext) => {
       await handleKofiAllCommand(ctx);
+    });
+    this.bot.command("kofi_user", async (ctx: MyMessageContext) => {
+      await handleKofiUserCommand(ctx);
     });
     this.bot.command("kofi_new_users", async (ctx: MyMessageContext) => {
       await handleKofiNewUsersCommand(ctx);
