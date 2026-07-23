@@ -162,6 +162,11 @@ export const handleKofiUserCommand = async (ctx: MyMessageContext): Promise<void
       return;
     }
 
+    if (user.kofiDonatedAt) {
+      await ctx.reply(code("⚠️ Questo utente ha già donato."));
+      return;
+    }
+
     const confirmMessage = blockquote(
       format`${bold("⚠️ Sei sicuro di voler inviare il messaggio al seguente utente?")}
 
