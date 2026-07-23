@@ -50,34 +50,40 @@ type ValidateResult<T> = { success: true; data: T } | { success: false; errors: 
 // Overload
 export function validateInput(command: CommandType.PREZZO, isin: string | undefined): ValidateResult<IsinValidated>;
 export function validateInput(command: CommandType.ALERT, isin: string | undefined, alertPrice: string | undefined): ValidateResult<AlertValidated>;
+export function validateInput(command: CommandType.KOFI_USER, telegramId: string | undefined): ValidateResult<number>;
 export function validateInput(command: CommandType.KOFI_DONOR, telegramId: string | undefined): ValidateResult<number>;
 // Implementazione concreta
 export function validateInput(command: CommandType, isin: string | undefined, alertPrice?: string): ValidateResult<any> {
-  if (command === CommandType.PREZZO) {
-    const result = isinSchema.safeParse(isin);
-    if (!result.success) {
-      return { success: false, errors: result.error.issues.map((e) => e.message) };
+  switch (command) {
+    case CommandType.PREZZO: {
+      const result = isinSchema.safeParse(isin);
+      if (!result.success) {
+        return { success: false, errors: result.error.issues.map((e) => e.message) };
+      }
+      return { success: true, data: result.data };
     }
-    return { success: true, data: result.data };
-  }
 
-  if (command === CommandType.ALERT) {
-    if (!alertPrice) {
-      return { success: false, errors: ["Il prezzo è richiesto per il comando /alert"] };
+    case CommandType.ALERT: {
+      if (!alertPrice) {
+        return { success: false, errors: ["Il prezzo è richiesto per il comando /alert"] };
+      }
+      const result = alertSchema.safeParse({ isin, alertPrice });
+      if (!result.success) {
+        return { success: false, errors: result.error.issues.map((e) => e.message) };
+      }
+      return { success: true, data: result.data };
     }
-    const result = alertSchema.safeParse({ isin, alertPrice });
-    if (!result.success) {
-      return { success: false, errors: result.error.issues.map((e) => e.message) };
+
+    case CommandType.KOFI_USER: // fall-through — stessa validazione di KOFI_USER
+    case CommandType.KOFI_DONOR: {
+      const result = telegramIdSchema.safeParse(isin);
+      if (!result.success) {
+        return { success: false, errors: result.error.issues.map((e) => e.message) };
+      }
+      return { success: true, data: result.data };
     }
-    return { success: true, data: result.data };
+
+    default:
+      return { success: false, errors: ["Comando non supportato"] };
   }
-  if (command === CommandType.KOFI_DONOR) {
-    const result = telegramIdSchema.safeParse(isin);
-    if (!result.success) {
-      return { success: false, errors: result.error.issues.map((e) => e.message) };
-    }
-    return { success: true, data: result.data };
-  }
-  // Fallback
-  return { success: false, errors: ["Comando non supportato"] };
 }

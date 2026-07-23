@@ -147,7 +147,7 @@ export const handleKofiUserCommand = async (ctx: MyMessageContext): Promise<void
     await ctx.sendChatAction("typing");
 
     const rawId = ctx.update?.message?.text?.trim().split(/\s+/)[1];
-    const validation = validateInput(CommandType.KOFI_DONOR, rawId);
+    const validation = validateInput(CommandType.KOFI_USER, rawId);
 
     if (!validation.success) {
       await ctx.reply(code("⚠️ Inserisci un Telegram ID valido."));
