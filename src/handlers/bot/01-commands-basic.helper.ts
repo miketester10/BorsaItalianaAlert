@@ -78,10 +78,16 @@ export const handleAdminCommand = async (ctx: MyMessageContext): Promise<void> =
       ${bold("🛠️ COMANDI ADMIN 🛠️")}
 
       ${blockquote(
-        format`🔹${code("/kofi_all")} - Invia il messaggio Kofi a tutti gli utenti (non donatori).
-      🔹${code("/kofi_new_users")} - Invia il messaggio Kofi ai nuovi utenti (non donatori, non notificati).
-      🔹${code("/mark_kofi_donor <telegramId>")} - Marca un utente come donatore Kofi.`,
+        format`🔹${code("/kofi_all")} - Invia il messaggio Kofi a tutti gli utenti che non hanno ancora donato e registrati da più di 31 giorni.
+      🔹${code("/kofi_new_users")} - Invia il messaggio Kofi SOLO agli utenti che non l'hanno mai ricevuto (non donatori, registrati da più di 31 giorni).
+      🔹${code("/kofi_user <telegramId>")} - Invia il messaggio Kofi a un singolo utente.
+        NON applica il filtro dei 31 giorni: può riceverlo anche se registrato da poco o già notificato. Unico vincolo: non deve aver già donato.
+      🔹${code("/mark_kofi_donor <telegramId>")} - Marca un utente come donatore Kofi.
+        Richiede che l'utente abbia GIÀ ricevuto la notifica Kofi. Una volta marcato, sarà escluso da tutte le campagne future.`,
       )}
+
+      ℹ️ ${underline(italic("REGOLA DEI 31 GIORNI:"))}
+      Un utente registrato da meno di ${code("31 giorni")} è considerato ${bold(`"troppo recente"`)} e NON riceverà alcuna notifica Kofi via ${code("/kofi_all")} e ${code("/kofi_new_users")}. L'unica eccezione è ${code("/kofi_user")}.
     `;
 
     await ctx.reply(message);
