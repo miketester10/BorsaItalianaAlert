@@ -79,7 +79,7 @@ export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: 
         const status = getUserStatusFromTelegramError(error);
         if (status) {
           await databaseHandler.updateUserStatus(user.telegramId, status);
-          logger.info(`Utente ${user.telegramId} marcato come ${status}`);
+          logger.warn(`Utente ${user.telegramId} marcato come ${status}`);
         }
         failed++;
       }

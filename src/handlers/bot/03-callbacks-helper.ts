@@ -1,4 +1,14 @@
-import { Bot, TelegramParams, InlineKeyboard, code, format, blockquote, bold, underline, italic } from "gramio";
+import {
+  Bot,
+  TelegramParams,
+  InlineKeyboard,
+  code,
+  format,
+  blockquote,
+  bold,
+  underline,
+  italic,
+} from "gramio";
 import { User } from "@prisma/client";
 import { MyCallbackQueryContext } from "../../types/custom-context.type";
 import { DatabaseHandler } from "../database/database-handler";
@@ -53,7 +63,11 @@ export const setupCallbacks = (bot: Bot): void => {
           .text("✅ Sì", deleteAlert.pack({ alertId }), { style: "success" })
           .text("❌ No", cancelDeleteAlert.pack(), { style: "danger" })
           .row()
-          .text("💰 Prezzo Attuale", currentPriceFromCallbackAlertsAttivi.pack({ isin: alert.isin, alertId }), { style: "primary" }),
+          .text(
+            "💰 Prezzo Attuale",
+            currentPriceFromCallbackAlertsAttivi.pack({ isin: alert.isin, alertId }),
+            { style: "primary" },
+          ),
       };
 
       await ctx.editText(message, replyOptions);
@@ -116,7 +130,11 @@ export const setupCallbacks = (bot: Bot): void => {
 
       const message = await handlePrezzoCommand(ctx, isin);
       const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
-        reply_markup: new InlineKeyboard().text("🔄 Aggiorna prezzo", currentPriceFromComandoPrezzo.pack({ isin }), { style: "primary" }),
+        reply_markup: new InlineKeyboard().text(
+          "🔄 Aggiorna prezzo",
+          currentPriceFromComandoPrezzo.pack({ isin }),
+          { style: "primary" },
+        ),
       };
       await ctx.editText(message, replyOptions);
     } catch (error) {
@@ -133,7 +151,11 @@ export const setupCallbacks = (bot: Bot): void => {
       const message = await handlePrezzoCommand(ctx, isin);
       const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
         reply_markup: new InlineKeyboard()
-          .text("🔄 Aggiorna prezzo", currentPriceFromCallbackAlertsAttivi.pack({ isin, alertId }), { style: "primary" })
+          .text(
+            "🔄 Aggiorna prezzo",
+            currentPriceFromCallbackAlertsAttivi.pack({ isin, alertId }),
+            { style: "primary" },
+          )
           .row()
           .text("⬅️ Indietro", preDeleteAlert.pack({ alertId })),
       };
@@ -166,12 +188,12 @@ export const setupCallbacks = (bot: Bot): void => {
       await dataBaseHandler.updateKofiNotifiedBatch([targetTelegramId]);
       await ctx.editText(code(`✅ Messaggio inviato a ${user.name}.`));
     } catch (error) {
+      await errorHandler(error, ctx);
       const status = getUserStatusFromTelegramError(error);
       if (status && user) {
         await dataBaseHandler.updateUserStatus(user.telegramId, status);
-        logger.info(`Utente ${user.telegramId} marcato come ${status}`);
+        logger.warn(`Utente ${user.telegramId} marcato come ${status}`);
       }
-      errorHandler(error, ctx);
     }
     return ctx.answer();
   });

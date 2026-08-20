@@ -107,7 +107,7 @@ export class AlertHandler {
           const status = getUserStatusFromTelegramError(error);
           if (status) {
             await this.dataBaseHandler.updateUserStatus(alert.userTelegramId, status);
-            logger.info(`User ${alert.userTelegramId} marcato come ${status}`);
+            logger.warn(`User ${alert.userTelegramId} marcato come ${status}`);
           }
           continue;
         }
