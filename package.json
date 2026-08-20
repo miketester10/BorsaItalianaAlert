@@ -2,28 +2,28 @@
   "name": "bot_btp_price",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "src/main.ts",
   "scripts": {
-    "dev": "nodemon  --watch src --exec ts-node src/main.ts",
-    "start": "ts-node src/main.ts"
+    "dev": "bun --watch src/main.ts",
+    "start": "bun src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "bunx prisma generate",
+    "prisma:push": "bunx prisma db push"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/bun": "^1.3.14",
     "@types/express": "^5.0.6",
-    "@types/node": "^24.1.0",
     "@types/node-cron": "^3.0.11",
-    "nodemon": "^3.1.10",
     "prisma": "^6.13.0",
-    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",
     "axios": "^1.11.0",
     "cron": "^4.3.2",
-    "dotenv": "16.5.0",
     "express": "^5.2.1",
     "from-exponential": "^1.1.1",
     "gramio": "^0.9.0",

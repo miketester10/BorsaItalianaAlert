@@ -20,12 +20,13 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
 ## Stack Tecnologico
 
 - **Linguaggio:** TypeScript (strict mode)
+- **Runtime:** [Bun](https://bun.sh/)
 - **Framework/Librerie:**
   - [gramio](https://gramio.dev/) (Bot Telegram)
   - [Prisma](https://www.prisma.io/) (ORM per MongoDB)
   - [Axios](https://axios-http.com/) (Client HTTP)
-  - [cron](https://github.com/node-cron/node-cron) (Scheduling)
-  - [dotenv](https://github.com/motdotla/dotenv) (Gestione variabili ambiente)
+  - [cron](https://github.com/kelektiv/node-cron) (Scheduling)
+  - [p-limit](https://github.com/sindresorhus/p-limit) (Concorrenza limitata sulle chiamate API)
   - [pino](https://getpino.io/) (Logging)
   - [Zod](https://zod.dev/) (Validazione runtime degli input)
 - **Database:** MongoDB con Prisma
@@ -36,7 +37,7 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
 
 ### Prerequisiti
 
-- Node.js >= 18
+- Bun (installabile con `curl -fsSL https://bun.sh/install | bash`)
 - MongoDB (locale o cloud)
 - Docker (opzionale, per setup containerizzato)
 
@@ -52,7 +53,7 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
 2. **Installa le dipendenze:**
 
    ```bash
-   npm install
+   bun install
    ```
 
 3. **Configura le variabili ambiente:**
@@ -65,14 +66,14 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
 5. **Esegui le migrazioni del database:**
 
    ```bash
-   npx prisma generate
-   npx prisma db push
+   bunx prisma generate
+   bunx prisma db push
    ```
 
 6. **Avvia il bot in sviluppo:**
 
    ```bash
-   npm run dev
+   bun run dev
    ```
 
 7. **Oppure avvia con Docker:**
@@ -109,12 +110,13 @@ KOFI_DELAY_MS=500
 
 ### Script Principali
 
-- `npm run dev` — Avvia il bot in modalità sviluppo (hot reload)
-- `npm start` — Avvia il bot in modalità produzione
+- `bun run dev` — Avvia il bot in modalità sviluppo (hot reload)
+- `bun run start` — Avvia il bot in modalità produzione
+- `bun run typecheck` — Esegue il typecheck TypeScript senza emissione
 
 ### Docker
 
-- `docker compose up -d` — Avvia bot e MongoDB in container
+- `docker compose up -d` — Avvia bot e MongoDB in container (immagine `oven/bun`)
 - `docker compose down` — Ferma e rimuove i container
 
 ## Comandi del Bot
