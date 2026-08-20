@@ -17,15 +17,21 @@ datasource db {
 }
 
 model User {
-  telegramId     Int       @id @map("_id")
-  name           String
-  username       String?
-  kofiNotified   Boolean   @default(false)
-  kofiNotifiedAt DateTime?
-  kofiDonatedAt  DateTime?
-  alerts         Alert[]
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  telegramId      Int        @id @map("_id")
+  name            String
+  username        String?
+  status          UserStatus @default(active)
+  statusChangedAt DateTime?
+
+  kofiNotified    Boolean    @default(false)
+  kofiNotifiedAt  DateTime?
+  kofiDonatedAt   DateTime?
+
+  alerts          Alert[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([status])
 }
 
 model Alert {
@@ -48,4 +54,10 @@ enum Condition {
   above
   below
   equal
+}
+
+enum UserStatus {
+  active
+  blocked
+  deactivated
 }

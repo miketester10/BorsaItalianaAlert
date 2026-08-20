@@ -10,6 +10,7 @@ import { BotHandler } from "../bot/00-bot-handler";
 import { Bot, blockquote, bold, code, format, underline } from "gramio";
 import pLimit from "p-limit";
 import { formatPrice } from "../../utils/price-formatter";
+import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
 
 export class AlertHandler {
   private static _instance: AlertHandler;
@@ -35,7 +36,7 @@ export class AlertHandler {
    * invia notifiche se la condizione è cambiata e aggiorna il DB.
    */
   async checkAndNotifyAlerts(): Promise<void> {
-    const alerts = await this.dataBaseHandler.findAllAlerts();
+    const alerts = await this.dataBaseHandler.findAllAlerts({ onlyActiveUsers: true });
     if (alerts.length === 0) return;
 
     // Ottimizzazione: prendo tutti gli ISIN unici per ridurre chiamate API
@@ -103,6 +104,11 @@ export class AlertHandler {
           await this.sendNotification(alert, currentPrice, newCondition);
         } catch (error) {
           logger.error(`Errore nell'invio della notifica allo user ${alert.userTelegramId}: ${(error as Error).message}`);
+          const status = getUserStatusFromTelegramError(error);
+          if (status) {
+            await this.dataBaseHandler.updateUserStatus(alert.userTelegramId, status);
+            logger.info(`User ${alert.userTelegramId} marcato come ${status}`);
+          }
           continue;
         }
 

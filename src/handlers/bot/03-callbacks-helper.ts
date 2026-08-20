@@ -1,9 +1,12 @@
 import { Bot, TelegramParams, InlineKeyboard, code, format, blockquote, bold, underline, italic } from "gramio";
+import { User } from "@prisma/client";
 import { MyCallbackQueryContext } from "../../types/custom-context.type";
 import { DatabaseHandler } from "../database/database-handler";
 import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./02-commands-helper";
 import { errorHandler } from "../error/error-handler";
 import { formatPrice } from "../../utils/price-formatter";
+import { logger } from "../../logger/logger";
+import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
 import {
   cancelDeleteAllAlerts,
   cancelDeleteAlert,
@@ -151,9 +154,10 @@ export const setupCallbacks = (bot: Bot): void => {
   });
 
   bot.callbackQuery(confirmKofiUser, async (ctx) => {
+    let user: User | null = null;
     try {
       const targetTelegramId = ctx.queryData.kofiUserTelegramId;
-      const user = await dataBaseHandler.findUserByTelegramId(targetTelegramId);
+      user = await dataBaseHandler.findUserByTelegramId(targetTelegramId);
       if (!user) {
         await ctx.editText(code("❌ Utente non trovato."));
         return ctx.answer();
@@ -162,6 +166,11 @@ export const setupCallbacks = (bot: Bot): void => {
       await dataBaseHandler.updateKofiNotifiedBatch([targetTelegramId]);
       await ctx.editText(code(`✅ Messaggio inviato a ${user.name}.`));
     } catch (error) {
+      const status = getUserStatusFromTelegramError(error);
+      if (status && user) {
+        await dataBaseHandler.updateUserStatus(user.telegramId, status);
+        logger.info(`Utente ${user.telegramId} marcato come ${status}`);
+      }
       errorHandler(error, ctx);
     }
     return ctx.answer();

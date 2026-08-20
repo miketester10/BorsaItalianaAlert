@@ -7,6 +7,7 @@ import { errorHandler } from "../error/error-handler";
 import { CommandType } from "../../enums/command-type.enum";
 import { validateInput } from "../../schemas/input-validator.schema";
 import { confirmKofiAll, confirmKofiUser, confirmKofiNewUsers, confirmMarkKofiDonor, cancelKofiAll, cancelKofiUser, cancelKofiNewUsers, cancelMarkKofiDonor } from "./04-callbacks-data";
+import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
 
 const databaseHandler = DatabaseHandler.getInstance();
 const OWNER_TELEGRAM_ID = Number(process.env.OWNER_TELEGRAM_ID);
@@ -77,6 +78,11 @@ export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: 
         sentIds.push(user.telegramId);
       } catch (error) {
         logger.error(`Errore invio a ${user.name} (ID: ${user.telegramId}): ${(error as Error).message}`);
+        const status = getUserStatusFromTelegramError(error);
+        if (status) {
+          await databaseHandler.updateUserStatus(user.telegramId, status);
+          logger.info(`Utente ${user.telegramId} marcato come ${status}`);
+        }
         failed++;
       }
 

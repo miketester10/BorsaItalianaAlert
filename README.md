@@ -277,15 +277,21 @@ Gli input provenienti dagli utenti (comandi Telegram e parametri) sono validati 
 
 ```prisma
 model User {
-  telegramId     Int       @id @map("_id")
-  name           String
-  username       String?
-  kofiNotified   Boolean   @default(false)
-  kofiNotifiedAt DateTime?
-  kofiDonatedAt  DateTime?
-  alerts         Alert[]
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  telegramId      Int        @id @map("_id")
+  name            String
+  username        String?
+  status          UserStatus @default(active)
+  statusChangedAt DateTime?
+
+  kofiNotified    Boolean    @default(false)
+  kofiNotifiedAt  DateTime?
+  kofiDonatedAt   DateTime?
+
+  alerts          Alert[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([status])
 }
 
 model Alert {
@@ -309,7 +315,15 @@ enum Condition {
   below
   equal
 }
+
+enum UserStatus {
+  active
+  blocked
+  deactivated
+}
 ```
+
+Lo stato `status` traccia la raggiungibilità dell'utente: `active` (raggiungibile), `blocked` (ha bloccato il bot) e `deactivated` (account eliminato). Il campo viene aggiornato automaticamente quando Telegram restituisce un errore `Forbidden` durante l'invio di una notifica, e riportato ad `active` quando l'utente interagisce di nuovo con il bot. Il job di monitoraggio prezzi elabora solo gli alert degli utenti `active`, evitando chiamate API inutili per utenti non più raggiungibili.
 
 ## API Integration
 

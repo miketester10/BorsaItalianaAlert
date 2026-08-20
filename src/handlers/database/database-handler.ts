@@ -1,4 +1,4 @@
-import { Alert, Prisma, PrismaClient, User } from "@prisma/client";
+import { Alert, Prisma, PrismaClient, User, UserStatus } from "@prisma/client";
 import { logger } from "../../logger/logger";
 import { CreateUserDto } from "../../dto/create-user.dto";
 import { UpdateUserDto } from "../../dto/update-user.dto";
@@ -98,9 +98,15 @@ export class DatabaseHandler {
     }
   }
 
-  async findAllAlerts(): Promise<Alert[]> {
+  async findAllAlerts(options?: { onlyActiveUsers?: boolean }): Promise<Alert[]> {
     try {
-      const alerts = await this.prisma.alert.findMany();
+      const where: Prisma.AlertWhereInput = {};
+
+      if (options?.onlyActiveUsers) {
+        where.user = { status: UserStatus.active };
+      }
+
+      const alerts = await this.prisma.alert.findMany({ where });
       return alerts;
     } catch (error) {
       throw error;
@@ -145,6 +151,20 @@ export class DatabaseHandler {
 
       const users = await this.prisma.user.findMany({ where });
       return users;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUserStatus(telegramId: number, status: UserStatus): Promise<void> {
+    try {
+      await this.prisma.user.update({
+        where: { telegramId },
+        data: {
+          status,
+          statusChangedAt: new Date(),
+        },
+      });
     } catch (error) {
       throw error;
     }
