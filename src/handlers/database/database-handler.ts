@@ -130,6 +130,7 @@ export class DatabaseHandler {
    * @param options.onlyNotNotified - Se true, esclude utenti con kofiNotified = true
    * @param options.excludeRecent - Se true, esclude utenti registrati da meno di 31 giorni
    * @param options.excludeDonors - Se true, esclude utenti che hanno già donato (kofiDonatedAt != null)
+   * @param options.onlyActive - Se true, include solo utenti con status = active (esclude blocked e deactivated)
    * @returns Promise<User[]>
    */
   async findAllUsers(options?: FindAllUsersOptions): Promise<User[]> {
@@ -147,6 +148,10 @@ export class DatabaseHandler {
 
       if (options?.excludeDonors) {
         where.kofiDonatedAt = null;
+      }
+
+      if (options?.onlyActive) {
+        where.status = UserStatus.active;
       }
 
       const users = await this.prisma.user.findMany({ where });
