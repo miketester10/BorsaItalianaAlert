@@ -161,20 +161,6 @@ export class DatabaseHandler {
     }
   }
 
-  async updateUserStatus(telegramId: number, status: UserStatus): Promise<void> {
-    try {
-      await this.prisma.user.update({
-        where: { telegramId },
-        data: {
-          status,
-          statusChangedAt: new Date(),
-        },
-      });
-    } catch (error) {
-      throw error;
-    }
-  }
-
   async markKofiDonor(telegramId: number): Promise<void> {
     try {
       await this.prisma.user.update({
@@ -217,6 +203,20 @@ export class DatabaseHandler {
         return true;
       }
       return false;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUserStatus(telegramId: number, status: UserStatus): Promise<void> {
+    try {
+      await this.prisma.user.update({
+        where: { telegramId },
+        data: {
+          status,
+          statusChangedAt: new Date(),
+        },
+      });
     } catch (error) {
       throw error;
     }
