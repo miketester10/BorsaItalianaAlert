@@ -41,8 +41,8 @@ const alertSchema = z.object({
   alertPrice: alertPriceSchema,
 });
 
-export type IsinValidated = z.infer<typeof isinSchema>;
-export type AlertValidated = z.infer<typeof alertSchema>;
+type IsinValidated = z.infer<typeof isinSchema>;
+type AlertValidated = z.infer<typeof alertSchema>;
 
 type ValidateResult<T> = { success: true; data: T } | { success: false; errors: string[] };
 
@@ -63,7 +63,13 @@ export function validatePrezzoInput(rawIsin: string | undefined): ValidateResult
  * @param rawIsin - ISIN grezzo dall'input utente
  * @param rawAlertPrice - Prezzo soglia grezzo dall'input utente
  */
-export function validateAlertInput(rawIsin: string | undefined, rawAlertPrice: string | undefined): ValidateResult<AlertValidated> {
+export function validateAlertInput(
+  rawIsin: string | undefined,
+  rawAlertPrice: string | undefined,
+): ValidateResult<AlertValidated> {
+  if (!rawIsin) {
+    return { success: false, errors: ["L'isin è richiesto per il comando /alert"] };
+  }
   if (!rawAlertPrice) {
     return { success: false, errors: ["Il prezzo è richiesto per il comando /alert"] };
   }
