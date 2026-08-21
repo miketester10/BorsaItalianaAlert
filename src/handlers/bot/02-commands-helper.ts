@@ -9,8 +9,7 @@ import { ApiHandler } from "../api/api-handler";
 import { AlertHandler } from "../alert/alert-handler";
 import { errorHandler } from "../error/error-handler";
 import { TelegramOptionsCustom } from "../../types/telegram-options-custom.type";
-import { validateInput } from "../../schemas/input-validator.schema";
-import { CommandType } from "../../enums/command-type.enum";
+import { validateAlertInput, validatePrezzoInput } from "../../schemas/input-validator.schema";
 import { formatPrice } from "../../utils/price-formatter";
 import { currentPriceFromComandoPrezzo, preDeleteAlert, deleteAllAlerts, cancelDeleteAllAlerts } from "./04-callbacks-data";
 
@@ -29,7 +28,7 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
     if (!isCallbackContext(ctx)) {
       await ctx.sendChatAction("typing");
 
-      const validation = validateInput(CommandType.PREZZO, isinRaw);
+      const validation = validatePrezzoInput(isinRaw);
 
       if (!validation.success) {
         logger.error(validation.errors);
@@ -86,7 +85,7 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
   try {
     await ctx.sendChatAction("typing");
 
-    const validation = validateInput(CommandType.ALERT, isinRaw, priceRaw);
+    const validation = validateAlertInput(isinRaw, priceRaw);
 
     if (!validation.success) {
       logger.error(validation.errors);

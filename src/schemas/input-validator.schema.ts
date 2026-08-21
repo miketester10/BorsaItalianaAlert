@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { CommandType } from "../enums/command-type.enum";
 
 // Validazione ISIN: 2 lettere, 9 alfanumerici, 1 cifra finale
 const isinSchema = z
@@ -47,43 +46,54 @@ export type AlertValidated = z.infer<typeof alertSchema>;
 
 type ValidateResult<T> = { success: true; data: T } | { success: false; errors: string[] };
 
-// Overload
-export function validateInput(command: CommandType.PREZZO, isin: string | undefined): ValidateResult<IsinValidated>;
-export function validateInput(command: CommandType.ALERT, isin: string | undefined, alertPrice: string | undefined): ValidateResult<AlertValidated>;
-export function validateInput(command: CommandType.KOFI_USER, telegramId: string | undefined): ValidateResult<number>;
-export function validateInput(command: CommandType.KOFI_DONOR, telegramId: string | undefined): ValidateResult<number>;
-// Implementazione concreta
-export function validateInput(command: CommandType, isin: string | undefined, alertPrice?: string): ValidateResult<any> {
-  switch (command) {
-    case CommandType.PREZZO: {
-      const result = isinSchema.safeParse(isin);
-      if (!result.success) {
-        return { success: false, errors: result.error.issues.map((e) => e.message) };
-      }
-      return { success: true, data: result.data };
-    }
-
-    case CommandType.ALERT: {
-      if (!alertPrice) {
-        return { success: false, errors: ["Il prezzo è richiesto per il comando /alert"] };
-      }
-      const result = alertSchema.safeParse({ isin, alertPrice });
-      if (!result.success) {
-        return { success: false, errors: result.error.issues.map((e) => e.message) };
-      }
-      return { success: true, data: result.data };
-    }
-
-    case CommandType.KOFI_USER: // fall-through — stessa validazione di KOFI_USER
-    case CommandType.KOFI_DONOR: {
-      const result = telegramIdSchema.safeParse(isin);
-      if (!result.success) {
-        return { success: false, errors: result.error.issues.map((e) => e.message) };
-      }
-      return { success: true, data: result.data };
-    }
-
-    default:
-      return { success: false, errors: ["Comando non supportato"] };
+/**
+ * Valida un ISIN per il comando /prezzo.
+ * @param rawIsin - Valore grezzo ricevuto dall'input utente (es. "IT0005...")
+ */
+export function validatePrezzoInput(rawIsin: string | undefined): ValidateResult<IsinValidated> {
+  const result = isinSchema.safeParse(rawIsin);
+  if (!result.success) {
+    return { success: false, errors: result.error.issues.map((e) => e.message) };
   }
+  return { success: true, data: result.data };
+}
+
+/**
+ * Valida ISIN e prezzo per il comando /alert.
+ * @param rawIsin - ISIN grezzo dall'input utente
+ * @param rawAlertPrice - Prezzo soglia grezzo dall'input utente
+ */
+export function validateAlertInput(rawIsin: string | undefined, rawAlertPrice: string | undefined): ValidateResult<AlertValidated> {
+  if (!rawAlertPrice) {
+    return { success: false, errors: ["Il prezzo è richiesto per il comando /alert"] };
+  }
+  const result = alertSchema.safeParse({ isin: rawIsin, alertPrice: rawAlertPrice });
+  if (!result.success) {
+    return { success: false, errors: result.error.issues.map((e) => e.message) };
+  }
+  return { success: true, data: result.data };
+}
+
+function parseTelegramId(rawTelegramId: string | undefined): ValidateResult<number> {
+  const result = telegramIdSchema.safeParse(rawTelegramId);
+  if (!result.success) {
+    return { success: false, errors: result.error.issues.map((e) => e.message) };
+  }
+  return { success: true, data: result.data };
+}
+
+/**
+ * Valida un Telegram ID per il comando /kofi_user.
+ * @param rawTelegramId - ID Telegram grezzo dall'input utente
+ */
+export function validateKofiUserInput(rawTelegramId: string | undefined): ValidateResult<number> {
+  return parseTelegramId(rawTelegramId);
+}
+
+/**
+ * Valida un Telegram ID per il comando /mark_kofi_donor.
+ * @param rawTelegramId - ID Telegram grezzo dall'input utente
+ */
+export function validateKofiDonorInput(rawTelegramId: string | undefined): ValidateResult<number> {
+  return parseTelegramId(rawTelegramId);
 }

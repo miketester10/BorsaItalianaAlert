@@ -5,8 +5,7 @@ import { KofiUsersResult } from "../../interfaces/kofi-users-result.interface";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
 import { errorHandler } from "../error/error-handler";
-import { CommandType } from "../../enums/command-type.enum";
-import { validateInput } from "../../schemas/input-validator.schema";
+import { validateKofiDonorInput, validateKofiUserInput } from "../../schemas/input-validator.schema";
 import { confirmKofiAll, confirmKofiUser, confirmKofiNewUsers, confirmMarkKofiDonor, cancelKofiAll, cancelKofiUser, cancelKofiNewUsers, cancelMarkKofiDonor } from "./04-callbacks-data";
 import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
 
@@ -151,7 +150,7 @@ export const handleKofiUserCommand = async (ctx: MyMessageContext): Promise<void
     await ctx.sendChatAction("typing");
 
     const rawId = ctx.update?.message?.text?.trim().split(/\s+/)[1];
-    const validation = validateInput(CommandType.KOFI_USER, rawId);
+    const validation = validateKofiUserInput(rawId);
 
     if (!validation.success) {
       await ctx.reply(code("⚠️ Inserisci un Telegram ID valido."));
@@ -212,7 +211,7 @@ export const handleMarkKofiDonorCommand = async (ctx: MyMessageContext): Promise
     await ctx.sendChatAction("typing");
 
     const rawId = ctx.update?.message?.text?.trim().split(/\s+/)[1];
-    const validation = validateInput(CommandType.KOFI_DONOR, rawId);
+    const validation = validateKofiDonorInput(rawId);
 
     if (!validation.success) {
       await ctx.reply(code("⚠️ Inserisci un Telegram ID valido."));
