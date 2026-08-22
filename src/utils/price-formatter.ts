@@ -13,6 +13,6 @@ import fromExponential from "from-exponential";
  * Utility per formattare i prezzi in modo leggibile per l'utente.
  * Converte la notazione scientifica (1e-6) in formato decimale (0.000001).
  */
-export function formatPrice(price: number): string {
+export const formatPrice = (price: number): string => {
   return fromExponential(price); // "1e-6" -> "0.000001"
-}
+};

@@ -50,23 +50,23 @@ type ValidateResult<T> = { success: true; data: T } | { success: false; errors: 
  * Valida un ISIN per il comando /prezzo.
  * @param rawIsin - Valore grezzo ricevuto dall'input utente (es. "IT0005...")
  */
-export function validatePrezzoInput(rawIsin: string | undefined): ValidateResult<IsinValidated> {
+export const validatePrezzoInput = (rawIsin: string | undefined): ValidateResult<IsinValidated> => {
   const result = isinSchema.safeParse(rawIsin);
   if (!result.success) {
     return { success: false, errors: result.error.issues.map((e) => e.message) };
   }
   return { success: true, data: result.data };
-}
+};
 
 /**
  * Valida ISIN e prezzo per il comando /alert.
  * @param rawIsin - ISIN grezzo dall'input utente
  * @param rawAlertPrice - Prezzo soglia grezzo dall'input utente
  */
-export function validateAlertInput(
+export const validateAlertInput = (
   rawIsin: string | undefined,
   rawAlertPrice: string | undefined,
-): ValidateResult<AlertValidated> {
+): ValidateResult<AlertValidated> => {
   if (!rawIsin) {
     return { success: false, errors: ["L'isin è richiesto per il comando /alert"] };
   }
@@ -78,28 +78,32 @@ export function validateAlertInput(
     return { success: false, errors: result.error.issues.map((e) => e.message) };
   }
   return { success: true, data: result.data };
-}
+};
 
-function parseTelegramId(rawTelegramId: string | undefined): ValidateResult<number> {
+const parseTelegramId = (rawTelegramId: string | undefined): ValidateResult<number> => {
   const result = telegramIdSchema.safeParse(rawTelegramId);
   if (!result.success) {
     return { success: false, errors: result.error.issues.map((e) => e.message) };
   }
   return { success: true, data: result.data };
-}
+};
 
 /**
  * Valida un Telegram ID per il comando /kofi_user.
  * @param rawTelegramId - ID Telegram grezzo dall'input utente
  */
-export function validateKofiUserInput(rawTelegramId: string | undefined): ValidateResult<number> {
+export const validateKofiUserInput = (
+  rawTelegramId: string | undefined,
+): ValidateResult<number> => {
   return parseTelegramId(rawTelegramId);
-}
+};
 
 /**
  * Valida un Telegram ID per il comando /mark_kofi_donor.
  * @param rawTelegramId - ID Telegram grezzo dall'input utente
  */
-export function validateKofiDonorInput(rawTelegramId: string | undefined): ValidateResult<number> {
+export const validateKofiDonorInput = (
+  rawTelegramId: string | undefined,
+): ValidateResult<number> => {
   return parseTelegramId(rawTelegramId);
-}
+};
