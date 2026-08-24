@@ -21,6 +21,22 @@ export class DatabaseHandler {
     return DatabaseHandler._instance;
   }
 
+  /**
+   * Connette il client al database MongoDB.
+   *
+   * NOTA: `$connect()` è lazy — inizializza il query engine ma NON verifica
+   * la reale raggiungibilità del server (il driver MongoDB fa "server selection"
+   * solo quando esegue una query). Senza il ping, con il container spento
+   * verrebbe loggato un falso `✅ Database MongoDB connesso con successo` e l'errore emergerebbe solo alla
+   * prima query (~30s di server selection timeout), lasciando il bot avviato
+   * in stato inconsistente.
+   *
+   * Per questo dopo `$connect()` eseguiamo un ping reale:
+   * `await this.prisma.$runCommandRaw({ ping: 1 })`.
+   * Se il DB non è raggiungibile fallisce subito → throw → shutdown graceful → exit(1).
+   *
+   * @see https://github.com/prisma/prisma/issues/25418
+   */
   async connect(): Promise<void> {
     try {
       await this.prisma.$connect();
