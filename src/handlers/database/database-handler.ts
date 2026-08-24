@@ -24,6 +24,7 @@ export class DatabaseHandler {
   async connect(): Promise<void> {
     try {
       await this.prisma.$connect();
+      await this.prisma.$runCommandRaw({ ping: 1 });
       logger.info("✅ Database MongoDB connesso con successo");
     } catch (error) {
       logger.error(`❌ Errore di connessione al database MongoDB`);
