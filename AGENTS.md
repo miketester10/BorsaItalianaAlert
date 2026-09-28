@@ -19,7 +19,7 @@ bun run start        # prod, decide il job in base a NODE_ENV
 bun run typecheck    # tsc --noEmit — OBBLIGATORIO dopo ogni modifica
 bunx prisma generate # dopo ogni modifica a prisma/schema.prisma
 bunx prisma db push  # applica schema a MongoDB
-docker compose up -d # bot + mongodb (immagine oven/bun)
+docker compose up -d # solo bot (immagine oven/bun)
 ```
 
 Test job vs prod job: `src/main.ts` sceglie in base a `NODE_ENV === "production"`.
