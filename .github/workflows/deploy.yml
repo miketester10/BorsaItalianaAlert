@@ -6,8 +6,29 @@ on:
       - main
 
 jobs:
-  deploy:
-    name: ⚙️ Deploy su VPS
+  verifica-codice-pre-deploy:
+    name: ✅ Verifica codice pre-deploy (install + prisma + typecheck)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 Clona il repository
+        uses: actions/checkout@v4
+
+      - name: 🧰 Installa Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: 📥 Installa dipendenze
+        run: bun install --frozen-lockfile
+
+      - name: 🧬 Valida schema Prisma
+        run: bunx prisma generate
+
+      - name: 🔍 Typecheck TypeScript
+        run: bun run typecheck
+
+  deploy-vps:
+    name: 🚀 Deploy su VPS (pull + riavvio solo se modificato)
+    needs: verifica-codice-pre-deploy
     runs-on: ubuntu-latest
 
     steps:

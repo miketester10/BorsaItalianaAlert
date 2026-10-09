@@ -76,6 +76,12 @@ Variabili da `.env.example`: `BOT_TOKEN`, `OWNER_TELEGRAM_ID`, `DATABASE_URL`, `
 
 Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation `userTelegramId -> User.telegramId`, indici su `User.status` e `Alert(userTelegramId)`, `Alert(userTelegramId, isin, alertPrice)`. Dopo ogni modifica schema: `bunx prisma generate && bunx prisma db push`.
 
+## CI/CD (`.github/workflows/deploy.yml`)
+
+- Job `verifica-codice-pre-deploy`: `bun install --frozen-lockfile` + `bunx prisma generate` + `bun run typecheck`. Se fallisce, il deploy non parte.
+- Job `deploy-vps` (`needs` verifica): SSH su VPS, `git pull`, restart container solo se ci sono modifiche.
+- Nomi job/step in italiano, id in kebab-case. Non aggiungere `db push` in CI (solo `generate`, mai migrazioni automatiche).
+
 ## Verifiche prima di finire
 
 1. `bun run typecheck` deve passare senza errori.

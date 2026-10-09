@@ -203,10 +203,12 @@ Il repository include una pipeline CI/CD in `/.github/workflows/deploy.yml` che 
 ### Come funziona
 
 - All'evento `push` su `main`, la pipeline:
-  - decodifica la chiave PEM in formato Base64 configurata nei Secrets
-  - si connette via SSH al VPS (es. istanza EC2) usando la chiave PEM
-  - fa `git pull` nella cartella del progetto sul server
-  - riavvia il container Docker solo se ci sono modifiche
+  - prima esegue il job `verifica-codice-pre-deploy`: install dipendenze (`bun install --frozen-lockfile`), validazione schema (`bunx prisma generate`), typecheck (`bun run typecheck`)
+  - solo se la verifica passa, esegue il job `deploy-vps`:
+    - decodifica la chiave PEM in formato Base64 configurata nei Secrets
+    - si connette via SSH al VPS (es. istanza EC2) usando la chiave PEM
+    - fa `git pull` nella cartella del progetto sul server
+    - riavvia il container Docker solo se ci sono modifiche
 
 ### Secrets richiesti
 
