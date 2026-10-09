@@ -1,4 +1,4 @@
-import { format, FormattableString, italic, TelegramParams, underline, InlineKeyboard, blockquote, code, bold } from "gramio";
+import { format, FormattableString, italic, underline, InlineKeyboard, blockquote, code, bold } from "gramio";
 import { API } from "../../consts/api";
 import { JWT } from "../../consts/jwt";
 import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
@@ -12,6 +12,7 @@ import { TelegramOptionsCustom } from "../../types/telegram-options-custom.type"
 import { validateAlertInput, validatePrezzoInput } from "../../schemas/input-validator.schema";
 import { formatPrice } from "../../utils/price-formatter";
 import { currentPriceFromComandoPrezzo, preDeleteAlert, deleteAllAlerts, cancelDeleteAllAlerts } from "./04-callbacks-data";
+import { replyOrEdit } from "./reply-or-edit.helper";
 
 const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
@@ -191,17 +192,5 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
     await ctx.reply(message, replyOptions);
   } catch (error) {
     errorHandler(error, ctx);
-  }
-};
-
-export const replyOrEdit = async (
-  ctx: MyMessageContext | MyCallbackQueryContext,
-  text: string | FormattableString,
-  options?: TelegramOptionsCustom,
-): Promise<void> => {
-  if (isCallbackContext(ctx)) {
-    await ctx.editText(text, options as TelegramParams.EditMessageTextParams);
-  } else {
-    await ctx.reply(text, options);
   }
 };
