@@ -130,6 +130,8 @@ KOFI_DELAY_MS=500
 - `/elimina_alerts` — Elimina tutti gli alert dell'utente
 - `/help` — Mostra l'elenco dei comandi disponibili per gli utenti
 
+L'ISIN è case-insensitive: minuscole accettate e normalizzate a maiuscolo (es. `it0003128367` = `IT0003128367`).
+
 ### Comandi Admin
 
 - `/admin` — Mostra l'elenco dei comandi riservati all'amministratore

@@ -31,7 +31,8 @@ Prod: ogni 2 min, lun–ven 07:00–18:55 `Europe/Rome`. Dev/test: ogni minuto.
 src/main.ts                         # entrypoint: server -> db -> bot -> job
 src/handlers/bot/00-bot-handler.ts  # registrazione comandi + menu Telegram
 src/handlers/bot/01-commands-basic.helper.ts  # start/help/admin
-src/handlers/bot/02-commands-helper.ts         # prezzo/alert/alerts_attivi/elimina_alerts + replyOrEdit
+src/handlers/bot/02-commands-helper.ts         # prezzo/alert/alerts_attivi/elimina_alerts
+src/handlers/bot/reply-or-edit.helper.ts        # helper neutro replyOrEdit (usato da bot/ ed error/, rompe il ciclo error <-> 02)
 src/handlers/bot/03-callbacks-helper.ts + 04-callbacks-data.ts  # inline keyboard callbacks
 src/handlers/bot/05-user-handler.ts # sync utente ad ogni update + reattivazione status
 src/handlers/bot/06-kofi-commands.ts
@@ -50,21 +51,21 @@ prisma/schema.prisma                # modelli User, Alert, enum Condition/UserSt
 ## Pattern architetturali (obbligatori)
 
 - **Singleton** in ogni handler: costruttore `private`, accesso solo via `XxxHandler.getInstance()`. Non usare `new` direttamente, non creare istanze multiple.
-- **Separation of Concerns:** `bot/` = solo Telegram, `alert/` = logica soglie/notifiche, `api/` = solo HTTP, `database/` = solo Prisma, `error/` = solo gestione errori.
+- **Separation of Concerns:** `bot/` = solo Telegram, `alert/` = logica soglie/notifiche, `api/` = solo HTTP, `database/` = solo Prisma, `error/` = solo gestione errori. `replyOrEdit` vive nel file neutro `src/handlers/bot/reply-or-edit.helper.ts`: importarlo sempre da lì, mai da `02-commands-helper.ts` (evita dipendenza circolare `error <-> 02`).
 - **Lazy bot in AlertHandler:** usa il getter `get bot()` esistente per evitare dipendenze circolari con `BotHandler`. Non importare `bot` come singleton eager da `AlertHandler`.
 - **DB ping reale:** `DatabaseHandler.connect()` fa `$connect()` + `$runCommandRaw({ ping: 1 })`. Non rimuovere il ping: `$connect()` da solo è lazy e darebbe falso OK con Mongo spento.
 - **Shutdown order** (`src/lifecycle/shutdown.ts`): 1. `stopAlertPriceJob()` 2. in parallelo `bot.stop() + server.stop() + db.disconnect()` via `Promise.allSettled` 3. `process.exit(code)`. Segnali gestiti: `SIGINT`, `SIGTERM`.
 
 ## Convenzioni codice
 
-- Validazione input: **sempre Zod** in `src/schemas/input-validator.schema.ts` (`validatePrezzoInput`, `validateAlertInput`, `validateKofiUserInput`, `validateKofiDonorInput`). ISIN: `/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/` + `.toUpperCase()` prima di validare. Mai validare inline con regex/`Number()` nei command handler.
+- Validazione input: **sempre Zod** in `src/schemas/input-validator.schema.ts` (`validatePrezzoInput`, `validateAlertInput`, `validateKofiUserInput`, `validateKofiDonorInput`). ISIN: `/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/` + normalizzazione centralizzata nello schema (`preprocess` con `trim()` + `toUpperCase()`): accetta anche minuscole. Mai duplicare `.toUpperCase()` nei command handler. Mai validare inline con regex/`Number()` nei command handler.
 - DB access: solo tramite `DatabaseHandler` + DTO (`CreateAlertDto`, `UpdateAlertDto`, `CreateUserDto`, `UpdateUserDto`). Mai chiamare `new PrismaClient()` fuori da `DatabaseHandler`.
 - API Borsa Italiana: solo tramite `ApiHandler.getPrice()` con header `Authorization: Bearer ${JWT.BORSA_ITALIANA}` e URL `${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`. Validare la risposta con `isBorsaItalianaValidResponse()` prima di leggere `intradayPoint.at(-1)?.endPx`. Prezzo corrente = **ultimo** elemento di `intradayPoint`.
 - Ottimizzazione alert: raggruppa per ISIN unici (`Set`), fetch parallelo con `p-limit(40)`, risultati con `Promise.allSettled`, mappa `priceMap[isin]`. Conta successi/errori e logga success-rate. Non cambiare il limite 40 senza motivo.
 - Notifiche: invia solo se `newCondition !== alert.lastCondition && newCondition !== equal` (`shouldNotify`). Dopo `sendNotification` OK, aggiorna DB con `lastCondition + lastCheckPrice`. Se `sendMessage` lancia `Forbidden`, mappa con `getUserStatusFromTelegramError()` e chiama `updateUserStatus()` (blocked/deactivated), poi `continue` senza aggiornare l'alert.
 - Filtri utenti: il job elabora solo utenti `active` (`findAllAlerts({ onlyActiveUsers: true })`). `05-user-handler.ts` riporta a `active` chi interagisce di nuovo.
-- Errori nei comandi bot: wrap `try/catch` + `errorHandler(error, ctx)` alla fine. Mai lanciare senza catch nei handler Telegram. `errorHandler` gestisce già `message is not modified` (solo `answerCallbackQuery`) e `AxiosError` con `status + message`.
-- Risposte Telegram: usa helper `replyOrEdit(ctx, message, options)` per supportare sia comandi che callback. Formattazione con helper gramio (`format`, `code`, `bold`, `blockquote`, `InlineKeyboard`). Prezzi con `formatPrice()` da `src/utils/price-formatter.ts`.
+- Errori nei comandi bot: wrap `try/catch` + `await errorHandler(error, ctx)` alla fine (sempre `await`, mai floating). Mai lanciare senza catch nei handler Telegram. `05-user-handler.ts` non rilancia mai (solo `logger.error`), così il middleware chiama sempre `next()`. `errorHandler` gestisce già `message is not modified` (solo `answerCallbackQuery`) e `AxiosError` con `status + message`.
+- Risposte Telegram: usa helper `replyOrEdit(ctx, message, options)` da `src/handlers/bot/reply-or-edit.helper.ts` per supportare sia comandi che callback. Formattazione con helper gramio (`format`, `code`, `bold`, `blockquote`, `InlineKeyboard`). Prezzi con `formatPrice()` da `src/utils/price-formatter.ts`.
 - Nuovi comandi bot: 1. aggiungi handler in `01-`/`02-`/`06-`, 2. registra in `00-bot-handler.ts` sia in `inizializeCommands()` che in `inizializeMenu()` (menu visibile), 3. aggiungi schema Zod se ha input, 4. usa `ctx.sendChatAction("typing")` all'inizio.
 - Logging: solo `logger` da `src/logger/logger.ts` (`info/warn/error/debug`). Mai `console.*`. Messaggi con emoji di stato esistenti (`✅`, `⚠️`, `❌`, `🚨`, `🟢`, `🔴`).
 - Stile: ESM `import`, `async/await` (no `.then` a catena), nomi file `kebab-case`, classi `PascalCase`, costanti env in `src/consts/` (`API`, `JWT`), tipi condivisi in `src/types/custom-context.type.ts` (`MyMessageContext`, `MyCallbackQueryContext`, `isCallbackContext`).
