@@ -20,7 +20,7 @@ const alertHandler: AlertHandler = AlertHandler.getInstance();
 export async function handlePrezzoCommand(ctx: MyMessageContext): Promise<void>;
 export async function handlePrezzoCommand(ctx: MyCallbackQueryContext, isinFromCallback: string): Promise<FormattableString>;
 export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQueryContext, isinFromCallback?: string): Promise<FormattableString | void> {
-  const isinRaw = ctx.update?.message?.text?.trim().split(/\s+/)[1]?.toUpperCase();
+  const isinRaw = ctx.update?.message?.text?.trim().split(/\s+/)[1];
   let isin: string;
   let message: FormattableString;
 

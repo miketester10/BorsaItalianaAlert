@@ -1,11 +1,14 @@
 import { z } from "zod";
 
-// Validazione ISIN: 2 lettere, 9 alfanumerici, 1 cifra finale
-const isinSchema = z
-  .string()
-  .trim()
-  .nonempty("ISIN non può essere vuoto")
-  .regex(/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/, "ISIN non valido");
+// Validazione ISIN: 2 lettere, 9 alfanumerici, 1 cifra finale (case-insensitive, normalizzato a maiuscolo)
+const isinSchema = z.preprocess(
+  (value) => (typeof value === "string" ? value.trim().toUpperCase() : value),
+  z
+    .string()
+    .trim()
+    .nonempty("ISIN non può essere vuoto")
+    .regex(/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/, "ISIN non valido"),
+);
 
 // Validazione ALERT_PRICE
 const alertPriceSchema = z
