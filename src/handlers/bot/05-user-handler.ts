@@ -12,18 +12,26 @@ export const userHandler = async (ctx: MyUserSourceContext): Promise<void> => {
   const name = ctx.from.firstName;
   const username = ctx.from.username ?? null;
 
-  const user = await dataBaseHandler.findUserByTelegramId(telegramId);
-  if (user) {
-    const isUpdated = await dataBaseHandler.updateUser(telegramId, user, { name, username });
+  try {
+    const user = await dataBaseHandler.findUserByTelegramId(telegramId);
+    if (user) {
+      const isUpdated = await dataBaseHandler.updateUser(telegramId, user, { name, username });
 
-    if (user.status !== UserStatus.active) {
-      await dataBaseHandler.updateUserStatus(telegramId, UserStatus.active);
-      logger.info(`Utente [${name}] tornato attivo (status precedente: ${user.status}).`);
+      if (user.status !== UserStatus.active) {
+        await dataBaseHandler.updateUserStatus(telegramId, UserStatus.active);
+        logger.info(`Utente [${name}] tornato attivo (status precedente: ${user.status}).`);
+      }
+
+      logger.debug(
+        `Utente [${name}] già registrato. ${isUpdated ? `Dati aggiornati con successo.` : `Nessun dato da aggiornare è stato trovato.`}`,
+      );
+    } else {
+      await dataBaseHandler.createUser({ telegramId, name, username });
+      logger.info(`Nuovo utente [${name}] registrato con successo.`);
     }
-
-    logger.debug(`Utente [${name}] già registrato. ${isUpdated ? `Dati aggiornati con successo.` : `Nessun dato da aggiornare è stato trovato.`}`);
-  } else {
-    await dataBaseHandler.createUser({ telegramId, name, username });
-    logger.info(`Nuovo utente [${name}] registrato con successo.`);
+  } catch (error) {
+    logger.error(
+      `Errore userHandler [${name} - Telegram ID: ${telegramId}]: ${(error as Error).message}`,
+    );
   }
 };
