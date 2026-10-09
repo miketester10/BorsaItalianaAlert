@@ -74,7 +74,7 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
       await replyOrEdit(ctx, message, replyOptions);
     }
   } catch (error) {
-    errorHandler(error, ctx);
+    await errorHandler(error, ctx);
   }
 }
 
@@ -121,7 +121,7 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
 
     await ctx.reply(message);
   } catch (error) {
-    errorHandler(error, ctx);
+    await errorHandler(error, ctx);
   }
 };
 
@@ -166,7 +166,7 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
 
     await replyOrEdit(ctx, message, replyOptions);
   } catch (error) {
-    errorHandler(error, ctx);
+    await errorHandler(error, ctx);
   }
 };
 
@@ -191,6 +191,6 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
 
     await ctx.reply(message, replyOptions);
   } catch (error) {
-    errorHandler(error, ctx);
+    await errorHandler(error, ctx);
   }
 };

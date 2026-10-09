@@ -28,7 +28,7 @@ export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> =
 
     await ctx.reply(message, { reply_markup: kofiKeyboard });
   } catch (error) {
-    errorHandler(error, ctx);
+    await errorHandler(error, ctx);
   }
 };
 
@@ -60,7 +60,7 @@ export const handleHelpCommand = async (ctx: MyMessageContext): Promise<void> =>
 
     await ctx.reply(message, { reply_markup: kofiKeyboard });
   } catch (error) {
-    errorHandler(error, ctx);
+    await errorHandler(error, ctx);
   }
 };
 
@@ -92,6 +92,6 @@ export const handleAdminCommand = async (ctx: MyMessageContext): Promise<void> =
 
     await ctx.reply(message);
   } catch (error) {
-    errorHandler(error, ctx);
+    await errorHandler(error, ctx);
   }
 };

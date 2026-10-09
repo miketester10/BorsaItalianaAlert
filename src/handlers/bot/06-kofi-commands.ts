@@ -101,7 +101,7 @@ export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: 
 
     await ctx.editText(reportMessage);
   } catch (error) {
-    errorHandler(error, ctx);
+    await errorHandler(error, ctx);
   }
 };
 
@@ -130,7 +130,7 @@ const showKofiConfirmPrompt = async (ctx: MyMessageContext, isNewUsers: boolean)
 
     await ctx.reply(confirmMessage, { reply_markup: keyboard });
   } catch (error) {
-    errorHandler(error, ctx);
+    await errorHandler(error, ctx);
   }
 };
 
@@ -191,7 +191,7 @@ export const handleKofiUserCommand = async (ctx: MyMessageContext): Promise<void
 
     await ctx.reply(confirmMessage, { reply_markup: keyboard });
   } catch (error) {
-    errorHandler(error, ctx);
+    await errorHandler(error, ctx);
   }
 };
 
@@ -250,6 +250,6 @@ export const handleMarkKofiDonorCommand = async (ctx: MyMessageContext): Promise
 
     await ctx.reply(confirmMessage, { reply_markup: keyboard });
   } catch (error) {
-    errorHandler(error, ctx);
+    await errorHandler(error, ctx);
   }
 };

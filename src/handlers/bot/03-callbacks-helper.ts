@@ -72,7 +72,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
       await ctx.editText(message, replyOptions);
     } catch (error) {
-      errorHandler(error, ctx);
+      await errorHandler(error, ctx);
     }
     return ctx.answer();
   });
@@ -90,7 +90,7 @@ export const setupCallbacks = (bot: Bot): void => {
       await dataBaseHandler.deleteAlertById(alertId);
       await handleAlertsAttiviCommand(ctx);
     } catch (error) {
-      errorHandler(error, ctx);
+      await errorHandler(error, ctx);
     }
     return ctx.answer();
   });
@@ -99,7 +99,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       await handleAlertsAttiviCommand(ctx);
     } catch (error) {
-      errorHandler(error, ctx);
+      await errorHandler(error, ctx);
     }
     return ctx.answer();
   });
@@ -110,7 +110,7 @@ export const setupCallbacks = (bot: Bot): void => {
       await dataBaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
       await ctx.editText(code(`✅ Tutti gli alerts sono stati eliminati con successo.`));
     } catch (error) {
-      errorHandler(error, ctx);
+      await errorHandler(error, ctx);
     }
     return ctx.answer();
   });
@@ -119,7 +119,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       await ctx.editText(code(`❌ Comando annullato. Nessun alert attivo è stato eliminato.`));
     } catch (error) {
-      errorHandler(error, ctx);
+      await errorHandler(error, ctx);
     }
     return ctx.answer();
   });
@@ -138,7 +138,7 @@ export const setupCallbacks = (bot: Bot): void => {
       };
       await ctx.editText(message, replyOptions);
     } catch (error) {
-      errorHandler(error, ctx);
+      await errorHandler(error, ctx);
     }
     return ctx.answer();
   });
@@ -161,7 +161,7 @@ export const setupCallbacks = (bot: Bot): void => {
       };
       await ctx.editText(message, replyOptions);
     } catch (error) {
-      errorHandler(error, ctx);
+      await errorHandler(error, ctx);
     }
     return ctx.answer();
   });
@@ -170,7 +170,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       await sendKofiMessages(ctx, false);
     } catch (error) {
-      errorHandler(error, ctx);
+      await errorHandler(error, ctx);
     }
     return ctx.answer();
   });
@@ -202,7 +202,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       await sendKofiMessages(ctx, true);
     } catch (error) {
-      errorHandler(error, ctx);
+      await errorHandler(error, ctx);
     }
     return ctx.answer();
   });
@@ -218,7 +218,7 @@ export const setupCallbacks = (bot: Bot): void => {
       await dataBaseHandler.markKofiDonor(targetTelegramId);
       await ctx.editText(code("✅ Donatore registrato con successo."));
     } catch (error) {
-      errorHandler(error, ctx);
+      await errorHandler(error, ctx);
     }
     return ctx.answer();
   });
@@ -227,7 +227,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       await ctx.editText(code("❌ Comando annullato."));
     } catch (error) {
-      errorHandler(error, ctx);
+      await errorHandler(error, ctx);
     }
     return ctx.answer();
   };
