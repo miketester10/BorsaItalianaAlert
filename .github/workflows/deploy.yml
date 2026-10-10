@@ -21,10 +21,10 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: 🧬 Valida schema Prisma
-        run: bunx prisma generate
+        run: bun prisma:generate
 
       - name: 🔍 Typecheck TypeScript
-        run: bun run typecheck
+        run: bun typecheck
 
   deploy-vps:
     name: 🚀 Deploy su VPS (pull + riavvio solo se modificato)
