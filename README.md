@@ -66,14 +66,14 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
 5. **Esegui le migrazioni del database:**
 
    ```bash
-   bunx prisma generate
-   bunx prisma db push
+   bun prisma:generate
+   bun prisma:push
    ```
 
 6. **Avvia il bot in sviluppo:**
 
    ```bash
-   bun run dev
+   bun dev
    ```
 
 7. **Oppure avvia con Docker:**
@@ -110,9 +110,9 @@ KOFI_DELAY_MS=500
 
 ### Script Principali
 
-- `bun run dev` — Avvia il bot in modalità sviluppo (hot reload)
-- `bun run start` — Avvia il bot in modalità produzione
-- `bun run typecheck` — Esegue il typecheck TypeScript senza emissione
+- `bun dev` — Avvia il bot in modalità sviluppo (hot reload)
+- `bun start` — Avvia il bot in modalità produzione
+- `bun typecheck` — Esegue il typecheck TypeScript senza emissione
 
 ### Docker
 
@@ -203,7 +203,7 @@ Il repository include una pipeline CI/CD in `/.github/workflows/deploy.yml` che 
 ### Come funziona
 
 - All'evento `push` su `main`, la pipeline:
-  - prima esegue il job `verifica-codice-pre-deploy`: install dipendenze (`bun install --frozen-lockfile`), validazione schema (`bunx prisma generate`), typecheck (`bun run typecheck`)
+  - prima esegue il job `verifica-codice-pre-deploy`: install dipendenze (`bun install --frozen-lockfile`), validazione schema (`bun prisma:generate`), typecheck (`bun typecheck`)
   - solo se la verifica passa, esegue il job `deploy-vps`:
     - decodifica la chiave PEM in formato Base64 configurata nei Secrets
     - si connette via SSH al VPS (es. istanza EC2) usando la chiave PEM

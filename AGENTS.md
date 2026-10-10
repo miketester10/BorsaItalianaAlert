@@ -14,11 +14,11 @@ Bot Telegram (Bun + TypeScript strict) che monitora i prezzi dei titoli Borsa It
 
 ```bash
 bun install
-bun run dev          # watch mode, job test ogni minuto
-bun run start        # prod, decide il job in base a NODE_ENV
-bun run typecheck    # tsc --noEmit — OBBLIGATORIO dopo ogni modifica
-bunx prisma generate # dopo ogni modifica a prisma/schema.prisma
-bunx prisma db push  # applica schema a MongoDB
+bun dev              # watch mode, job test ogni minuto
+bun start            # prod, decide il job in base a NODE_ENV
+bun typecheck        # tsc --noEmit — OBBLIGATORIO dopo ogni modifica
+bun prisma:generate  # dopo ogni modifica a prisma/schema.prisma
+bun prisma:push      # applica schema a MongoDB
 docker compose up -d # solo bot (immagine oven/bun)
 ```
 
@@ -74,17 +74,17 @@ prisma/schema.prisma                # modelli User, Alert, enum Condition/UserSt
 
 Variabili da `.env.example`: `BOT_TOKEN`, `OWNER_TELEGRAM_ID`, `DATABASE_URL`, `BORSA_ITALIANA_API`, `BORSA_ITALIANA_API_TAIL`, `BORSA_ITALIANA_JWT`, `PORT`, `NODE_ENV`, `KOFI_DELAY_MS`. Mai committare `.env` (già in `.gitignore`). Costanti leggono `process.env.X!` — se aggiungi una var, aggiungila a `.env.example` + `src/consts/` se è un endpoint/secret riusato.
 
-Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation `userTelegramId -> User.telegramId`, indici su `User.status` e `Alert(userTelegramId)`, `Alert(userTelegramId, isin, alertPrice)`. Dopo ogni modifica schema: `bunx prisma generate && bunx prisma db push`.
+Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation `userTelegramId -> User.telegramId`, indici su `User.status` e `Alert(userTelegramId)`, `Alert(userTelegramId, isin, alertPrice)`. Dopo ogni modifica schema: `bun prisma:generate && bun prisma:push`.
 
 ## CI/CD (`.github/workflows/deploy.yml`)
 
-- Job `verifica-codice-pre-deploy`: `bun install --frozen-lockfile` + `bunx prisma generate` + `bun run typecheck`. Se fallisce, il deploy non parte.
+- Job `verifica-codice-pre-deploy`: `bun install --frozen-lockfile` + `bun prisma:generate` + `bun typecheck`. Se fallisce, il deploy non parte.
 - Job `deploy-vps` (`needs` verifica): SSH su VPS, `git pull`, restart container solo se ci sono modifiche.
 - Nomi job/step in italiano, id in kebab-case. Non aggiungere `db push` in CI (solo `generate`, mai migrazioni automatiche).
 
 ## Verifiche prima di finire
 
-1. `bun run typecheck` deve passare senza errori.
+1. `bun typecheck` deve passare senza errori.
 2. Nessun `console.log`, nessun `new PrismaClient()` fuori da `DatabaseHandler`, nessun `new BotHandler/AlertHandler/...` diretto.
 3. Se toccato `prisma/schema.prisma`: rigenerato client + push.
 4. Se nuovo comando: registrato in comandi + menu + validato con Zod.
