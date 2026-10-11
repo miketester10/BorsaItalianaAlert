@@ -2,7 +2,7 @@ import { Alert, Condition } from "@prisma/client";
 import { DatabaseHandler } from "../database/database-handler";
 import { ApiHandler } from "../api/api-handler";
 import { logger } from "../../logger/logger";
-import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
+import { BorsaItalianaApiResponse, getLastPrice, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
 import { env } from "../../config/env";
 import { UpdateAlertDto } from "../../dto/update-alert.dto";
 import { BotHandler } from "../bot/00-bot-handler";
@@ -71,8 +71,14 @@ export class AlertHandler {
       if (result.status === "fulfilled") {
         const { isin, response } = result.value;
         if (isBorsaItalianaValidResponse(response)) {
-          priceMap[isin] = response.intradayPoint.at(-1)?.endPx;
-          successCount++;
+          const currentPrice = getLastPrice(response);
+          if (currentPrice === null) {
+            logger.warn(`Prezzo non valido per ISIN ${isin}. Ricevuto: ${String(response.intradayPoint.at(-1)?.endPx)}`);
+            errorCount++;
+          } else {
+            priceMap[isin] = currentPrice;
+            successCount++;
+          }
         } else {
           logger.warn(`Risposta non valida per ISIN ${isin}`);
           errorCount++;

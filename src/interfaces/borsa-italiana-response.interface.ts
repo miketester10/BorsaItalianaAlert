@@ -11,28 +11,6 @@ export interface BorsaItalianaResponse {
   instrType: string;
 }
 
-export interface BorsaItalianaErrorResponse {
-  status: number;
-  entityID: string;
-  view: string;
-  sessionQuality: string;
-}
-
-export interface BorsaItalianaHttpErrorResponse {
-  timestamp: number;
-  status: number;
-  error: string;
-  message: string;
-}
-
-// Union type per gestire tutti i tipi di risposta
-export type BorsaItalianaApiResponse = BorsaItalianaResponse | BorsaItalianaErrorResponse;
-
-// Type guard per verificare se la risposta contiene dati validi
-export const isBorsaItalianaValidResponse = (response: BorsaItalianaApiResponse): response is BorsaItalianaResponse => {
-  return "intradayPoint" in response && Array.isArray(response.intradayPoint);
-};
-
 export interface IntradayPoint {
   time: string;
   nbTrade: number;
@@ -57,3 +35,38 @@ export interface IntradayPoint {
   previousSettlementPx: number;
   previousSettlementDt: string;
 }
+
+export interface BorsaItalianaErrorResponse {
+  status: number;
+  entityID: string;
+  view: string;
+  sessionQuality: string;
+}
+
+export interface BorsaItalianaHttpErrorResponse {
+  timestamp: number;
+  status: number;
+  error: string;
+  message: string;
+}
+
+// Union type per gestire tutti i tipi di risposta
+export type BorsaItalianaApiResponse = BorsaItalianaResponse | BorsaItalianaErrorResponse;
+
+// Type guard per verificare se la risposta contiene dati validi
+export const isBorsaItalianaValidResponse = (
+  response: BorsaItalianaApiResponse,
+): response is BorsaItalianaResponse => {
+  return "intradayPoint" in response && Array.isArray(response.intradayPoint);
+};
+
+/**
+ * Estrae l'ultimo prezzo o `null` se assente/non valido.
+ * Controlla tipo number, NaN e positivo (prezzi Borsa sempre > 0):
+ */
+export const getLastPrice = (response: BorsaItalianaApiResponse): number | null => {
+  if (!isBorsaItalianaValidResponse(response)) return null;
+  const price = response.intradayPoint.at(-1)?.endPx;
+  if (typeof price !== "number" || Number.isNaN(price) || price <= 0) return null;
+  return price;
+};

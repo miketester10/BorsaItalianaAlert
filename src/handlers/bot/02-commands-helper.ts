@@ -1,6 +1,6 @@
 import { format, FormattableString, italic, underline, InlineKeyboard, blockquote, code, bold } from "gramio";
 import { env } from "../../config/env";
-import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
+import { BorsaItalianaApiResponse, getLastPrice, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
 import { isCallbackContext, MyCallbackQueryContext, MyMessageContext } from "../../types/custom-context.type";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
@@ -48,15 +48,20 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
     });
 
     if (isBorsaItalianaValidResponse(response)) {
-      const price = response.intradayPoint.at(-1)?.endPx!;
-      const label = response.label;
-      message = blockquote(
-        format`${bold("🆔 ISIN:")} ${code(isin)}
-                    ${bold("🏷️ Label:")} ${code(label)}
-                    ${bold("💰 Prezzo:")} ${code(`${formatPrice(price)}€`)}
-                  `,
-      );
-      logger.info(`Ultimo prezzo: ${price}€`);
+      const price = getLastPrice(response);
+      if (price === null) {
+        message = code(`⚠️ Prezzo non disponibile. Riprova più tardi.`);
+        logger.warn(`ISIN ${isin} senza prezzo valido. Ricevuto: ${String(response.intradayPoint.at(-1)?.endPx)}`);
+      } else {
+        const label = response.label;
+        message = blockquote(
+          format`${bold("🆔 ISIN:")} ${code(isin)}
+                      ${bold("🏷️ Label:")} ${code(label)}
+                      ${bold("💰 Prezzo:")} ${code(`${formatPrice(price)}€`)}
+                    `,
+        );
+        logger.info(`Ultimo prezzo: ${price}€`);
+      }
     } else {
       message = code(`⚠️ ISIN non valido o non trovato.`);
       logger.warn(`ISIN ${isin} non valido o non trovato.`);
@@ -101,17 +106,22 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
     });
 
     if (isBorsaItalianaValidResponse(response)) {
-      const alert = await dataBaseHandler.findAlert(userTelegramId, isin, alertPrice);
-      if (alert) {
-        message = code(`⚠️ Alert già registrato.`);
-        logger.warn(`Alert già registrato.`);
+      const lastCheckPrice = getLastPrice(response);
+      if (lastCheckPrice === null) {
+        message = code(`⚠️ Prezzo non disponibile. Nessun alert registrato. Riprova più tardi.`);
+        logger.warn(`ISIN ${isin} senza prezzo valido. Nessun alert registrato. Ricevuto: ${String(response.intradayPoint.at(-1)?.endPx)}`);
       } else {
-        const label = response.label;
-        const lastCheckPrice = response.intradayPoint.at(-1)?.endPx!;
-        const lastCondition = alertHandler.calculateCondition(lastCheckPrice, alertPrice);
-        await dataBaseHandler.createAlert({ userTelegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
-        message = code(`✅ Alert registrato con successo.`);
-        logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${formatPrice(alertPrice)}€`);
+        const alert = await dataBaseHandler.findAlert(userTelegramId, isin, alertPrice);
+        if (alert) {
+          message = code(`⚠️ Alert già registrato.`);
+          logger.warn(`Alert già registrato.`);
+        } else {
+          const label = response.label;
+          const lastCondition = alertHandler.calculateCondition(lastCheckPrice, alertPrice);
+          await dataBaseHandler.createAlert({ userTelegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
+          message = code(`✅ Alert registrato con successo.`);
+          logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${formatPrice(alertPrice)}€`);
+        }
       }
     } else {
       message = code(`⚠️ ISIN non trovato. Nessun alert è stato registrato.`);
