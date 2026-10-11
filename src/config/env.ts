@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { envSchema, type Env } from "./env.schema";
 
 /**
@@ -9,8 +10,7 @@ import { envSchema, type Env } from "./env.schema";
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  const details = parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ");
-  throw new Error(`❌ Variabili d'ambiente non valide: ${details}`);
+  throw new Error(`❌ Variabili d'ambiente non valide:\n${z.prettifyError(parsed.error)}`);
 }
 
 export const env: Env = parsed.data;
