@@ -102,7 +102,7 @@ BORSA_ITALIANA_JWT=your_borsa_italiana_jwt_token
 PORT=3000
 
 # Environment
-NODE_ENV="development or production"
+NODE_ENV=development
 
 # Delay tra i messaggi dei comandi kofi (millisecondi, default 500)
 KOFI_DELAY_MS=500
@@ -180,7 +180,7 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 │   ├── dto/             # Data Transfer Objects
 │   ├── interfaces/      # Interfacce TypeScript
 │   ├── enums/           # Enumerazioni
-│   ├── consts/          # Costanti (API endpoints)
+│   ├── config/          # Validazione env Zod fail-fast (schema + parse all'avvio)
 │   ├── jobs/            # CronJob e task schedulati
 │   ├── lifecycle/       # Lifecycle app (es. graceful shutdown)
 │   ├── logger/          # Configurazione logging
@@ -276,6 +276,13 @@ Gli input provenienti dagli utenti (comandi Telegram e parametri) sono validati 
 
 - Posizione schemi: `src/schemas/`
 - File principale: `src/schemas/input-validator.schema.ts`
+
+### Validazione Env (Zod, fail-fast)
+
+Tutte le variabili d'ambiente sono validate all'avvio con [Zod](https://zod.dev/): se una manca o non è valida, l'app termina subito con la lista degli errori invece di fallire a runtime (`NaN`, `Bearer undefined`).
+
+- Posizione: `src/config/` (`env.schema.ts` = schema, `env.ts` = parse + export tipizzato)
+- Nessun altro file legge `process.env` direttamente
 
 ## Database Schema
 
