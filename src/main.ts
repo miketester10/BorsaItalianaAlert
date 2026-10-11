@@ -1,3 +1,4 @@
+import { env } from "./config/env";
 import { ServerHandler } from "./handlers/server/server-handler";
 import { DatabaseHandler } from "./handlers/database/database-handler";
 import { BotHandler } from "./handlers/bot/00-bot-handler";
@@ -10,7 +11,7 @@ const serverHandler = ServerHandler.getInstance();
 const databaseHandler = DatabaseHandler.getInstance();
 const botHandler = BotHandler.getInstance();
 
-const isProductionEnv = process.env.NODE_ENV === "production";
+const isProductionEnv = env.NODE_ENV === "production";
 const job = isProductionEnv ? startAlertPriceJob : startTestAlertPriceJob;
 
 const main = async () => {

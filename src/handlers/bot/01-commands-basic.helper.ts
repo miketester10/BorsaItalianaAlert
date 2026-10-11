@@ -1,10 +1,11 @@
 import { blockquote, bold, code, format, italic, underline, InlineKeyboard } from "gramio";
+import { env } from "../../config/env";
 import { MyMessageContext } from "../../types/custom-context.type";
 import { logger } from "../../logger/logger";
 import { errorHandler } from "../error/error-handler";
 import { kofiKeyboard } from "./06-kofi-commands";
 
-const OWNER_TELEGRAM_ID = Number(process.env.OWNER_TELEGRAM_ID);
+const OWNER_TELEGRAM_ID = env.OWNER_TELEGRAM_ID;
 
 export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> => {
   const telegramId = ctx.from?.id!;

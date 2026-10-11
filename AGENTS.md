@@ -44,7 +44,8 @@ src/handlers/server/server-handler.ts
 src/jobs/alert-price.job.ts         # startAlertPriceJob / startTestAlertPriceJob / stopAlertPriceJob
 src/lifecycle/shutdown.ts           # graceful shutdown
 src/schemas/input-validator.schema.ts  # TUTTA la validazione input utente (Zod)
-src/dto/ /src/interfaces/ /src/types/ /src/enums/ /src/consts/ /src/utils/
+src/config/env.schema.ts + env.ts      # validazione env Zod fail-fast (unico punto che legge process.env)
+src/dto/ /src/interfaces/ /src/types/ /src/enums/ /src/utils/
 prisma/schema.prisma                # modelli User, Alert, enum Condition/UserStatus
 ```
 
@@ -68,11 +69,11 @@ prisma/schema.prisma                # modelli User, Alert, enum Condition/UserSt
 - Risposte Telegram: usa helper `replyOrEdit(ctx, message, options)` da `src/handlers/bot/reply-or-edit.helper.ts` per supportare sia comandi che callback. Formattazione con helper gramio (`format`, `code`, `bold`, `blockquote`, `InlineKeyboard`). Prezzi con `formatPrice()` da `src/utils/price-formatter.ts`.
 - Nuovi comandi bot: 1. aggiungi handler in `01-`/`02-`/`06-`, 2. registra in `00-bot-handler.ts` sia in `inizializeCommands()` che in `inizializeMenu()` (menu visibile), 3. aggiungi schema Zod se ha input, 4. usa `ctx.sendChatAction("typing")` all'inizio.
 - Logging: solo `logger` da `src/logger/logger.ts` (`info/warn/error/debug`). Mai `console.*`. Messaggi con emoji di stato esistenti (`✅`, `⚠️`, `❌`, `🚨`, `🟢`, `🔴`).
-- Stile: ESM `import`, `async/await` (no `.then` a catena), nomi file `kebab-case`, classi `PascalCase`, costanti env in `src/consts/` (`API`, `JWT`), tipi condivisi in `src/types/custom-context.type.ts` (`MyMessageContext`, `MyCallbackQueryContext`, `isCallbackContext`).
+- Stile: ESM `import`, `async/await` (no `.then` a catena), nomi file `kebab-case`, classi `PascalCase`, env validato in `src/config/` (`env.schema.ts` + `env.ts`), tipi condivisi in `src/types/custom-context.type.ts` (`MyMessageContext`, `MyCallbackQueryContext`, `isCallbackContext`).
 
 ## Env e database
 
-Variabili da `.env.example`: `BOT_TOKEN`, `OWNER_TELEGRAM_ID`, `DATABASE_URL`, `BORSA_ITALIANA_API`, `BORSA_ITALIANA_API_TAIL`, `BORSA_ITALIANA_JWT`, `PORT`, `NODE_ENV`, `KOFI_DELAY_MS`. Mai committare `.env` (già in `.gitignore`). Costanti leggono `process.env.X!` — se aggiungi una var, aggiungila a `.env.example` + `src/consts/` se è un endpoint/secret riusato.
+Variabili da `.env.example`: `BOT_TOKEN`, `OWNER_TELEGRAM_ID`, `DATABASE_URL`, `BORSA_ITALIANA_API`, `BORSA_ITALIANA_API_TAIL`, `BORSA_ITALIANA_JWT`, `PORT`, `NODE_ENV`, `KOFI_DELAY_MS`. Mai committare `.env` (già in `.gitignore`). Tutte validate in `src/config/env.schema.ts` con fail-fast all'avvio — se aggiungi una var, aggiungila a `.env.example` + allo schema. Mai leggere `process.env` fuori da `src/config/env.ts`.
 
 Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation `userTelegramId -> User.telegramId`, indici su `User.status` e `Alert(userTelegramId)`, `Alert(userTelegramId, isin, alertPrice)`. Dopo ogni modifica schema: `bun prisma:generate && bun prisma:push`.
 

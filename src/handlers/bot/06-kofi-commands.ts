@@ -7,10 +7,11 @@ import { DatabaseHandler } from "../database/database-handler";
 import { errorHandler } from "../error/error-handler";
 import { validateKofiDonorInput, validateKofiUserInput } from "../../schemas/input-validator.schema";
 import { confirmKofiAll, confirmKofiUser, confirmKofiNewUsers, confirmMarkKofiDonor, cancelKofiAll, cancelKofiUser, cancelKofiNewUsers, cancelMarkKofiDonor } from "./04-callbacks-data";
+import { env } from "../../config/env";
 import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
 
 const databaseHandler = DatabaseHandler.getInstance();
-const OWNER_TELEGRAM_ID = Number(process.env.OWNER_TELEGRAM_ID);
+const OWNER_TELEGRAM_ID = env.OWNER_TELEGRAM_ID;
 
 const buildKofiMessage = (userName: string): FormattableString => format`
   Ciao ${bold(userName)}! 👋
@@ -62,7 +63,7 @@ export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: 
     const label = filteredUsers.length === 1 ? "utente" : "utenti";
     await ctx.editText(format`${bold(`📬 Invio invito caffè a ${filteredUsers.length} ${label}...`)}`);
 
-    const delayMs = Math.max(100, Number(process.env.KOFI_DELAY_MS) || 500);
+    const delayMs = env.KOFI_DELAY_MS;
 
     let sent = 0;
     let failed = 0;

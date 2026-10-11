@@ -1,9 +1,10 @@
 import express, { Request, Response, Express } from "express";
 import { Server } from "http";
+import { env } from "../../config/env";
 import { logger } from "../../logger/logger";
 
 export class ServerHandler {
-  private readonly EXPRESS_PORT: number = parseInt(process.env.PORT!);
+  private readonly EXPRESS_PORT: number = env.PORT;
 
   private static _instance: ServerHandler;
   private readonly app: Express = express();

@@ -1,4 +1,5 @@
 import { Bot } from "gramio";
+import { env } from "../../config/env";
 import { logger } from "../../logger/logger";
 import { MyMessageContext } from "../../types/custom-context.type";
 import { handleHelpCommand, handleStartCommand, handleAdminCommand } from "./01-commands-basic.helper";
@@ -8,7 +9,7 @@ import { userHandler } from "./05-user-handler";
 import { handleKofiAllCommand, handleKofiNewUsersCommand, handleMarkKofiDonorCommand, handleKofiUserCommand } from "./06-kofi-commands";
 
 export class BotHandler {
-  private readonly BOT_TOKEN: string = process.env.BOT_TOKEN!;
+  private readonly BOT_TOKEN: string = env.BOT_TOKEN;
 
   private static _instance: BotHandler;
   readonly bot: Bot;

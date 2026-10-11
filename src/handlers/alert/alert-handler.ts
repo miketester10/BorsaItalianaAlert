@@ -1,10 +1,9 @@
 import { Alert, Condition } from "@prisma/client";
 import { DatabaseHandler } from "../database/database-handler";
 import { ApiHandler } from "../api/api-handler";
-import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
 import { logger } from "../../logger/logger";
-import { API } from "../../consts/api";
-import { JWT } from "../../consts/jwt";
+import { BorsaItalianaApiResponse, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
+import { env } from "../../config/env";
 import { UpdateAlertDto } from "../../dto/update-alert.dto";
 import { BotHandler } from "../bot/00-bot-handler";
 import { Bot, blockquote, bold, code, format, underline } from "gramio";
@@ -48,8 +47,8 @@ export class AlertHandler {
     const requests = isins.map((isin) =>
       limit(async () => {
         try {
-          const response = await this.apiHandler.getPrice<BorsaItalianaApiResponse>(`${API.BORSA_ITALIANA}${isin}${API.BORSA_ITALIANA_TAIL}`, {
-            Authorization: `Bearer ${JWT.BORSA_ITALIANA}`,
+          const response = await this.apiHandler.getPrice<BorsaItalianaApiResponse>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
+            Authorization: `Bearer ${env.BORSA_ITALIANA_JWT}`,
           });
           return { isin, response };
         } catch (error) {
