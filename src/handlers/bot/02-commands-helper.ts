@@ -48,8 +48,8 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
     });
 
     if (isBorsaItalianaValidResponse(response)) {
-      const price = getLastPrice(response);
-      if (price === null) {
+      const currentPrice = getLastPrice(response);
+      if (currentPrice === null) {
         message = code(`⚠️ Prezzo non disponibile. Riprova più tardi.`);
         logger.warn(`ISIN ${isin} senza prezzo valido. Ricevuto: ${String(response.intradayPoint.at(-1)?.endPx)}`);
       } else {
@@ -57,10 +57,10 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
         message = blockquote(
           format`${bold("🆔 ISIN:")} ${code(isin)}
                       ${bold("🏷️ Label:")} ${code(label)}
-                      ${bold("💰 Prezzo:")} ${code(`${formatPrice(price)}€`)}
+                      ${bold("💰 Prezzo:")} ${code(`${formatPrice(currentPrice)}€`)}
                     `,
         );
-        logger.info(`Ultimo prezzo: ${price}€`);
+        logger.info(`Ultimo prezzo: ${currentPrice}€`);
       }
     } else {
       message = code(`⚠️ ISIN non valido o non trovato.`);

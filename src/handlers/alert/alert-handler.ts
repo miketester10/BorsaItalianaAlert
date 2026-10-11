@@ -97,7 +97,7 @@ export class AlertHandler {
     for (const alert of alerts) {
       const currentPrice = priceMap[alert.isin];
 
-      if (!currentPrice) {
+      if (currentPrice === undefined) {
         logger.warn(`ISIN ${alert.isin} non trovato nella Mappa. Impossibile controllare alert. Procedo con l'alert successivo.`);
         continue;
       }
