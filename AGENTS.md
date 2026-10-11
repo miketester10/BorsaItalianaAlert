@@ -90,6 +90,7 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 3. Se toccato `prisma/schema.prisma`: rigenerato client + push.
 4. Se nuovo comando: registrato in comandi + menu + validato con Zod.
 5. Non aggiungere dipendenze senza necessità; se le aggiungi usa `bun add`.
+6. Dopo ogni modifica al codice, controllare sempre se `README.md` e/o `AGENTS.md` vanno aggiornati (struttura, env, comandi, cron, pattern) e aggiornarli se necessario.
 
 ## Git
 
