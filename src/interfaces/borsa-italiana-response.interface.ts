@@ -54,19 +54,25 @@ export interface BorsaItalianaHttpErrorResponse {
 export type BorsaItalianaApiResponse = BorsaItalianaResponse | BorsaItalianaErrorResponse;
 
 // Type guard per verificare se la risposta contiene dati validi
-export const isBorsaItalianaValidResponse = (
+const isBorsaItalianaValidResponse = (
   response: BorsaItalianaApiResponse,
 ): response is BorsaItalianaResponse => {
   return "intradayPoint" in response && Array.isArray(response.intradayPoint);
 };
 
 /**
- * Estrae l'ultimo prezzo o `null` se assente/non valido.
- * Controlla tipo number, NaN e positivo (prezzi Borsa sempre > 0):
+ * Esito estrazione ultimo prezzo: un'unica chiamata distingue
+ * risposta invalida (`invalid`), dato assente/incoerente (`nodata`, con raw per i log)
+ * e prezzo valido (`ok`). Prezzi Borsa sempre > 0.
  */
-export const getLastPrice = (response: BorsaItalianaApiResponse): number | null => {
-  if (!isBorsaItalianaValidResponse(response)) return null;
+type LastPriceStatus =
+  | { kind: "ok"; price: number; label: string }
+  | { kind: "invalid" }
+  | { kind: "nodata"; raw: unknown };
+
+export const getLastPriceStatus = (response: BorsaItalianaApiResponse): LastPriceStatus => {
+  if (!isBorsaItalianaValidResponse(response)) return { kind: "invalid" };
   const price = response.intradayPoint.at(-1)?.endPx;
-  if (typeof price !== "number" || Number.isNaN(price) || price <= 0) return null;
-  return price;
+  if (typeof price !== "number" || Number.isNaN(price) || price <= 0) return { kind: "nodata", raw: price };
+  return { kind: "ok", price, label: response.label };
 };

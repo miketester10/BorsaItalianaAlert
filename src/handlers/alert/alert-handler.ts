@@ -2,7 +2,7 @@ import { Alert, Condition } from "@prisma/client";
 import { DatabaseHandler } from "../database/database-handler";
 import { ApiHandler } from "../api/api-handler";
 import { logger } from "../../logger/logger";
-import { BorsaItalianaApiResponse, getLastPrice, isBorsaItalianaValidResponse } from "../../interfaces/borsa-italiana-response.interface";
+import { BorsaItalianaApiResponse, getLastPriceStatus } from "../../interfaces/borsa-italiana-response.interface";
 import { env } from "../../config/env";
 import { UpdateAlertDto } from "../../dto/update-alert.dto";
 import { BotHandler } from "../bot/00-bot-handler";
@@ -70,15 +70,13 @@ export class AlertHandler {
     for (const result of results) {
       if (result.status === "fulfilled") {
         const { isin, response } = result.value;
-        if (isBorsaItalianaValidResponse(response)) {
-          const currentPrice = getLastPrice(response);
-          if (currentPrice === null) {
-            logger.warn(`Prezzo non valido per ISIN ${isin}. Ricevuto: ${String(response.intradayPoint.at(-1)?.endPx)}`);
-            errorCount++;
-          } else {
-            priceMap[isin] = currentPrice;
-            successCount++;
-          }
+        const status = getLastPriceStatus(response);
+        if (status.kind === "ok") {
+          priceMap[isin] = status.price;
+          successCount++;
+        } else if (status.kind === "nodata") {
+          logger.warn(`Prezzo non valido per ISIN ${isin}. Ricevuto: ${String(status.raw)}`);
+          errorCount++;
         } else {
           logger.warn(`Risposta non valida per ISIN ${isin}`);
           errorCount++;
