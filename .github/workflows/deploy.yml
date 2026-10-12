@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "**.md"
+      - "AGENTS.md"
+      - "LICENSE"
+      - ".gitignore"
+      - ".env.example"
 
 jobs:
   verifica-codice-pre-deploy:

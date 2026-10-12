@@ -83,6 +83,7 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 - Job `verifica-codice-pre-deploy`: `bun install --frozen-lockfile` + `bun prisma:generate` + `bun typecheck` + `bun test`. Se fallisce, il deploy non parte.
 - Job `deploy-vps` (`needs` verifica): SSH su VPS, `git pull`, restart container solo se ci sono modifiche.
 - Nomi job/step in italiano, id in kebab-case. Non aggiungere `db push` in CI (solo `generate`, mai migrazioni automatiche).
+- Push che toccano solo docs (`**.md`, `AGENTS.md`, `LICENSE`, `.gitignore`, `.env.example`) non avviano la pipeline (`paths-ignore`): il container monta il repo live e non ne ha bisogno. Override manuale: `[skip ci]` nel messaggio.
 
 ## Verifiche prima di finire
 
@@ -95,7 +96,7 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 
 ## Git
 
-- Conventional commits minuscoli in inglese: `feat:`, `fix:`, `test:`, `refactor:`, `docs:`, `chore:` + descrizione breve (es. `test: add bun:test suite for zod input validation`).
+- Conventional commits minuscoli in inglese: `feat:`, `fix:`, `perf:`, `test:`, `refactor:`, `docs:`, `chore:` + descrizione breve (es. `test: add bun:test suite for zod input validation`).
 - File nuovi: `git add <file>` esplicito (`commit -am` non basta per gli untracked).
 - Mai committare `.env`, `node_modules/`, `dist/`.
 
