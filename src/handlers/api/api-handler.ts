@@ -30,7 +30,7 @@ export class ApiHandler {
     return ApiHandler._instance;
   }
 
-  async getPrice<T>(api: string, headers: RawAxiosRequestHeaders = {}): Promise<T> {
+  async getPrice<T>(api: string, headers?: RawAxiosRequestHeaders): Promise<T> {
     const response = await httpClient.get<T>(api, { headers });
     return response.data;
   }
