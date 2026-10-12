@@ -111,6 +111,7 @@ describe("handleAlertCommand", () => {
   test("registra un alert sotto soglia con condizione below", async () => {
     await handleAlertCommand(createContext("/alert IT0005518128 110"));
 
+    expect(getReplyMessage()).toContain("Alert registrato con successo.");
     expect(createAlert).toHaveBeenCalledWith(
       expect.objectContaining({
         lastCondition: Condition.below,
@@ -119,13 +120,26 @@ describe("handleAlertCommand", () => {
     );
   });
 
+  test("registra con condizione equal se il prezzo è uguale alla soglia", async () => {
+    await handleAlertCommand(createContext("/alert IT0005518128 100"));
+
+    expect(getReplyMessage()).toContain("Alert registrato con successo.");
+    expect(createAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lastCondition: Condition.equal,
+        lastCheckPrice: 100,
+      }),
+    );
+    expect(handleError).not.toHaveBeenCalled();
+  });
+
   test("non registra nulla se l'ISIN non esiste", async () => {
     getPrice.mockImplementation(async () => createNotFoundResponse());
 
     await handleAlertCommand(createContext("/alert IT0005518128 90"));
 
     expect(reply).toHaveBeenCalledTimes(1);
-    expect(getReplyMessage()).toContain("ISIN non trovato. Nessun alert");
+    expect(getReplyMessage()).toContain("ISIN non trovato. Nessun alert registrato.");
     expect(createAlert).not.toHaveBeenCalled();
     expect(handleError).not.toHaveBeenCalled();
   });

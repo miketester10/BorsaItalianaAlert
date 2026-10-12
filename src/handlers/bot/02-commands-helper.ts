@@ -122,8 +122,8 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
       message = code(`⚠️ Prezzo non disponibile. Nessun alert registrato. Riprova più tardi.`);
       logger.warn(`ISIN ${isin} senza prezzo valido. Nessun alert registrato. Ricevuto: ${String(status.raw)}`);
     } else {
-      message = code(`⚠️ ISIN non trovato. Nessun alert è stato registrato.`);
-      logger.warn(`ISIN ${isin} non trovato. Nessun alert è stato registrato.`);
+      message = code(`⚠️ ISIN non trovato. Nessun alert registrato.`);
+      logger.warn(`ISIN ${isin} non trovato. Nessun alert registrato.`);
     }
 
     await ctx.reply(message);
