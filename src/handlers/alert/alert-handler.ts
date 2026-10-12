@@ -2,7 +2,7 @@ import { Alert, Condition } from "@prisma/client";
 import { DatabaseHandler } from "../database/database-handler";
 import { ApiHandler } from "../api/api-handler";
 import { logger } from "../../logger/logger";
-import { BorsaItalianaApiResponse, getLastPriceStatus } from "../../interfaces/borsa-italiana-response.interface";
+import { BorsaItalianaResponse, getLastPriceStatus } from "../../interfaces/borsa-italiana-response.interface";
 import { env } from "../../config/env";
 import { UpdateAlertDto } from "../../dto/update-alert.dto";
 import { BotHandler } from "../bot/00-bot-handler";
@@ -47,7 +47,7 @@ export class AlertHandler {
     const requests = isins.map((isin) =>
       limit(async () => {
         try {
-          const response = await this.apiHandler.getPrice<BorsaItalianaApiResponse>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
+          const response = await this.apiHandler.getPrice<BorsaItalianaResponse>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
             Authorization: `Bearer ${env.BORSA_ITALIANA_JWT}`,
           });
           return { isin, response };

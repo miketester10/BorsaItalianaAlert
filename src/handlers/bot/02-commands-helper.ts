@@ -1,6 +1,6 @@
 import { format, FormattableString, italic, underline, InlineKeyboard, blockquote, code, bold } from "gramio";
 import { env } from "../../config/env";
-import { BorsaItalianaApiResponse, getLastPriceStatus } from "../../interfaces/borsa-italiana-response.interface";
+import { BorsaItalianaResponse, getLastPriceStatus } from "../../interfaces/borsa-italiana-response.interface";
 import { isCallbackContext, MyCallbackQueryContext, MyMessageContext } from "../../types/custom-context.type";
 import { logger } from "../../logger/logger";
 import { DatabaseHandler } from "../database/database-handler";
@@ -43,7 +43,7 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
       isin = isinFromCallback;
     }
 
-    const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
+    const response = await apiHandler.getPrice<BorsaItalianaResponse>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
       Authorization: `Bearer ${env.BORSA_ITALIANA_JWT}`,
     });
 
@@ -100,7 +100,7 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
 
     const { isin, alertPrice } = validation.data;
 
-    const response = await apiHandler.getPrice<BorsaItalianaApiResponse>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
+    const response = await apiHandler.getPrice<BorsaItalianaResponse>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
       Authorization: `Bearer ${env.BORSA_ITALIANA_JWT}`,
     });
 

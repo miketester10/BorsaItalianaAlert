@@ -1,4 +1,4 @@
-export interface BorsaItalianaResponse {
+export interface BorsaItalianaSuccessResponse {
   intradayPoint: IntradayPoint[];
   status: number;
   entityID: string;
@@ -43,20 +43,13 @@ export interface BorsaItalianaErrorResponse {
   sessionQuality: string;
 }
 
-export interface BorsaItalianaHttpErrorResponse {
-  timestamp: number;
-  status: number;
-  error: string;
-  message: string;
-}
-
 // Union type per gestire tutti i tipi di risposta
-export type BorsaItalianaApiResponse = BorsaItalianaResponse | BorsaItalianaErrorResponse;
+export type BorsaItalianaResponse = BorsaItalianaSuccessResponse | BorsaItalianaErrorResponse;
 
 // Type guard per verificare se la risposta contiene dati validi
 const isBorsaItalianaValidResponse = (
-  response: BorsaItalianaApiResponse,
-): response is BorsaItalianaResponse => {
+  response: BorsaItalianaResponse,
+): response is BorsaItalianaSuccessResponse => {
   return "intradayPoint" in response && Array.isArray(response.intradayPoint);
 };
 
@@ -70,9 +63,10 @@ type LastPriceStatus =
   | { kind: "invalid" }
   | { kind: "nodata"; raw: unknown };
 
-export const getLastPriceStatus = (response: BorsaItalianaApiResponse): LastPriceStatus => {
+export const getLastPriceStatus = (response: BorsaItalianaResponse): LastPriceStatus => {
   if (!isBorsaItalianaValidResponse(response)) return { kind: "invalid" };
   const price = response.intradayPoint.at(-1)?.endPx;
-  if (typeof price !== "number" || Number.isNaN(price) || price <= 0) return { kind: "nodata", raw: price };
+  if (typeof price !== "number" || Number.isNaN(price) || price <= 0)
+    return { kind: "nodata", raw: price };
   return { kind: "ok", price, label: response.label };
 };

@@ -1,11 +1,14 @@
 import { AxiosError } from "axios";
-import { BorsaItalianaHttpErrorResponse } from "../../interfaces/borsa-italiana-response.interface";
+import { BorsaItalianaHttpErrorResponse } from "../../interfaces/borsa-italiana-http-error.interface";
 import { logger } from "../../logger/logger";
 import { code, format, TelegramError } from "gramio";
 import { MyCallbackQueryContext, MyMessageContext } from "../../types/custom-context.type";
 import { replyOrEdit } from "../bot/reply-or-edit.helper";
 
-export const errorHandler = async (error: unknown, ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
+export const errorHandler = async (
+  error: unknown,
+  ctx: MyMessageContext | MyCallbackQueryContext,
+): Promise<void> => {
   const defaultErrorMessage = format`${code(`❌ Si è verificato un errore. Riprova più tardi.`)}`;
 
   if (error instanceof TelegramError && error.message.includes("message is not modified")) {
@@ -13,7 +16,8 @@ export const errorHandler = async (error: unknown, ctx: MyMessageContext | MyCal
     logger.error(`Telegram Error: ${error.message}`);
     return;
   } else if (error instanceof AxiosError) {
-    const message = (error as AxiosError<BorsaItalianaHttpErrorResponse>).response?.data.message || error.message;
+    const message =
+      (error as AxiosError<BorsaItalianaHttpErrorResponse>).response?.data.message || error.message;
     const status = error.response?.status || "Unknown";
     const errorMessage = `Status ${status} - Message: ${message}`;
     logger.error(`Axios Error: ${errorMessage}`);
