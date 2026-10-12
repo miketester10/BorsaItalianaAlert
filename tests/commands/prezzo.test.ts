@@ -38,18 +38,6 @@ mock.module("../../src/handlers/api/api-handler", () => ({
   },
 }));
 
-mock.module("../../src/handlers/database/database-handler", () => ({
-  DatabaseHandler: {
-    getInstance: () => ({}),
-  },
-}));
-
-mock.module("../../src/handlers/alert/alert-handler", () => ({
-  AlertHandler: {
-    getInstance: () => ({}),
-  },
-}));
-
 mock.module("../../src/logger/logger", () => ({
   logger: {
     info: mock(() => {}),
