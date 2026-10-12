@@ -27,7 +27,7 @@ jobs:
         run: bun typecheck
 
       - name: 🧪 Suite di test
-        run: bun test
+        run: bun test --isolate
 
   deploy-vps:
     name: 🚀 Deploy su VPS (pull + riavvio solo se modificato)

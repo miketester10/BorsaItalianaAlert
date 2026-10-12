@@ -113,7 +113,7 @@ KOFI_DELAY_MS=500
 - `bun dev` — Avvia il bot in modalità sviluppo (hot reload)
 - `bun start` — Avvia il bot in modalità produzione
 - `bun typecheck` — Esegue il typecheck TypeScript senza emissione
-- `bun test` — Esegue la suite di test (`bun:test`)
+- `bun test --isolate` — Esegue la suite di test (`bun:test`, ogni file isolato)
 
 ### Docker
 
@@ -191,6 +191,7 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 │   └── workflows/
 │       └── deploy.yml   # CI/CD: deploy automatico su VPS al push su main
 ├── prisma/              # Schema database e migrazioni
+├── tests/               # Suite bun:test (commands, fixtures, helpers, schemas)
 ├── docker-compose.yml   # Configurazione Docker
 ├── package.json
 ├── tsconfig.json

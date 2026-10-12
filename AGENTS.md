@@ -17,7 +17,7 @@ bun install
 bun dev              # watch mode, job test ogni minuto
 bun start            # prod, decide il job in base a NODE_ENV
 bun typecheck        # tsc --noEmit — OBBLIGATORIO dopo ogni modifica
-bun test             # suite di test bun:test
+bun test --isolate  # suite di test bun:test (isolate: ogni file in registry fresco)
 bun prisma:generate  # dopo ogni modifica a prisma/schema.prisma
 bun prisma:push      # applica schema a MongoDB
 docker compose up -d # solo bot (immagine oven/bun)

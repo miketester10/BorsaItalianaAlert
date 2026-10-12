@@ -1,18 +1,20 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import type { BorsaItalianaResponse } from "../../src/interfaces/borsa-italiana-response.interface";
 import type { MyMessageContext } from "../../src/types/custom-context.type";
 import {
   createValidResponse,
   createNotFoundResponse,
   createNoPriceResponse,
 } from "../fixtures/borsa-italiana-response";
-import { RawAxiosRequestHeaders } from "axios";
+import {
+  getPrice,
+  handleError,
+  loadCommandsHandler,
+  registerCommandMocks,
+  resetCommandMocks,
+} from "../helpers/shared-mocks";
 
-// Simula la chiamata API di Borsa Italiana.
-const getPrice = mock(
-  async (_api: string, _headers?: RawAxiosRequestHeaders): Promise<BorsaItalianaResponse> =>
-    createValidResponse(100),
-);
+// Mock condivisi tra file: vedi shared-mocks (evita contaminazioni nel registry).
+registerCommandMocks();
 
 // Simula la funzione che invia una risposta Telegram.
 const reply = mock(async (..._args: unknown[]): Promise<void> => {});
@@ -20,38 +22,8 @@ const reply = mock(async (..._args: unknown[]): Promise<void> => {});
 // Simula l'azione Telegram "typing".
 const sendChatAction = mock(async (_action: string): Promise<void> => {});
 
-// Simula il gestore degli errori.
-const handleError = mock(async (_error: unknown, _ctx: MyMessageContext): Promise<void> => {});
-
-// Sostituisce le dipendenze reali con mock.
-mock.module("../../src/config/env", () => ({
-  env: {
-    BORSA_ITALIANA_API: "https://example.test/",
-    BORSA_ITALIANA_API_TAIL: "api-tail",
-    BORSA_ITALIANA_JWT: "jwt-test-token",
-  },
-}));
-
-mock.module("../../src/handlers/api/api-handler", () => ({
-  ApiHandler: {
-    getInstance: () => ({ getPrice }),
-  },
-}));
-
-mock.module("../../src/logger/logger", () => ({
-  logger: {
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-  },
-}));
-
-mock.module("../../src/handlers/error/error-handler", () => ({
-  errorHandler: handleError,
-}));
-
 // Import dinamico: i mock devono essere registrati prima del modulo testato.
-const { handlePrezzoCommand } = await import("../../src/handlers/bot/02-commands-helper");
+const { handlePrezzoCommand } = await loadCommandsHandler();
 
 // Crea un contesto Telegram minimale per simulare un messaggio.
 const createContext = (text: string): MyMessageContext => {
@@ -81,14 +53,10 @@ const getReplyMessage = (): string => {
 
 describe("handlePrezzoCommand", () => {
   beforeEach(() => {
-    // mockReset (non mockClear): cancella anche le implementazioni impostate
-    // dai test precedenti (es. not-found/errore), altrimenti resterebbero attive.
-    getPrice.mockReset();
+    // Reset condiviso: default valido + pulizia chiamate (vedi shared-mocks).
+    resetCommandMocks();
     reply.mockClear();
     sendChatAction.mockClear();
-    handleError.mockClear();
-    // Default: risposta API valida. I singoli test la sovrascrivono quando serve.
-    getPrice.mockImplementation(async () => createValidResponse(100));
   });
 
   test("rifiuta un ISIN mancante senza chiamare l'API", async () => {
