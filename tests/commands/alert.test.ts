@@ -88,6 +88,7 @@ describe("handleAlertCommand", () => {
 
     expect(getReplyMessage()).toContain("Alert già registrato.");
     expect(createAlert).not.toHaveBeenCalled();
+    expect(getPrice).not.toHaveBeenCalled();
     expect(handleError).not.toHaveBeenCalled();
   });
 

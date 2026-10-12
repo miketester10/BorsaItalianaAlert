@@ -100,6 +100,14 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
 
     const { isin, alertPrice } = validation.data;
 
+    const existingAlert = await dataBaseHandler.findAlert(userTelegramId, isin, alertPrice);
+    if (existingAlert) {
+      message = code(`⚠️ Alert già registrato.`);
+      logger.warn(`Alert già registrato.`);
+      await ctx.reply(message);
+      return;
+    }
+
     const response = await apiHandler.getPrice<BorsaItalianaResponse>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
       Authorization: `Bearer ${env.BORSA_ITALIANA_JWT}`,
     });
@@ -107,17 +115,11 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
     const status = getLastPriceStatus(response);
     if (status.kind === "ok") {
       const lastCheckPrice = status.price;
-      const alert = await dataBaseHandler.findAlert(userTelegramId, isin, alertPrice);
-      if (alert) {
-        message = code(`⚠️ Alert già registrato.`);
-        logger.warn(`Alert già registrato.`);
-      } else {
-        const label = status.label;
-        const lastCondition = alertHandler.calculateCondition(lastCheckPrice, alertPrice);
-        await dataBaseHandler.createAlert({ userTelegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
-        message = code(`✅ Alert registrato con successo.`);
-        logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${formatPrice(alertPrice)}€`);
-      }
+      const label = status.label;
+      const lastCondition = alertHandler.calculateCondition(lastCheckPrice, alertPrice);
+      await dataBaseHandler.createAlert({ userTelegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
+      message = code(`✅ Alert registrato con successo.`);
+      logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${formatPrice(alertPrice)}€`);
     } else if (status.kind === "nodata") {
       message = code(`⚠️ Prezzo non disponibile. Nessun alert registrato. Riprova più tardi.`);
       logger.warn(`ISIN ${isin} senza prezzo valido. Nessun alert registrato. Ricevuto: ${String(status.raw)}`);
