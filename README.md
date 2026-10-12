@@ -202,6 +202,8 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 
 Il repository include una pipeline CI/CD in `.github/workflows/deploy.yml` che esegue il **deploy automatico su VPS** ad ogni push sul branch `main`.
 
+La pipeline **non parte** se il push tocca solo file esclusi (`**.md`, `AGENTS.md`, `LICENSE`, `.gitignore`, `.env.example`): non servono al container, che monta il repo live.
+
 ### Come funziona
 
 - All'evento `push` su `main`, la pipeline:
