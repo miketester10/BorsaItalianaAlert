@@ -81,12 +81,14 @@ const getReplyMessage = (): string => {
 
 describe("handlePrezzoCommand", () => {
   beforeEach(() => {
-    // Reset completo: pulisce chiamate e implementazioni, poi ripristina il default valido.
+    // mockReset (non mockClear): cancella anche le implementazioni impostate
+    // dai test precedenti (es. not-found/errore), altrimenti resterebbero attive.
     getPrice.mockReset();
-    getPrice.mockImplementation(async () => createValidResponse(100));
     reply.mockClear();
     sendChatAction.mockClear();
     handleError.mockClear();
+    // Default: risposta API valida. I singoli test la sovrascrivono quando serve.
+    getPrice.mockImplementation(async () => createValidResponse(100));
   });
 
   test("rifiuta un ISIN mancante senza chiamare l'API", async () => {
