@@ -200,7 +200,7 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 
 ## Deploy automatico (GitHub Actions)
 
-Il repository include una pipeline CI/CD in `/.github/workflows/deploy.yml` che esegue il **deploy automatico su VPS** ad ogni push sul branch `main`.
+Il repository include una pipeline CI/CD in `.github/workflows/deploy.yml` che esegue il **deploy automatico su VPS** ad ogni push sul branch `main`.
 
 ### Come funziona
 
