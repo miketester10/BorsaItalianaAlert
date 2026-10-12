@@ -80,7 +80,7 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 
 ## CI/CD (`.github/workflows/deploy.yml`)
 
-- Job `verifica-codice-pre-deploy`: `bun install --frozen-lockfile` + `bun prisma:generate` + `bun typecheck`. Se fallisce, il deploy non parte.
+- Job `verifica-codice-pre-deploy`: `bun install --frozen-lockfile` + `bun prisma:generate` + `bun typecheck` + `bun test`. Se fallisce, il deploy non parte.
 - Job `deploy-vps` (`needs` verifica): SSH su VPS, `git pull`, restart container solo se ci sono modifiche.
 - Nomi job/step in italiano, id in kebab-case. Non aggiungere `db push` in CI (solo `generate`, mai migrazioni automatiche).
 
