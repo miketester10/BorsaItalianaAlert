@@ -7,6 +7,7 @@
     "dev": "bun --watch src/main.ts",
     "start": "bun src/main.ts",
     "typecheck": "tsc --noEmit",
+    "test": "bun test",
     "prisma:generate": "bunx prisma generate",
     "prisma:push": "bunx prisma db push"
   },

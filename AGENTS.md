@@ -17,6 +17,7 @@ bun install
 bun dev              # watch mode, job test ogni minuto
 bun start            # prod, decide il job in base a NODE_ENV
 bun typecheck        # tsc --noEmit — OBBLIGATORIO dopo ogni modifica
+bun test             # suite di test bun:test
 bun prisma:generate  # dopo ogni modifica a prisma/schema.prisma
 bun prisma:push      # applica schema a MongoDB
 docker compose up -d # solo bot (immagine oven/bun)
@@ -94,7 +95,7 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 
 ## Git
 
-- Conventional commits minuscoli: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:` + descrizione breve (es. `docs: add AGENTS.md con guida operativa per AI`).
+- Conventional commits minuscoli in inglese: `feat:`, `fix:`, `test:`, `refactor:`, `docs:`, `chore:` + descrizione breve (es. `test: add bun:test suite for zod input validation`).
 - File nuovi: `git add <file>` esplicito (`commit -am` non basta per gli untracked).
 - Mai committare `.env`, `node_modules/`, `dist/`.
 

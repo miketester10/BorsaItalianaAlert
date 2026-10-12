@@ -113,6 +113,7 @@ KOFI_DELAY_MS=500
 - `bun dev` — Avvia il bot in modalità sviluppo (hot reload)
 - `bun start` — Avvia il bot in modalità produzione
 - `bun typecheck` — Esegue il typecheck TypeScript senza emissione
+- `bun test` — Esegue la suite di test (`bun:test`)
 
 ### Docker
 
