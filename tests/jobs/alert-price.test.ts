@@ -10,7 +10,7 @@ import { createAlertFixture } from "../fixtures/alert";
 import {
   botSendMessage,
   findAllAlerts,
-  getPrice,
+  getPriceByIsin,
   resetSharedMocks,
   registerCommandMocks,
   updateAlert,
@@ -43,7 +43,7 @@ describe("checkAndNotifyAlerts", () => {
     await AlertHandler.getInstance().checkAndNotifyAlerts();
 
     expect(findAllAlerts).toHaveBeenCalledWith({ onlyActiveUsers: true });
-    expect(getPrice).not.toHaveBeenCalled();
+    expect(getPriceByIsin).not.toHaveBeenCalled();
     expect(botSendMessage).not.toHaveBeenCalled();
   });
 
@@ -53,7 +53,7 @@ describe("checkAndNotifyAlerts", () => {
     await AlertHandler.getInstance().checkAndNotifyAlerts();
 
     expect(findAllAlerts).toHaveBeenCalledWith({ onlyActiveUsers: true });
-    expect(getPrice).toHaveBeenCalled();
+    expect(getPriceByIsin).toHaveBeenCalled();
     expect(botSendMessage).toHaveBeenCalledTimes(1);
     expect(botSendMessage).toHaveBeenCalledWith(expect.objectContaining({ chat_id: 123 }));
     expect(updateAlert).toHaveBeenCalledTimes(1);
@@ -72,7 +72,7 @@ describe("checkAndNotifyAlerts", () => {
     await AlertHandler.getInstance().checkAndNotifyAlerts();
 
     expect(findAllAlerts).toHaveBeenCalledWith({ onlyActiveUsers: true });
-    expect(getPrice).toHaveBeenCalled();
+    expect(getPriceByIsin).toHaveBeenCalled();
     expect(botSendMessage).toHaveBeenCalledTimes(1);
     expect(botSendMessage).toHaveBeenCalledWith(expect.objectContaining({ chat_id: 123 }));
     expect(updateAlert).toHaveBeenCalledTimes(1);
@@ -118,13 +118,13 @@ describe("checkAndNotifyAlerts", () => {
 
     await AlertHandler.getInstance().checkAndNotifyAlerts();
 
-    expect(getPrice).toHaveBeenCalledTimes(1);
+    expect(getPriceByIsin).toHaveBeenCalledTimes(1);
     expect(botSendMessage).toHaveBeenCalledTimes(2);
   });
 
   test("salta l'ISIN non valido ed elabora gli altri", async () => {
-    getPrice.mockImplementation(async (api: string) =>
-      api.includes("IT0005518128") ? createValidResponse(100) : createNotFoundResponse(),
+    getPriceByIsin.mockImplementation(async (isin: string) =>
+      isin === "IT0005518128" ? createValidResponse(100) : createNotFoundResponse(),
     );
     findAllAlerts.mockImplementation(async () => [
       createAlertFixture({ id: "alert-test-1", isin: "IT0005518128", alertPrice: 95 }),
@@ -138,8 +138,8 @@ describe("checkAndNotifyAlerts", () => {
   });
 
   test("salta l'ISIN in errore ed elabora gli altri", async () => {
-    getPrice.mockImplementation(async (api: string) => {
-      if (api.includes("XX0000000000")) throw new Error("Errore API simulato");
+    getPriceByIsin.mockImplementation(async (isin: string) => {
+      if (isin === "XX0000000000") throw new Error("Errore API simulato");
       return createValidResponse(100);
     });
     findAllAlerts.mockImplementation(async () => [
@@ -154,7 +154,7 @@ describe("checkAndNotifyAlerts", () => {
   });
 
   test("salta l'ISIN senza prezzo ed elabora gli altri", async () => {
-    getPrice.mockImplementation(async () => createNoPriceResponse());
+    getPriceByIsin.mockImplementation(async () => createNoPriceResponse());
     findAllAlerts.mockImplementation(async () => [createAlertFixture()]);
 
     await AlertHandler.getInstance().checkAndNotifyAlerts();

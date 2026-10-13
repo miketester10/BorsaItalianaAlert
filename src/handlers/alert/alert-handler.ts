@@ -3,7 +3,6 @@ import { DatabaseHandler } from "../database/database-handler";
 import { ApiHandler } from "../api/api-handler";
 import { logger } from "../../logger/logger";
 import { BorsaItalianaResponse, getLastPriceStatus } from "../../interfaces/borsa-italiana-response.interface";
-import { env } from "../../config/env";
 import { UpdateAlertDto } from "../../dto/update-alert.dto";
 import { BotHandler } from "../bot/00-bot-handler";
 import { Bot, blockquote, bold, code, format, underline } from "gramio";
@@ -47,9 +46,7 @@ export class AlertHandler {
     const requests = isins.map((isin) =>
       limit(async () => {
         try {
-          const response = await this.apiHandler.getPrice<BorsaItalianaResponse>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
-            Authorization: `Bearer ${env.BORSA_ITALIANA_JWT}`,
-          });
+          const response = await this.apiHandler.getPriceByIsin<BorsaItalianaResponse>(isin);
           return { isin, response };
         } catch (error) {
           throw new Error(`ISIN ${isin} - ${(error as Error).message}`);

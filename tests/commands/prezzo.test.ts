@@ -6,7 +6,7 @@ import {
   createNoPriceResponse,
 } from "../fixtures/borsa-italiana-response";
 import {
-  getPrice,
+  getPriceByIsin,
   handleError,
   loadCommandsHandler,
   registerCommandMocks,
@@ -64,7 +64,7 @@ describe("handlePrezzoCommand", () => {
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Inserisci un ISIN valido.");
-    expect(getPrice).not.toHaveBeenCalled();
+    expect(getPriceByIsin).not.toHaveBeenCalled();
   });
 
   test("rifiuta un ISIN non valido senza chiamare l'API", async () => {
@@ -72,7 +72,7 @@ describe("handlePrezzoCommand", () => {
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Inserisci un ISIN valido.");
-    expect(getPrice).not.toHaveBeenCalled();
+    expect(getPriceByIsin).not.toHaveBeenCalled();
   });
 
   test("gestisce una risposta API con prezzo valido", async () => {
@@ -81,12 +81,12 @@ describe("handlePrezzoCommand", () => {
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Label: BTP PER I TEST");
     expect(getReplyMessage()).toContain("Prezzo: 100€");
-    expect(getPrice).toHaveBeenCalledTimes(1);
+    expect(getPriceByIsin).toHaveBeenCalledTimes(1);
     expect(handleError).not.toHaveBeenCalled();
   });
 
   test("gestisce un ISIN non trovato dall'API", async () => {
-    getPrice.mockImplementation(async () => createNotFoundResponse());
+    getPriceByIsin.mockImplementation(async () => createNotFoundResponse());
 
     await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
@@ -96,7 +96,7 @@ describe("handlePrezzoCommand", () => {
   });
 
   test("gestisce un prezzo assente", async () => {
-    getPrice.mockImplementation(async () => createNoPriceResponse());
+    getPriceByIsin.mockImplementation(async () => createNoPriceResponse());
 
     await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
@@ -106,7 +106,7 @@ describe("handlePrezzoCommand", () => {
   });
 
   test("gestisce un prezzo uguale a zero", async () => {
-    getPrice.mockImplementation(async () => createValidResponse(0));
+    getPriceByIsin.mockImplementation(async () => createValidResponse(0));
 
     await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
@@ -116,7 +116,7 @@ describe("handlePrezzoCommand", () => {
   });
 
   test("inoltra gli errori API al gestore degli errori", async () => {
-    getPrice.mockImplementation(async () => {
+    getPriceByIsin.mockImplementation(async () => {
       throw new Error("Errore API simulato");
     });
 

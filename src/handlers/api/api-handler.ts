@@ -1,6 +1,7 @@
-import axios, { RawAxiosRequestHeaders } from "axios";
+import axios from "axios";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
+import { env } from "../../config/env";
 
 // Reuse TCP/TLS connections and set a sane timeout
 const httpAgent = new HttpAgent({
@@ -30,8 +31,10 @@ export class ApiHandler {
     return ApiHandler._instance;
   }
 
-  async getPrice<T>(api: string, headers?: RawAxiosRequestHeaders): Promise<T> {
-    const response = await httpClient.get<T>(api, { headers });
+  async getPriceByIsin<T>(isin: string): Promise<T> {
+    const response = await httpClient.get<T>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
+      headers: { Authorization: `Bearer ${env.BORSA_ITALIANA_JWT}` },
+    });
     return response.data;
   }
 }

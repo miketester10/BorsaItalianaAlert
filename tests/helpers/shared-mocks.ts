@@ -1,6 +1,5 @@
 import { mock } from "bun:test";
 import type { Alert } from "@prisma/client";
-import type { RawAxiosRequestHeaders } from "axios";
 import type { BorsaItalianaResponse } from "../../src/interfaces/borsa-italiana-response.interface";
 import type { MyMessageContext } from "../../src/types/custom-context.type";
 import { createValidResponse } from "../fixtures/borsa-italiana-response";
@@ -18,10 +17,9 @@ import { createValidResponse } from "../fixtures/borsa-italiana-response";
  * (`calculateCondition`) sono puri e restano quelli reali.
  */
 
-// Simula la chiamata API di Borsa Italiana.
-export const getPrice = mock(
-  async (_api: string, _headers?: RawAxiosRequestHeaders): Promise<BorsaItalianaResponse> =>
-    createValidResponse(100),
+// Simula la chiamata API di Borsa Italiana per ISIN.
+export const getPriceByIsin = mock(
+  async (_isin: string): Promise<BorsaItalianaResponse> => createValidResponse(100),
 );
 
 // Simula le query del database (superset: copre comandi e job).
@@ -52,7 +50,7 @@ export const registerCommandMocks = (): void => {
 
   mock.module("../../src/handlers/api/api-handler", () => ({
     ApiHandler: {
-      getInstance: () => ({ getPrice }),
+      getInstance: () => ({ getPriceByIsin }),
     },
   }));
 
@@ -84,8 +82,8 @@ export const registerCommandMocks = (): void => {
 
 // Ripristina i default prima di ogni test. I singoli test sovrascrivono quando serve.
 export const resetSharedMocks = (): void => {
-  getPrice.mockReset();
-  getPrice.mockImplementation(async () => createValidResponse(100));
+  getPriceByIsin.mockReset();
+  getPriceByIsin.mockImplementation(async () => createValidResponse(100));
   findAllAlerts.mockReset();
   findAllAlerts.mockImplementation(async () => []);
   findAlert.mockReset();
