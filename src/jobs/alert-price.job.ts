@@ -7,17 +7,16 @@ const minutiProduzione = 2;
 const minutiTest = 1;
 let activeJob: CronJob | null = null;
 
-/* ✅ Cron: ogni 2 minuti dalle 07:00 alle 18:55, dal lunedì al venerdì */
-export const startAlertPriceJob = async (): Promise<void> => {
+const startJob = (jobName: string, cronExpression: string, startupMessage: string): void => {
   const job = new CronJob(
-    `*/${minutiProduzione} 7-18 * * 1-5`,
+    cronExpression,
     async () => {
       try {
         await alertHandler.checkAndNotifyAlerts();
         const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
-        logger.info(`AlertPriceJob eseguito il: ${date}`);
+        logger.info(`${jobName} eseguito il: ${date}`);
       } catch (error) {
-        logger.error(`Errore nell'esecuzione dell'AlertPriceJob: ${(error as Error).message}`);
+        logger.error(`Errore nell'esecuzione di ${jobName}: ${(error as Error).message}`);
       }
     },
     null,
@@ -26,29 +25,25 @@ export const startAlertPriceJob = async (): Promise<void> => {
   );
   job.start();
   activeJob = job;
-  logger.info(`✅ AlertPriceJob attivo: ogni ${minutiProduzione} min. dalle 07:00 alle 18:55 (lun-ven).`);
+  logger.info(startupMessage);
+};
+
+/* ✅ Cron: ogni 2 minuti dalle 07:00 alle 18:55, dal lunedì al venerdì */
+export const startAlertPriceJob = async (): Promise<void> => {
+  startJob(
+    "AlertPriceJob",
+    `*/${minutiProduzione} 7-18 * * 1-5`,
+    `✅ AlertPriceJob attivo: ogni ${minutiProduzione} min. dalle 07:00 alle 18:55 (lun-ven).`,
+  );
 };
 
 /* ✅ [TEST] Cron: ogni minuto */
 export const startTestAlertPriceJob = async (): Promise<void> => {
-  const job = new CronJob(
+  startJob(
+    "TestAlertPriceJob",
     `*/${minutiTest} * * * *`,
-    async () => {
-      try {
-        await alertHandler.checkAndNotifyAlerts();
-        const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
-        logger.info(`TestAlertPriceJob eseguito il: ${date}`);
-      } catch (error) {
-        logger.error(`Errore nell'esecuzione del TestAlertPriceJob: ${(error as Error).message}`);
-      }
-    },
-    null,
-    true,
-    "Europe/Rome",
+    `✅ TestAlertPriceJob attivo: ogni ${minutiTest} min.`,
   );
-  job.start();
-  activeJob = job;
-  logger.info(`✅ TestAlertPriceJob attivo: ogni ${minutiTest} min.`);
 };
 
 export const stopAlertPriceJob = (): void => {
