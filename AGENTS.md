@@ -97,6 +97,7 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 
 ## Git
 
+- Mai committare in automatico: solo su richiesta esplicita dell'utente.
 - Conventional commits minuscoli in inglese: `feat:`, `fix:`, `perf:`, `test:`, `refactor:`, `docs:`, `chore:` + descrizione breve (es. `test: add test suite for zod input validation`).
 - File nuovi: `git add <file>` esplicito (`commit -am` non basta per gli untracked).
 - Mai committare `.env`, `node_modules/`, `dist/`.
