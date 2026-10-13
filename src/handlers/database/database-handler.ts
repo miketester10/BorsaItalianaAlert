@@ -59,86 +59,58 @@ export class DatabaseHandler {
   }
 
   async createUser(createUsertDto: CreateUserDto): Promise<void> {
-    try {
-      await this.prisma.user.create({
-        data: {
-          ...createUsertDto,
-          kofiNotifiedAt: null,
-          kofiDonatedAt: null,
-        },
-      });
-    } catch (error) {
-      throw error;
-    }
+    await this.prisma.user.create({
+      data: {
+        ...createUsertDto,
+        kofiNotifiedAt: null,
+        kofiDonatedAt: null,
+      },
+    });
   }
 
   async createAlert(createAlertDto: CreateAlertDto): Promise<void> {
-    try {
-      await this.prisma.alert.create({
-        data: createAlertDto,
-      });
-    } catch (error) {
-      throw error;
-    }
+    await this.prisma.alert.create({
+      data: createAlertDto,
+    });
   }
 
   async findUserByTelegramId(telegramId: number): Promise<User | null> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { telegramId },
-      });
-      return user;
-    } catch (error) {
-      throw error;
-    }
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId },
+    });
+    return user;
   }
 
   async findAlert(userTelegramId: number, isin: string, alertPrice: number): Promise<Alert | null> {
-    try {
-      const alert = await this.prisma.alert.findFirst({
-        where: { userTelegramId, isin, alertPrice },
-      });
-      return alert;
-    } catch (error) {
-      throw error;
-    }
+    const alert = await this.prisma.alert.findFirst({
+      where: { userTelegramId, isin, alertPrice },
+    });
+    return alert;
   }
 
   async findAlertById(alertId: string): Promise<Alert | null> {
-    try {
-      const alert = await this.prisma.alert.findUnique({
-        where: { id: alertId },
-      });
-      return alert;
-    } catch (error) {
-      throw error;
-    }
+    const alert = await this.prisma.alert.findUnique({
+      where: { id: alertId },
+    });
+    return alert;
   }
 
   async findAllAlerts(options?: { onlyActiveUsers?: boolean }): Promise<Alert[]> {
-    try {
-      const where: Prisma.AlertWhereInput = {};
+    const where: Prisma.AlertWhereInput = {};
 
-      if (options?.onlyActiveUsers) {
-        where.user = { status: UserStatus.active };
-      }
-
-      const alerts = await this.prisma.alert.findMany({ where });
-      return alerts;
-    } catch (error) {
-      throw error;
+    if (options?.onlyActiveUsers) {
+      where.user = { status: UserStatus.active };
     }
+
+    const alerts = await this.prisma.alert.findMany({ where });
+    return alerts;
   }
 
   async findAllAlertsByTelegramId(userTelegramId: number): Promise<Alert[]> {
-    try {
-      const alerts = await this.prisma.alert.findMany({
-        where: { userTelegramId },
-      });
-      return alerts;
-    } catch (error) {
-      throw error;
-    }
+    const alerts = await this.prisma.alert.findMany({
+      where: { userTelegramId },
+    });
+    return alerts;
   }
 
   /**
@@ -151,123 +123,91 @@ export class DatabaseHandler {
    * @returns Promise<User[]>
    */
   async findAllUsers(options?: FindAllUsersOptions): Promise<User[]> {
-    try {
-      const where: Prisma.UserWhereInput = {};
+    const where: Prisma.UserWhereInput = {};
 
-      if (options?.onlyNotNotified) {
-        where.kofiNotified = false;
-      }
-
-      if (options?.excludeRecent) {
-        const cutoffDate = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
-        where.createdAt = { lt: cutoffDate };
-      }
-
-      if (options?.excludeDonors) {
-        where.kofiDonatedAt = null;
-      }
-
-      if (options?.onlyActive) {
-        where.status = UserStatus.active;
-      }
-
-      const users = await this.prisma.user.findMany({ where });
-      return users;
-    } catch (error) {
-      throw error;
+    if (options?.onlyNotNotified) {
+      where.kofiNotified = false;
     }
+
+    if (options?.excludeRecent) {
+      const cutoffDate = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
+      where.createdAt = { lt: cutoffDate };
+    }
+
+    if (options?.excludeDonors) {
+      where.kofiDonatedAt = null;
+    }
+
+    if (options?.onlyActive) {
+      where.status = UserStatus.active;
+    }
+
+    const users = await this.prisma.user.findMany({ where });
+    return users;
   }
 
   async markKofiDonor(telegramId: number): Promise<void> {
-    try {
-      await this.prisma.user.update({
-        where: { telegramId },
-        data: { kofiDonatedAt: new Date() },
-      });
-    } catch (error) {
-      throw error;
-    }
+    await this.prisma.user.update({
+      where: { telegramId },
+      data: { kofiDonatedAt: new Date() },
+    });
   }
 
   async updateKofiNotifiedBatch(telegramIds: number[]): Promise<void> {
     if (telegramIds.length === 0) return;
-    try {
-      await this.prisma.user.updateMany({
-        where: { telegramId: { in: telegramIds } },
-        data: {
-          kofiNotified: true,
-          kofiNotifiedAt: new Date(),
-        },
-      });
-    } catch (error) {
-      throw error;
-    }
+    await this.prisma.user.updateMany({
+      where: { telegramId: { in: telegramIds } },
+      data: {
+        kofiNotified: true,
+        kofiNotifiedAt: new Date(),
+      },
+    });
   }
 
   async updateUser(telegramId: number, user: User, updateUserDto: UpdateUserDto): Promise<boolean> {
     const { name, username } = updateUserDto;
-    try {
-      const isDataChanged = user.name !== name || user.username !== username;
+    const isDataChanged = user.name !== name || user.username !== username;
 
-      if (isDataChanged) {
-        await this.prisma.user.update({
-          where: { telegramId },
-          data: {
-            name: name,
-            username: username ?? null, // Assicuro che username sia sempre null se non fornito (undefined)
-          },
-        });
-        return true;
-      }
-      return false;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async updateUserStatus(telegramId: number, status: UserStatus): Promise<void> {
-    try {
+    if (isDataChanged) {
       await this.prisma.user.update({
         where: { telegramId },
         data: {
-          status,
-          statusChangedAt: new Date(),
+          name: name,
+          username: username ?? null, // Assicuro che username sia sempre null se non fornito (undefined)
         },
       });
-    } catch (error) {
-      throw error;
+      return true;
     }
+    return false;
+  }
+
+  async updateUserStatus(telegramId: number, status: UserStatus): Promise<void> {
+    await this.prisma.user.update({
+      where: { telegramId },
+      data: {
+        status,
+        statusChangedAt: new Date(),
+      },
+    });
   }
 
   async updateAlert(updateAlertDto: UpdateAlertDto): Promise<void> {
-    try {
-      const { id, ...rest } = updateAlertDto;
-      await this.prisma.alert.update({
-        where: { id },
-        data: rest,
-      });
-    } catch (error) {
-      throw error;
-    }
+    const { id, ...rest } = updateAlertDto;
+    await this.prisma.alert.update({
+      where: { id },
+      data: rest,
+    });
   }
 
   async deleteAlertById(alertId: string): Promise<void> {
-    try {
-      await this.prisma.alert.delete({
-        where: { id: alertId },
-      });
-    } catch (error) {
-      throw error;
-    }
+    await this.prisma.alert.delete({
+      where: { id: alertId },
+    });
   }
 
   async deleteAllAlertsByTelegramId(userTelegramId: number): Promise<void> {
-    try {
-      await this.prisma.alert.deleteMany({
-        where: { userTelegramId },
-      });
-    } catch (error) {
-      throw error;
-    }
+    await this.prisma.alert.deleteMany({
+      where: { userTelegramId },
+    });
   }
 }
