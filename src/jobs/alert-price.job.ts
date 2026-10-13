@@ -28,12 +28,12 @@ const startJob = (jobName: string, cronExpression: string, startupMessage: strin
   logger.info(startupMessage);
 };
 
-/* ✅ Cron: ogni 2 minuti dalle 07:00 alle 18:55, dal lunedì al venerdì */
+/* ✅ Cron: ogni 2 minuti dalle 07:00 alle 18:58, dal lunedì al venerdì */
 export const startAlertPriceJob = async (): Promise<void> => {
   startJob(
     "AlertPriceJob",
     `*/${minutiProduzione} 7-18 * * 1-5`,
-    `✅ AlertPriceJob attivo: ogni ${minutiProduzione} min. dalle 07:00 alle 18:55 (lun-ven).`,
+    `✅ AlertPriceJob attivo: ogni ${minutiProduzione} min. dalle 07:00 alle 18:58 (lun-ven).`,
   );
 };
 

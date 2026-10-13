@@ -162,7 +162,7 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 ### CronJob
 
 - **Modalità Test:** Controllo ogni minuto
-- **Modalità Produzione:** Controllo ogni 2 minuti (lun-ven, 07:00-18:55)
+- **Modalità Produzione:** Controllo ogni 2 minuti (lun-ven, 07:00-18:58)
 
 ## Struttura del Progetto
 
@@ -249,7 +249,7 @@ All'avvio dell'app il flusso è il seguente:
 4. Viene avviato il bot Telegram e inizializzati comandi/menu.
 5. Parte il job di monitoraggio prezzi:
    - `NODE_ENV=development` → job test (ogni minuto)
-   - `NODE_ENV=production` → job produzione (lun-ven, 07:00-18:55, ogni 2 minuti)
+   - `NODE_ENV=production` → job produzione (lun-ven, 07:00-18:58, ogni 2 minuti)
 
 #### Flow di shutdown graceful
 

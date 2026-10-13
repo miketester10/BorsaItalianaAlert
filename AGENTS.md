@@ -24,7 +24,7 @@ docker compose up -d # solo bot (immagine oven/bun)
 ```
 
 Test job vs prod job: `src/main.ts` sceglie in base a `NODE_ENV === "production"`.
-Prod: ogni 2 min, lun–ven 07:00–18:55 `Europe/Rome`. Dev/test: ogni minuto.
+Prod: ogni 2 min, lun–ven 07:00–18:58 `Europe/Rome`. Dev/test: ogni minuto.
 
 ## Struttura
 
@@ -77,7 +77,7 @@ tests/commands|config|fixtures|helpers|interfaces|jobs|schemas|utils  # suite di
 
 Variabili da `.env.example`: `BOT_TOKEN`, `OWNER_TELEGRAM_ID`, `DATABASE_URL`, `BORSA_ITALIANA_API`, `BORSA_ITALIANA_API_TAIL`, `BORSA_ITALIANA_JWT`, `PORT`, `NODE_ENV`, `KOFI_DELAY_MS`. Mai committare `.env` (già in `.gitignore`). Tutte validate in `src/config/env.schema.ts` con fail-fast all'avvio — se aggiungi una var, aggiungila a `.env.example` + allo schema. Mai leggere `process.env` fuori da `src/config/env.ts`.
 
-Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation `userTelegramId -> User.telegramId`, indici su `User.status` e `Alert(userTelegramId)`, `Alert(userTelegramId, isin, alertPrice)`. Dopo ogni modifica schema: `bun prisma:generate && bun prisma:push`.
+Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation `userTelegramId -> User.telegramId`, indici su `User.status` e `Alert(userTelegramId)`, `Alert(userTelegramId, isin, alertPrice)`. Dopo ogni modifica schema: `bun prisma:generate && bun prisma:push` (il push solo su DB corretto e quando autorizzato, mai automatico in produzione).
 
 ## CI/CD (`.github/workflows/deploy.yml`)
 
@@ -92,9 +92,9 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 
 ## Verifiche prima di finire
 
-1. `bun typecheck` deve passare senza errori.
+1. `bun typecheck` deve passare senza errori. Riporta l'errore reale se fallisce; non dichiarare controlli superati se non eseguiti.
 2. Nessun `console.log`, nessun `new PrismaClient()` fuori da `DatabaseHandler`, nessun `new BotHandler/AlertHandler/...` diretto.
-3. Se toccato `prisma/schema.prisma`: rigenerato client + push.
+3. Se toccato `prisma/schema.prisma`: rigenerato client + push (solo se autorizzato e sul DB corretto).
 4. Se nuovo comando: registrato in comandi + menu + validato con Zod.
 5. Non aggiungere dipendenze senza necessità; se le aggiungi usa `bun add`.
 6. Dopo ogni modifica al codice, controllare sempre se `README.md` e/o `AGENTS.md` vanno aggiornati (struttura, env, comandi, cron, pattern) e aggiornarli se necessario.
@@ -106,6 +106,7 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 - Conventional commits minuscoli in inglese: `feat:`, `fix:`, `perf:`, `test:`, `refactor:`, `docs:`, `chore:` + descrizione breve (es. `test: add test suite for zod input validation`).
 - File nuovi: `git add <file>` esplicito (`commit -am` non basta per gli untracked).
 - Mai committare `.env`, `node_modules/`, `dist/`.
+- Mai fare push, merge o deploy senza richiesta esplicita.
 
 ## Non fare
 
