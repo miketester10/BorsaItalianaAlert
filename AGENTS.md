@@ -17,7 +17,7 @@ bun install
 bun dev              # watch mode, job test ogni minuto
 bun start            # prod, decide il job in base a NODE_ENV
 bun typecheck        # tsc --noEmit — OBBLIGATORIO dopo ogni modifica
-bun test --isolate  # suite di test bun:test (isolate: ogni file in registry fresco)
+bun test             # suite di test
 bun prisma:generate  # dopo ogni modifica a prisma/schema.prisma
 bun prisma:push      # applica schema a MongoDB
 docker compose up -d # solo bot (immagine oven/bun)
@@ -48,6 +48,7 @@ src/schemas/input-validator.schema.ts  # TUTTA la validazione input utente (Zod)
 src/config/env.schema.ts + env.ts      # validazione env Zod fail-fast (unico punto che legge process.env)
 src/dto/ /src/interfaces/ /src/types/ /src/enums/ /src/utils/
 prisma/schema.prisma                # modelli User, Alert, enum Condition/UserStatus
+tests/commands|config|fixtures|helpers|interfaces|jobs|schemas  # suite di test (mock condivisi in helpers/)
 ```
 
 ## Pattern architetturali (obbligatori)
@@ -96,7 +97,7 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 
 ## Git
 
-- Conventional commits minuscoli in inglese: `feat:`, `fix:`, `perf:`, `test:`, `refactor:`, `docs:`, `chore:` + descrizione breve (es. `test: add bun:test suite for zod input validation`).
+- Conventional commits minuscoli in inglese: `feat:`, `fix:`, `perf:`, `test:`, `refactor:`, `docs:`, `chore:` + descrizione breve (es. `test: add test suite for zod input validation`).
 - File nuovi: `git add <file>` esplicito (`commit -am` non basta per gli untracked).
 - Mai committare `.env`, `node_modules/`, `dist/`.
 

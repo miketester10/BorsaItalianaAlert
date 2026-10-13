@@ -60,8 +60,7 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
    - Copia `.env.example` in `.env` nella root del progetto e compila i valori richiesti (vedi sotto)
 
 4. **Avvia MongoDB:**
-   - Localmente: `docker compose up -d mongodb`
-   - Oppure usa la tua istanza MongoDB
+   - Usa la tua istanza MongoDB (locale o cloud)
 
 5. **Esegui le migrazioni del database:**
 
@@ -113,7 +112,7 @@ KOFI_DELAY_MS=500
 - `bun dev` — Avvia il bot in modalità sviluppo (hot reload)
 - `bun start` — Avvia il bot in modalità produzione
 - `bun typecheck` — Esegue il typecheck TypeScript senza emissione
-- `bun test --isolate` — Esegue la suite di test (`bun:test`, ogni file isolato)
+- `bun test` — Esegue la suite di test
 
 ### Docker
 
@@ -191,7 +190,7 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 │   └── workflows/
 │       └── deploy.yml   # CI/CD: deploy automatico su VPS al push su main
 ├── prisma/              # Schema database e migrazioni
-├── tests/               # Suite bun:test (commands, config, fixtures, helpers, interfaces, jobs, schemas)
+├── tests/               # Suite di test (commands, config, fixtures, helpers, interfaces, jobs, schemas)
 ├── docker-compose.yml   # Configurazione Docker
 ├── package.json
 ├── tsconfig.json
@@ -207,7 +206,7 @@ La pipeline **non parte** se il push tocca solo file esclusi (`**.md`, `AGENTS.m
 ### Come funziona
 
 - All'evento `push` su `main`, la pipeline:
-  - prima esegue il job `verifica-codice-pre-deploy`: installa dipendenze (`bun install --frozen-lockfile`), validazione schema (`bun prisma:generate`), typecheck (`bun typecheck`), test (`bun test --isolate`) 
+  - prima esegue il job `verifica-codice-pre-deploy`: installa dipendenze (`bun install --frozen-lockfile`), validazione schema (`bun prisma:generate`), typecheck (`bun typecheck`), test (`bun test`)
   - solo se la verifica passa, esegue il job `deploy-vps`:
     - decodifica la chiave PEM in formato Base64 configurata nei Secrets
     - si connette via SSH al VPS (es. istanza EC2) usando la chiave PEM
@@ -244,7 +243,7 @@ La pipeline si aspetta che il progetto sul VPS sia in `/home/ubuntu/BorsaItalian
 
 All'avvio dell'app il flusso è il seguente:
 
-1. `main.ts` registra gli handler di shutdown (`SIGINT`, `SIGTERM`) tramite `registerProcessShutdownHandlers()`.
+1. `main.ts` registra gli handler di shutdown (`SIGINT`, `SIGTERM`) tramite `registerProcessShutdown()`.
 2. Viene avviato il server Express per l'endpoint health-check.
 3. Viene aperta la connessione al database MongoDB tramite Prisma.
 4. Viene avviato il bot Telegram e inizializzati comandi/menu.
@@ -340,7 +339,7 @@ enum UserStatus {
 }
 ```
 
-Lo stato `status` traccia la raggiungibilità dell'utente: `active` (raggiungibile), `blocked` (ha bloccato il bot) e `deactivated` (account eliminato). Il campo viene aggiornato automaticamente quando Telegram restituisce un errore `Forbidden` durante l'invio di una notifica, e riportato ad `active` quando l'utente interagisce di nuovo con il bot. Il job di monitoraggio prezzi elabora solo gli alert degli utenti `active`, evitando chiamate API inutili per utenti non più raggiungibili.
+Lo stato `status` traccia la raggiungibilità dell'utente: `active` (raggiungibile), `blocked` (ha bloccato il bot) e `deactivated` (account eliminato). Il campo viene aggiornato automaticamente quando Telegram restituisce un errore di blocco o disattivazione durante l'invio di una notifica, e riportato ad `active` quando l'utente interagisce di nuovo con il bot. Il job di monitoraggio prezzi elabora solo gli alert degli utenti `active`, evitando chiamate API inutili per utenti non più raggiungibili.
 
 ## API Integration
 
