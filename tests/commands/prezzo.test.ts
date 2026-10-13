@@ -10,7 +10,7 @@ import {
   handleError,
   loadCommandsHandler,
   registerCommandMocks,
-  resetCommandMocks,
+  resetSharedMocks,
 } from "../helpers/shared-mocks";
 
 // Mock condivisi tra file: vedi shared-mocks (evita contaminazioni nel registry).
@@ -54,7 +54,7 @@ const getReplyMessage = (): string => {
 describe("handlePrezzoCommand", () => {
   beforeEach(() => {
     // Reset condiviso: default valido + pulizia chiamate (vedi shared-mocks).
-    resetCommandMocks();
+    resetSharedMocks();
     reply.mockClear();
     sendChatAction.mockClear();
   });

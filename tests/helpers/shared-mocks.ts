@@ -1,5 +1,5 @@
 import { mock } from "bun:test";
-import { Condition, type Alert } from "@prisma/client";
+import type { Alert } from "@prisma/client";
 import type { RawAxiosRequestHeaders } from "axios";
 import type { BorsaItalianaResponse } from "../../src/interfaces/borsa-italiana-response.interface";
 import type { MyMessageContext } from "../../src/types/custom-context.type";
@@ -8,11 +8,14 @@ import { createValidResponse } from "../fixtures/borsa-italiana-response";
 /**
  * Mock condivisi tra tutti i file di test.
  *
- * Il modulo sotto test (`02-commands-helper`) è valutato una sola volta nel
- * registry condiviso di `bun test`: se ogni file registrasse i propri mock,
- * il secondo file riuserebbe i mock del primo (contaminazione). Usando gli
- * stessi oggetti ovunque, ogni file vede mock coerenti sia in corsa singola
- * che congiunta (con o senza `--isolate`).
+ * Il modulo sotto test è valutato una sola volta nel registry condiviso di
+ * `bun test`: se ogni file registrasse i propri mock, il secondo file
+ * riuserebbe i mock del primo (contaminazione). Usando gli stessi oggetti
+ * ovunque, ogni file vede mock coerenti sia in corsa singola che congiunta
+ * (con o senza `--isolate`).
+ *
+ * `AlertHandler` non è mockato di proposito: i metodi usati nei test
+ * (`calculateCondition`) sono puri e restano quelli reali.
  */
 
 // Simula la chiamata API di Borsa Italiana.
@@ -21,9 +24,15 @@ export const getPrice = mock(
     createValidResponse(100),
 );
 
-// Simula le query di lettura e scrittura degli alert.
+// Simula le query del database (superset: copre comandi e job).
+export const findAllAlerts = mock(async (): Promise<Alert[]> => []);
 export const findAlert = mock(async (): Promise<Alert | null> => null);
 export const createAlert = mock(async (): Promise<void> => {});
+export const updateAlert = mock(async (): Promise<void> => {});
+export const updateUserStatus = mock(async (): Promise<void> => {});
+
+// Simula l'invio Telegram del job (BotHandler reale mai istanziato nei test).
+export const botSendMessage = mock(async (): Promise<unknown> => ({}));
 
 // Simula il gestore degli errori.
 export const handleError = mock(async (_error: unknown, _ctx: MyMessageContext): Promise<void> => {});
@@ -49,20 +58,13 @@ export const registerCommandMocks = (): void => {
 
   mock.module("../../src/handlers/database/database-handler", () => ({
     DatabaseHandler: {
-      getInstance: () => ({ findAlert, createAlert }),
+      getInstance: () => ({ findAllAlerts, findAlert, createAlert, updateAlert, updateUserStatus }),
     },
   }));
 
-  mock.module("../../src/handlers/alert/alert-handler", () => ({
-    AlertHandler: {
-      // Replica la logica reale: sopra soglia, sotto soglia, uguale.
-      getInstance: () => ({
-        calculateCondition: (currentPrice: number, alertPrice: number): Condition => {
-          if (currentPrice > alertPrice) return Condition.above;
-          if (currentPrice < alertPrice) return Condition.below;
-          return Condition.equal;
-        },
-      }),
+  mock.module("../../src/handlers/bot/00-bot-handler", () => ({
+    BotHandler: {
+      getInstance: () => ({ bot: { api: { sendMessage: botSendMessage } } }),
     },
   }));
 
@@ -71,6 +73,7 @@ export const registerCommandMocks = (): void => {
       info: silentLog,
       warn: silentLog,
       error: silentLog,
+      debug: silentLog,
     },
   }));
 
@@ -80,12 +83,17 @@ export const registerCommandMocks = (): void => {
 };
 
 // Ripristina i default prima di ogni test. I singoli test sovrascrivono quando serve.
-export const resetCommandMocks = (): void => {
+export const resetSharedMocks = (): void => {
   getPrice.mockReset();
   getPrice.mockImplementation(async () => createValidResponse(100));
+  findAllAlerts.mockReset();
+  findAllAlerts.mockImplementation(async () => []);
   findAlert.mockReset();
   findAlert.mockImplementation(async () => null);
   createAlert.mockClear();
+  updateAlert.mockClear();
+  updateUserStatus.mockClear();
+  botSendMessage.mockClear();
   handleError.mockClear();
   silentLog.mockClear();
 };
