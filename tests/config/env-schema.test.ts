@@ -39,13 +39,13 @@ describe("envSchema", () => {
     }
   });
 
-  test("rifiuta un OWNER_TELEGRAM_ID non numerico (prima era NaN silenzioso)", () => {
+  test("rifiuta un OWNER_TELEGRAM_ID non numerico", () => {
     const result = envSchema.safeParse({ ...createValidEnv(), OWNER_TELEGRAM_ID: "abc" });
 
     expect(result.success).toBe(false);
   });
 
-  test("rifiuta un JWT mancante (prima era Bearer undefined)", () => {
+  test("rifiuta un JWT mancante", () => {
     const env = createValidEnv();
     delete env.BORSA_ITALIANA_JWT;
 
@@ -56,7 +56,7 @@ describe("envSchema", () => {
     expect(envSchema.safeParse({ ...createValidEnv(), BOT_TOKEN: "" }).success).toBe(false);
   });
 
-  test("rifiuta una PORT fuori range", () => {
+  test("rifiuta una PORT fuori range (1-65535)", () => {
     expect(envSchema.safeParse({ ...createValidEnv(), PORT: "99999" }).success).toBe(false);
   });
 
