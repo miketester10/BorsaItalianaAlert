@@ -58,10 +58,10 @@ export class DatabaseHandler {
     }
   }
 
-  async createUser(createUsertDto: CreateUserDto): Promise<void> {
+  async createUser(createUserDto: CreateUserDto): Promise<void> {
     await this.prisma.user.create({
       data: {
-        ...createUsertDto,
+        ...createUserDto,
         kofiNotifiedAt: null,
         kofiDonatedAt: null,
       },

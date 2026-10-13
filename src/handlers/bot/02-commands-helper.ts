@@ -13,7 +13,7 @@ import { formatPrice } from "../../utils/price-formatter";
 import { currentPriceFromComandoPrezzo, preDeleteAlert, deleteAllAlerts, cancelDeleteAllAlerts } from "./04-callbacks-data";
 import { replyOrEdit } from "./reply-or-edit.helper";
 
-const dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
+const databaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 const apiHandler: ApiHandler = ApiHandler.getInstance();
 const alertHandler: AlertHandler = AlertHandler.getInstance();
 
@@ -100,7 +100,7 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
 
     const { isin, alertPrice } = validation.data;
 
-    const existingAlert = await dataBaseHandler.findAlert(userTelegramId, isin, alertPrice);
+    const existingAlert = await databaseHandler.findAlert(userTelegramId, isin, alertPrice);
     if (existingAlert) {
       message = code(`⚠️ Alert già registrato.`);
       logger.warn(`Alert già registrato.`);
@@ -117,7 +117,7 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
       const lastCheckPrice = status.price;
       const label = status.label;
       const lastCondition = alertHandler.calculateCondition(lastCheckPrice, alertPrice);
-      await dataBaseHandler.createAlert({ userTelegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
+      await databaseHandler.createAlert({ userTelegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
       message = code(`✅ Alert registrato con successo.`);
       logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${formatPrice(alertPrice)}€`);
     } else if (status.kind === "nodata") {
@@ -144,7 +144,7 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
       await ctx.sendChatAction("typing");
     }
 
-    const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
+    const alerts = await databaseHandler.findAllAlertsByTelegramId(userTelegramId);
 
     if (alerts.length > 0) {
       // Ordina gli alert per ISIN (alfabetico) e per prezzo (decrescente)
@@ -187,7 +187,7 @@ export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise
   try {
     await ctx.sendChatAction("typing");
 
-    const alerts = await dataBaseHandler.findAllAlertsByTelegramId(userTelegramId);
+    const alerts = await databaseHandler.findAllAlertsByTelegramId(userTelegramId);
 
     if (alerts.length > 0) {
       message = blockquote(format`${bold("⚠️ Vuoi eliminare tutti gli alerts attivi?")}`);

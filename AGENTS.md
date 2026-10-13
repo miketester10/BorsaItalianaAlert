@@ -69,7 +69,7 @@ tests/commands|config|fixtures|helpers|interfaces|jobs|schemas  # suite di test 
 - Filtri utenti: il job elabora solo utenti `active` (`findAllAlerts({ onlyActiveUsers: true })`). `05-user-handler.ts` riporta a `active` chi interagisce di nuovo.
 - Errori nei comandi bot: wrap `try/catch` + `await errorHandler(error, ctx)` alla fine (sempre `await`, mai floating). Mai lanciare senza catch nei handler Telegram. `05-user-handler.ts` non rilancia mai (solo `logger.error`), così il middleware chiama sempre `next()`. `errorHandler` gestisce già `message is not modified` (solo `answerCallbackQuery`) e `AxiosError` con `status + message`.
 - Risposte Telegram: usa helper `replyOrEdit(ctx, message, options)` da `src/handlers/bot/reply-or-edit.helper.ts` per supportare sia comandi che callback. Formattazione con helper gramio (`format`, `code`, `bold`, `blockquote`, `InlineKeyboard`). Prezzi con `formatPrice()` da `src/utils/price-formatter.ts`.
-- Nuovi comandi bot: 1. aggiungi handler in `01-`/`02-`/`06-`, 2. registra in `00-bot-handler.ts` sia in `inizializeCommands()` che in `inizializeMenu()` (menu visibile), 3. aggiungi schema Zod se ha input, 4. usa `ctx.sendChatAction("typing")` all'inizio.
+- Nuovi comandi bot: 1. aggiungi handler in `01-`/`02-`/`06-`, 2. registra in `00-bot-handler.ts` sia in `initializeCommands()` che in `initializeMenu()` (menu visibile), 3. aggiungi schema Zod se ha input, 4. usa `ctx.sendChatAction("typing")` all'inizio.
 - Logging: solo `logger` da `src/logger/logger.ts` (`info/warn/error/debug`). Mai `console.*`. Messaggi con emoji di stato esistenti (`✅`, `⚠️`, `❌`, `🚨`, `🟢`, `🔴`).
 - Stile: ESM `import`, `async/await` (no `.then` a catena), nomi file `kebab-case`, classi `PascalCase`, env validato in `src/config/` (`env.schema.ts` + `env.ts`), tipi condivisi in `src/types/custom-context.type.ts` (`MyMessageContext`, `MyCallbackQueryContext`, `isCallbackContext`).
 
@@ -94,6 +94,7 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 4. Se nuovo comando: registrato in comandi + menu + validato con Zod.
 5. Non aggiungere dipendenze senza necessità; se le aggiungi usa `bun add`.
 6. Dopo ogni modifica al codice, controllare sempre se `README.md` e/o `AGENTS.md` vanno aggiornati (struttura, env, comandi, cron, pattern) e aggiornarli se necessario.
+7. Controllare sempre typo, naming incoerenti e convenzioni violate (`initialize`, camelCase come `databaseHandler`, file `kebab-case`, classi `PascalCase`).
 
 ## Git
 

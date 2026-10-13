@@ -26,11 +26,11 @@ export class BotHandler {
   }
 
   async start(): Promise<void> {
-    await this.inizializeCommands();
+    await this.initializeCommands();
     await this.bot.start();
 
     // Inizializza il menu dei comandi Telegram
-    if (!(await this.inizializeMenu())) return logger.warn("⚠️ Bot Telegram avviato senza Menu inizializzato");
+    if (!(await this.initializeMenu())) return logger.warn("⚠️ Bot Telegram avviato senza Menu inizializzato");
 
     logger.info("✅ Bot Telegram avviato con successo");
   }
@@ -40,7 +40,7 @@ export class BotHandler {
     logger.info("✅ Bot Telegram fermato");
   }
 
-  private async inizializeMenu(): Promise<boolean> {
+  private async initializeMenu(): Promise<boolean> {
     try {
       const commands_set = await this.bot.api.setMyCommands({
         commands: [
@@ -73,7 +73,7 @@ export class BotHandler {
     }
   }
 
-  private async inizializeCommands(): Promise<void> {
+  private async initializeCommands(): Promise<void> {
     this.bot.on(["message", "callback_query"], async (ctx, next) => {
       await userHandler(ctx);
       return next();

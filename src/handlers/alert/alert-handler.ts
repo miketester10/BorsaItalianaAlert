@@ -13,10 +13,10 @@ import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
 
 export class AlertHandler {
   private static _instance: AlertHandler;
-  private readonly dataBaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
+  private readonly databaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
   private readonly apiHandler: ApiHandler = ApiHandler.getInstance();
 
-  // Lazy init: ottengo l'instanza del bot solo quando serve (evito il problema della dipendenza circolare)
+  // Lazy init: ottengo l'istanza del bot solo quando serve (evito il problema della dipendenza circolare)
   private get bot(): Bot {
     return BotHandler.getInstance().bot;
   }
@@ -35,7 +35,7 @@ export class AlertHandler {
    * invia notifiche se la condizione è cambiata e aggiorna il DB.
    */
   async checkAndNotifyAlerts(): Promise<void> {
-    const alerts = await this.dataBaseHandler.findAllAlerts({ onlyActiveUsers: true });
+    const alerts = await this.databaseHandler.findAllAlerts({ onlyActiveUsers: true });
     if (alerts.length === 0) return;
 
     // Ottimizzazione: prendo tutti gli ISIN unici per ridurre chiamate API
@@ -109,7 +109,7 @@ export class AlertHandler {
           logger.error(`Errore nell'invio della notifica allo user ${alert.userTelegramId}: ${(error as Error).message}`);
           const status = getUserStatusFromTelegramError(error);
           if (status) {
-            await this.dataBaseHandler.updateUserStatus(alert.userTelegramId, status);
+            await this.databaseHandler.updateUserStatus(alert.userTelegramId, status);
             logger.warn(`User ${alert.userTelegramId} marcato come ${status}`);
           }
           continue;
@@ -150,7 +150,7 @@ export class AlertHandler {
       lastCondition: condition,
       lastCheckPrice: price,
     };
-    await this.dataBaseHandler.updateAlert(updateAlertDto);
+    await this.databaseHandler.updateAlert(updateAlertDto);
   }
 
   /**
