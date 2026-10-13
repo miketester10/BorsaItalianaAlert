@@ -4,16 +4,17 @@ import { MyMessageContext } from "../../types/custom-context.type";
 import { logger } from "../../logger/logger";
 import { errorHandler } from "../error/error-handler";
 import { kofiKeyboard } from "./06-kofi-commands";
+import { requireTelegramId } from "../../utils/telegram-id.util";
 
 const OWNER_TELEGRAM_ID = env.OWNER_TELEGRAM_ID;
 
 export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> => {
-  const telegramId = ctx.from?.id!;
-  const name = ctx.from?.firstName!;
-
-  logger.info(`Bot avviato da: ${name} - Telegram ID: ${telegramId}`);
-
   try {
+    const telegramId = requireTelegramId(ctx);
+    const name = ctx.from?.firstName ?? "utente";
+
+    logger.info(`Bot avviato da: ${name} - Telegram ID: ${telegramId}`);
+
     await ctx.sendChatAction("typing");
 
     const message = format`

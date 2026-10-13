@@ -48,7 +48,7 @@ src/schemas/input-validator.schema.ts  # TUTTA la validazione input utente (Zod)
 src/config/env.schema.ts + env.ts      # validazione env Zod fail-fast (unico punto che legge process.env)
 src/dto/ /src/interfaces/ /src/types/ /src/enums/ /src/utils/
 prisma/schema.prisma                # modelli User, Alert, enum Condition/UserStatus
-tests/commands|config|fixtures|helpers|interfaces|jobs|schemas  # suite di test (mock condivisi in helpers/)
+tests/commands|config|fixtures|helpers|interfaces|jobs|schemas|utils  # suite di test (mock condivisi in helpers/)
 ```
 
 ## Pattern architetturali (obbligatori)
@@ -67,7 +67,7 @@ tests/commands|config|fixtures|helpers|interfaces|jobs|schemas  # suite di test 
 - Ottimizzazione alert: raggruppa per ISIN unici (`Set`), fetch parallelo con `p-limit(40)`, risultati con `Promise.allSettled`, mappa `priceMap[isin]`. Conta successi/errori e logga success-rate. Non cambiare il limite 40 senza motivo.
 - Notifiche: invia solo se `newCondition !== alert.lastCondition && newCondition !== equal` (`shouldNotify`). Dopo `sendNotification` OK, aggiorna DB con `lastCondition + lastCheckPrice`. Se `sendMessage` lancia `Forbidden`, mappa con `getUserStatusFromTelegramError()` e chiama `updateUserStatus()` (blocked/deactivated), poi `continue` senza aggiornare l'alert.
 - Filtri utenti: il job elabora solo utenti `active` (`findAllAlerts({ onlyActiveUsers: true })`). `05-user-handler.ts` riporta a `active` chi interagisce di nuovo.
-- Errori nei comandi bot: wrap `try/catch` + `await errorHandler(error, ctx)` alla fine (sempre `await`, mai floating). Mai lanciare senza catch nei handler Telegram. `05-user-handler.ts` non rilancia mai (solo `logger.error`), così il middleware chiama sempre `next()`. `errorHandler` gestisce già `message is not modified` (solo `answerCallbackQuery`) e `AxiosError` con `status + message`.
+- Errori nei comandi bot: wrap `try/catch` + `await errorHandler(error, ctx)` alla fine (sempre `await`, mai floating). Mai lanciare senza catch nei handler Telegram. Mai `!` su `ctx.from` (né `?.x!` altrove): usa `requireTelegramId(ctx)` da `src/utils/telegram-id.util.ts` dentro il `try` (lancia → `errorHandler`). `05-user-handler.ts` non rilancia mai (solo `logger.error`), così il middleware chiama sempre `next()`. `errorHandler` gestisce già `message is not modified` (solo `answerCallbackQuery`) e `AxiosError` con `status + message`.
 - Risposte Telegram: usa helper `replyOrEdit(ctx, message, options)` da `src/handlers/bot/reply-or-edit.helper.ts` per supportare sia comandi che callback. Formattazione con helper gramio (`format`, `code`, `bold`, `blockquote`, `InlineKeyboard`). Prezzi con `formatPrice()` da `src/utils/price-formatter.ts`.
 - Nuovi comandi bot: 1. aggiungi handler in `01-`/`02-`/`06-`, 2. registra in `00-bot-handler.ts` sia in `initializeCommands()` che in `initializeMenu()` (menu visibile), 3. aggiungi schema Zod se ha input, 4. usa `ctx.sendChatAction("typing")` all'inizio.
 - Logging: solo `logger` da `src/logger/logger.ts` (`info/warn/error/debug`). Mai `console.*`. Messaggi con emoji di stato esistenti (`✅`, `⚠️`, `❌`, `🚨`, `🟢`, `🔴`).

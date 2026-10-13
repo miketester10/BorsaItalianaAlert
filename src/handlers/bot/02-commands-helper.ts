@@ -8,6 +8,7 @@ import { AlertHandler } from "../alert/alert-handler";
 import { errorHandler } from "../error/error-handler";
 import { TelegramOptionsCustom } from "../../types/telegram-options-custom.type";
 import { validateAlertInput, validatePrezzoInput } from "../../schemas/input-validator.schema";
+import { requireTelegramId } from "../../utils/telegram-id.util";
 import { formatPrice } from "../../utils/price-formatter";
 import { currentPriceFromComandoPrezzo, preDeleteAlert, deleteAllAlerts, cancelDeleteAllAlerts } from "./04-callbacks-data";
 import { replyOrEdit } from "./reply-or-edit.helper";
@@ -79,11 +80,11 @@ export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQuer
 }
 
 export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> => {
-  const userTelegramId = ctx.from?.id!;
   const [command, isinRaw, priceRaw] = ctx.update?.message?.text?.trim().split(/\s+/) as [string, string | undefined, string | undefined];
   let message: FormattableString;
 
   try {
+    const userTelegramId = requireTelegramId(ctx);
     await ctx.sendChatAction("typing");
 
     const validation = validateAlertInput(isinRaw, priceRaw);
@@ -130,11 +131,11 @@ export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> =
 };
 
 export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
-  const userTelegramId = ctx.from?.id!;
   let message: string | FormattableString;
   let replyOptions: TelegramOptionsCustom = {};
 
   try {
+    const userTelegramId = requireTelegramId(ctx);
     if (!isCallbackContext(ctx)) {
       await ctx.sendChatAction("typing");
     }
@@ -175,11 +176,11 @@ export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallba
 };
 
 export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise<void> => {
-  const userTelegramId = ctx.from?.id!;
   let message: string | FormattableString;
   let replyOptions: TelegramOptionsCustom = {};
 
   try {
+    const userTelegramId = requireTelegramId(ctx);
     await ctx.sendChatAction("typing");
 
     const alerts = await databaseHandler.findAllAlertsByTelegramId(userTelegramId);
