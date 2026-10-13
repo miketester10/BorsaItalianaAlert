@@ -86,6 +86,10 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 - Nomi job/step in italiano, id in kebab-case. Non aggiungere `db push` in CI (solo `generate`, mai migrazioni automatiche).
 - Push che toccano solo docs (`**.md`, `AGENTS.md`, `LICENSE`, `.gitignore`, `.env.example`) non avviano la pipeline (`paths-ignore`): il container monta il repo live e non ne ha bisogno. Override manuale: `[skip ci]` nel messaggio.
 
+## Ricerca web
+
+- Puoi usare internet (`websearch`/`webfetch` o altri tool) quando non sai qualcosa, servono più spiegazioni, dettagli tecnici o esempi per spiegarli all'utente. Verifica sempre versioni/API dai registry o docs ufficiali, non a memoria.
+
 ## Verifiche prima di finire
 
 1. `bun typecheck` deve passare senza errori.
