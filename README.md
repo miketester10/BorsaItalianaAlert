@@ -207,7 +207,7 @@ La pipeline **non parte** se il push tocca solo file esclusi (`**.md`, `AGENTS.m
 ### Come funziona
 
 - All'evento `push` su `main`, la pipeline:
-  - prima esegue il job `verifica-codice-pre-deploy`: install dipendenze (`bun install --frozen-lockfile`), validazione schema (`bun prisma:generate`), typecheck (`bun typecheck`)
+  - prima esegue il job `verifica-codice-pre-deploy`: installa dipendenze (`bun install --frozen-lockfile`), validazione schema (`bun prisma:generate`), typecheck (`bun typecheck`), test (`bun test --isolate`) 
   - solo se la verifica passa, esegue il job `deploy-vps`:
     - decodifica la chiave PEM in formato Base64 configurata nei Secrets
     - si connette via SSH al VPS (es. istanza EC2) usando la chiave PEM
