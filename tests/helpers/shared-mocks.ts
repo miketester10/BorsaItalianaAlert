@@ -36,7 +36,7 @@ export const botSendMessage = mock(async (): Promise<unknown> => ({}));
 export const handleError = mock(async (_error: unknown, _ctx: MyMessageContext): Promise<void> => {});
 
 // Silenzia i log nei test (mai asserito).
-const silentLog = mock(() => ({}));
+const silentLog = mock((): unknown => ({}));
 
 // Registra tutti i mock di modulo. Da chiamare prima del dynamic import.
 export const registerCommandMocks = (): void => {
@@ -45,6 +45,7 @@ export const registerCommandMocks = (): void => {
       BORSA_ITALIANA_API: "https://example.test/",
       BORSA_ITALIANA_API_TAIL: "api-tail",
       BORSA_ITALIANA_JWT: "jwt-test-token",
+      PORT: 3999, // Porta fissa fuori dalle comuni: mai la 3000 di default, per non confliggere col bot acceso in dev o altri servizi in CI.
     },
   }));
 

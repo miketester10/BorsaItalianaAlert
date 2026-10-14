@@ -48,7 +48,7 @@ src/schemas/input-validator.schema.ts  # TUTTA la validazione input utente (Zod)
 src/config/env.schema.ts + env.ts      # validazione env Zod fail-fast (unico punto che legge process.env)
 src/dto/ /src/interfaces/ /src/types/ /src/enums/ /src/utils/
 prisma/schema.prisma                # modelli User, Alert, enum Condition/UserStatus
-tests/commands|config|fixtures|helpers|interfaces|jobs|schemas|utils  # suite di test (mock condivisi in helpers/)
+tests/commands|config|fixtures|helpers|interfaces|jobs|schemas|server|utils  # suite di test (mock condivisi in helpers/)
 ```
 
 ## Pattern architetturali (obbligatori)

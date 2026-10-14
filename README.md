@@ -190,7 +190,7 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 │   └── workflows/
 │       └── deploy.yml   # CI/CD: deploy automatico su VPS al push su main
 ├── prisma/              # Schema database e migrazioni
-├── tests/               # Suite di test (commands, config, fixtures, helpers, interfaces, jobs, schemas, utils)
+├── tests/               # Suite di test (commands, config, fixtures, helpers, interfaces, jobs, schemas, server, utils)
 ├── docker-compose.yml   # Configurazione Docker
 ├── package.json
 ├── tsconfig.json
