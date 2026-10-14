@@ -13,11 +13,15 @@ describe("requireTelegramId", () => {
     expect(requireTelegramId(createContext({ id: 123 }))).toBe(123);
   });
 
-  test("lancia quando il mittente manca", () => {
-    expect(() => requireTelegramId(createContext(undefined))).toThrow("Telegram ID mittente mancante");
+  test("lancia errore quando il mittente manca", () => {
+    expect(() => requireTelegramId(createContext(undefined))).toThrow(
+      "Telegram ID mittente mancante",
+    );
   });
 
-  test("lancia quando l'id non è un numero", () => {
-    expect(() => requireTelegramId(createContext({}))).toThrow("Telegram ID mittente mancante");
+  test("lancia errore quando l'id non è un numero", () => {
+    expect(() => requireTelegramId(createContext({ id: "123" }))).toThrow(
+      "Telegram ID mittente mancante",
+    );
   });
 });
