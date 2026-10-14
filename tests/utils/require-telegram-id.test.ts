@@ -9,7 +9,7 @@ const createContext = (from?: unknown): MyMessageContext =>
   }) as unknown as MyMessageContext;
 
 describe("requireTelegramId", () => {
-  test("restituisce l'id quando il mittente esiste", () => {
+  test("restituisce l'id quando il mittente esiste e l'id è un numero", () => {
     expect(requireTelegramId(createContext({ id: 123 }))).toBe(123);
   });
 
