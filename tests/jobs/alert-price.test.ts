@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { Condition, UserStatus } from "@prisma/client";
+import { CronJob } from "cron";
 import { TelegramError } from "gramio";
 import {
   createValidResponse,
@@ -197,5 +198,38 @@ describe("checkAndNotifyAlerts", () => {
     await AlertHandler.getInstance().checkAndNotifyAlerts();
 
     expect(botSendMessage).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("startAlertPriceJob / startTestAlertPriceJob", () => {
+  // Verifica il wiring dei due job: entrambi devono nascere con waitForCompletion: true.
+  // Senza il flag, un controllo più lungo dell'intervallo del cron partirebbe di nuovo
+  // (lo skip del run sovrapposto è interno alla libreria, in CronJob.fireOnTick()).
+  test("configura waitForCompletion per evitare run cron sovrapposti", async () => {
+    // spyOn intercetta CronJob.from e registra gli argomenti con cui nasce il job,
+    // mantenendo l'implementazione reale: il job viene creato davvero e va fermato
+    // con stopAlertPriceJob() per non lasciare timer attivi tra i test.
+    const fromSpy = spyOn(CronJob, "from");
+    const { startAlertPriceJob, startTestAlertPriceJob, stopAlertPriceJob } = await import(
+      "../../src/jobs/alert-price.job"
+    );
+
+    await startAlertPriceJob();
+
+    expect(fromSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ timeZone: "Europe/Rome", waitForCompletion: true }),
+    );
+
+    stopAlertPriceJob();
+    fromSpy.mockClear();
+
+    await startTestAlertPriceJob();
+
+    expect(fromSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ timeZone: "Europe/Rome", waitForCompletion: true }),
+    );
+
+    stopAlertPriceJob();
+    fromSpy.mockRestore();
   });
 });

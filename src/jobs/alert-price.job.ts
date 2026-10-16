@@ -9,9 +9,9 @@ let activeJob: CronJob | null = null;
 let activeJobName: string | null = null;
 
 const startJob = (jobName: string, cronExpression: string, startupMessage: string): void => {
-  const job = new CronJob(
-    cronExpression,
-    async () => {
+  const job = CronJob.from({
+    cronTime: cronExpression,
+    onTick: async () => {
       try {
         await alertHandler.checkAndNotifyAlerts();
         const date = new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" });
@@ -20,10 +20,13 @@ const startJob = (jobName: string, cronExpression: string, startupMessage: strin
         logger.error(`Errore nell'esecuzione di ${jobName}: ${(error as Error).message}`);
       }
     },
-    null,
-    true,
-    "Europe/Rome",
-  );
+    start: true,
+    timeZone: "Europe/Rome",
+    // Cron salta il nuovo run se il precedente è ancora in corso: internamente
+    // fireOnTick() esegue `if (this.waitForCompletion && this._isCallbackRunning) return`.
+    // Evita run sovrapposti (e doppie notifiche) se un controllo supera l'intervallo.
+    waitForCompletion: true,
+  });
   job.start();
   activeJob = job;
   activeJobName = jobName;
