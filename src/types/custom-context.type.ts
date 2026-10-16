@@ -1,7 +1,9 @@
 import { Bot, CallbackQueryContext, MessageContext } from "gramio";
 
 export type MyMessageContext = MessageContext<Bot>;
-export type MyCallbackQueryContext<Q = any> = Omit<CallbackQueryContext<Bot>, "data"> & { queryData: Q };
+// Q = tipo di `queryData`: nei callback registrati con un CallbackData gramio lo inferisce
+// da solo; il default `unknown` (non `any`) evita letture non tipizzate a chi usa il tipo nudo.
+export type MyCallbackQueryContext<Q = unknown> = Omit<CallbackQueryContext<Bot>, "data"> & { queryData: Q };
 export type MyGenericCallbackQueryContext = CallbackQueryContext<Bot>;
 export type MyUserSourceContext = MyMessageContext | MyGenericCallbackQueryContext;
 
