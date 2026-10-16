@@ -1,6 +1,6 @@
 services:
   BorsaItalianaAlertBot:
-    image: oven/bun:1
+    image: oven/bun:1.4.3
     container_name: BorsaItalianaAlertBot
     working_dir: /app
     volumes:
@@ -11,7 +11,9 @@ services:
       - TZ=Europe/Rome # Imposta la variabile TimeZone per avere l'orario italiano nei logs
     expose:
       - "3000" # Espone la porta 3000 per health checks (non è accessibile dall'esterno, ma solo per i container nella stessa rete Docker)
-    command: ["sh", "-c", "bun install && bunx prisma generate && bunx prisma db push && bun run start"]
+    # `prisma db push` all'avvio è voluto: allinea lo schema al deploy; in CI resta solo `generate`.
+    # `exec bun start` mantiene bun come processo principale: riceve il SIGTERM di `docker stop` → shutdown graceful.
+    command: ["sh", "-c", "bun install --frozen-lockfile && bunx prisma generate && bunx prisma db push && exec bun start"]
     restart: unless-stopped
     networks:
       - proxy-manager

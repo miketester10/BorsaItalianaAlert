@@ -20,7 +20,7 @@ bun typecheck        # tsc --noEmit — OBBLIGATORIO dopo ogni modifica
 bun test             # suite di test
 bun prisma:generate  # dopo ogni modifica a prisma/schema.prisma
 bun prisma:push      # applica schema a MongoDB
-docker compose up -d # solo bot (immagine oven/bun)
+docker compose up -d # solo bot (immagine oven/bun pinnata, prisma db push all'avvio)
 ```
 
 Test job vs prod job: `src/main.ts` sceglie in base a `NODE_ENV === "production"`.
@@ -77,13 +77,13 @@ tests/commands|config|fixtures|helpers|interfaces|jobs|schemas|server|utils  # s
 
 Variabili da `.env.example`: `BOT_TOKEN`, `OWNER_TELEGRAM_ID`, `DATABASE_URL`, `BORSA_ITALIANA_API`, `BORSA_ITALIANA_API_TAIL`, `BORSA_ITALIANA_JWT`, `PORT`, `NODE_ENV`, `KOFI_DELAY_MS`. Mai committare `.env` (già in `.gitignore`). Tutte validate in `src/config/env.schema.ts` con fail-fast all'avvio — se aggiungi una var, aggiungila a `.env.example` + allo schema. Mai leggere `process.env` fuori da `src/config/env.ts`.
 
-Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation `userTelegramId -> User.telegramId`, indici su `User.status` e `Alert(userTelegramId)`, `Alert(userTelegramId, isin, alertPrice)`. Dopo ogni modifica schema: `bun prisma:generate && bun prisma:push` (il push solo su DB corretto e quando autorizzato, mai automatico in produzione).
+Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation `userTelegramId -> User.telegramId`, indici su `User.status` e `Alert(userTelegramId)`, `Alert(userTelegramId, isin, alertPrice)`. Dopo ogni modifica schema: `bun prisma:generate && bun prisma:push` (push manuale solo su DB corretto e autorizzato; in produzione lo applica il container all'avvio, scelta accettata — vedi `docker-compose.yml`).
 
 ## CI/CD (`.github/workflows/deploy.yml`)
 
 - Job `verifica-codice-pre-deploy`: `bun install --frozen-lockfile` + `bun prisma:generate` + `bun typecheck` + `bun test`. Se fallisce, il deploy non parte.
 - Job `deploy-vps` (`needs` verifica): SSH su VPS, `git pull`, restart container solo se ci sono modifiche.
-- Nomi job/step in italiano, id in kebab-case. Non aggiungere `db push` in CI (solo `generate`, mai migrazioni automatiche).
+- Nomi job/step in italiano, id in kebab-case. Non aggiungere `db push` in CI (solo `generate`): l'unico push automatico ammesso è quello del container all'avvio (`docker-compose.yml`).
 - Push che toccano solo docs (`**.md`, `AGENTS.md`, `LICENSE`, `.gitignore`, `.env.example`) non avviano la pipeline (`paths-ignore`): il container monta il repo live e non ne ha bisogno. Override manuale: `[skip ci]` nel messaggio.
 
 ## Ricerca web
