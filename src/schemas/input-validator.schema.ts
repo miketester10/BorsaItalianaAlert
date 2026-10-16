@@ -17,7 +17,7 @@ const alertPriceSchema = z
   .nonempty("Il prezzo non può essere vuoto")
   .transform((val, ctx) => {
     const num = Number(val);
-    if (isNaN(num)) {
+    if (!Number.isFinite(num)) {
       ctx.addIssue({ code: "custom", message: "Il prezzo deve essere un numero valido" });
       return z.NEVER; // interrompe la trasformazione e segnala errore;
     }

@@ -28,4 +28,4 @@ const main = async () => {
 
 registerProcessShutdown();
 
-main();
+void main();

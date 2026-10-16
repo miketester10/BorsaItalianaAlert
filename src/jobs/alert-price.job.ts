@@ -6,6 +6,7 @@ const alertHandler: AlertHandler = AlertHandler.getInstance();
 const minutiProduzione = 2;
 const minutiTest = 1;
 let activeJob: CronJob | null = null;
+let activeJobName: string | null = null;
 
 const startJob = (jobName: string, cronExpression: string, startupMessage: string): void => {
   const job = new CronJob(
@@ -25,6 +26,7 @@ const startJob = (jobName: string, cronExpression: string, startupMessage: strin
   );
   job.start();
   activeJob = job;
+  activeJobName = jobName;
   logger.info(startupMessage);
 };
 
@@ -49,7 +51,9 @@ export const startTestAlertPriceJob = async (): Promise<void> => {
 export const stopAlertPriceJob = (): void => {
   if (!activeJob) return;
 
+  const jobName = activeJobName ?? "Job";
   activeJob.stop();
   activeJob = null;
-  logger.info("✅ AlertPriceJob fermato");
+  activeJobName = null;
+  logger.info(`✅ ${jobName} fermato`);
 };

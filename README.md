@@ -116,7 +116,7 @@ KOFI_DELAY_MS=500
 
 ### Docker
 
-- `docker compose up -d` — Avvia bot e MongoDB in container (immagine `oven/bun`)
+- `docker compose up -d` — Avvia il bot in container (immagine `oven/bun` pinnata)
 - `docker compose down` — Ferma e rimuove i container
 
 ## Comandi del Bot

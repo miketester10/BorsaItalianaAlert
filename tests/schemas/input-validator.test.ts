@@ -70,6 +70,12 @@ describe("validateAlertInput", () => {
     expect(result.success).toBe(false);
   });
 
+  test("rifiuta un prezzo Infinity", () => {
+    const result = validateAlertInput("IT0005518128", "Infinity");
+
+    expect(result.success).toBe(false);
+  });
+
   test("rifiuta un prezzo uguale a zero", () => {
     const result = validateAlertInput("IT0005518128", "0");
 
