@@ -5,7 +5,6 @@ const isinSchema = z.preprocess(
   (value) => (typeof value === "string" ? value.trim().toUpperCase() : value),
   z
     .string()
-    .trim()
     .nonempty("ISIN non può essere vuoto")
     .regex(/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/, "ISIN non valido"),
 );
@@ -18,8 +17,11 @@ const alertPriceSchema = z
   .transform((val, ctx) => {
     const num = Number(val);
     if (!Number.isFinite(num)) {
-      ctx.addIssue({ code: "custom", message: "Il prezzo deve essere un numero valido" });
-      return z.NEVER; // interrompe la trasformazione e segnala errore;
+      ctx.addIssue({
+        code: "custom",
+        message: "Il prezzo deve essere un numero valido",
+      });
+      return z.NEVER; // interrompe la trasformazione e segnala errore
     }
     return num;
   })
@@ -32,9 +34,12 @@ const telegramIdSchema = z
   .nonempty("Telegram ID non può essere vuoto")
   .transform((val, ctx) => {
     const num = Number(val);
-    if (isNaN(num) || !Number.isInteger(num) || num <= 0) {
-      ctx.addIssue({ code: "custom", message: "Telegram ID non valido" });
-      return z.NEVER;
+    if (!Number.isFinite(num) || !Number.isInteger(num) || num <= 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Telegram ID non valido",
+      });
+      return z.NEVER; // interrompe la trasformazione e segnala errore
     }
     return num;
   });
