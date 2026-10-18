@@ -151,8 +151,8 @@ export const handleKofiUserCommand = async (ctx: MyMessageContext): Promise<void
       return;
     }
 
-    const targetTelegramId = validation.data;
-    const user = await databaseHandler.findUserByTelegramId(targetTelegramId);
+    const telegramId = validation.data;
+    const user = await databaseHandler.findUserByTelegramId(telegramId);
 
     if (!user) {
       await ctx.reply(code("⚠️ Utente non trovato."));
@@ -180,7 +180,7 @@ export const handleKofiUserCommand = async (ctx: MyMessageContext): Promise<void
     );
 
     const keyboard = new InlineKeyboard()
-      .text("✅ Invia", confirmKofiUser.pack({ kofiUserTelegramId: targetTelegramId }), { style: "success" })
+      .text("✅ Invia", confirmKofiUser.pack({ kofiUserTelegramId: telegramId }), { style: "success" })
       .text("❌ Annulla", cancelKofiUser.pack(), { style: "danger" });
 
     await ctx.reply(confirmMessage, { reply_markup: keyboard });
@@ -207,8 +207,8 @@ export const handleMarkKofiDonorCommand = async (ctx: MyMessageContext): Promise
       return;
     }
 
-    const targetTelegramId = validation.data;
-    const user = await databaseHandler.findUserByTelegramId(targetTelegramId);
+    const telegramId = validation.data;
+    const user = await databaseHandler.findUserByTelegramId(telegramId);
 
     if (!user) {
       await ctx.reply(code("⚠️ Utente non trovato."));
@@ -234,7 +234,7 @@ export const handleMarkKofiDonorCommand = async (ctx: MyMessageContext): Promise
     );
 
     const keyboard = new InlineKeyboard()
-      .text("✅ Conferma", confirmMarkKofiDonor.pack({ donorTelegramId: targetTelegramId }), { style: "success" })
+      .text("✅ Conferma", confirmMarkKofiDonor.pack({ donorTelegramId: telegramId }), { style: "success" })
       .text("❌ Annulla", cancelMarkKofiDonor.pack(), { style: "danger" });
 
     await ctx.reply(confirmMessage, { reply_markup: keyboard });

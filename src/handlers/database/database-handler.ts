@@ -81,9 +81,9 @@ export class DatabaseHandler {
     return user;
   }
 
-  async findAlert(userTelegramId: number, isin: string, alertPrice: number): Promise<Alert | null> {
+  async findAlert(telegramId: number, isin: string, alertPrice: number): Promise<Alert | null> {
     const alert = await this.prisma.alert.findFirst({
-      where: { userTelegramId, isin, alertPrice },
+      where: { userTelegramId: telegramId, isin, alertPrice },
     });
     return alert;
   }
@@ -106,9 +106,9 @@ export class DatabaseHandler {
     return alerts;
   }
 
-  async findAllAlertsByTelegramId(userTelegramId: number): Promise<Alert[]> {
+  async findAllAlertsByTelegramId(telegramId: number): Promise<Alert[]> {
     const alerts = await this.prisma.alert.findMany({
-      where: { userTelegramId },
+      where: { userTelegramId: telegramId },
     });
     return alerts;
   }
@@ -205,9 +205,9 @@ export class DatabaseHandler {
     });
   }
 
-  async deleteAllAlertsByTelegramId(userTelegramId: number): Promise<void> {
+  async deleteAllAlertsByTelegramId(telegramId: number): Promise<void> {
     await this.prisma.alert.deleteMany({
-      where: { userTelegramId },
+      where: { userTelegramId: telegramId },
     });
   }
 }

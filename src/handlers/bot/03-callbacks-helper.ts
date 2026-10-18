@@ -43,9 +43,9 @@ export const setupCallbacks = (bot: Bot): void => {
   bot.callbackQuery(preDeleteAlert, async (ctx) => {
     try {
       const alertId = ctx.queryData.alertId;
-      const userTelegramId = ctx.from.id;
+      const telegramId = ctx.from.id;
 
-      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, userTelegramId);
+      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, telegramId);
       if (!alert) {
         await ctx.editText(code(`❌ Alert non trovato.`));
         return ctx.answer();
@@ -82,9 +82,9 @@ export const setupCallbacks = (bot: Bot): void => {
   bot.callbackQuery(deleteAlert, async (ctx) => {
     try {
       const alertId = ctx.queryData.alertId;
-      const userTelegramId = ctx.from.id;
+      const telegramId = ctx.from.id;
 
-      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, userTelegramId);
+      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, telegramId);
       if (!alert) {
         await ctx.editText(code(`❌ Alert non trovato.`));
         return ctx.answer();
@@ -109,8 +109,8 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(deleteAllAlerts, async (ctx) => {
     try {
-      const userTelegramId = ctx.from.id;
-      await databaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
+      const telegramId = ctx.from.id;
+      await databaseHandler.deleteAllAlertsByTelegramId(telegramId);
       await ctx.editText(code(`✅ Tutti gli alerts sono stati eliminati con successo.`));
     } catch (error) {
       await errorHandler(error, ctx);
@@ -185,14 +185,14 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       if (!checkOwner(ctx, "callback [ confirmKofiUser ]")) return ctx.answer();
 
-      const targetTelegramId = ctx.queryData.kofiUserTelegramId;
-      user = await databaseHandler.findUserByTelegramId(targetTelegramId);
+      const telegramId = ctx.queryData.kofiUserTelegramId;
+      user = await databaseHandler.findUserByTelegramId(telegramId);
       if (!user) {
         await ctx.editText(code("❌ Utente non trovato."));
         return ctx.answer();
       }
-      await sendKofiMessageToUser(ctx, targetTelegramId, user.name);
-      await databaseHandler.updateKofiNotifiedBatch([targetTelegramId]);
+      await sendKofiMessageToUser(ctx, telegramId, user.name);
+      await databaseHandler.updateKofiNotifiedBatch([telegramId]);
       await ctx.editText(code(`✅ Messaggio inviato a ${user.name}.`));
     } catch (error) {
       await errorHandler(error, ctx);
@@ -220,13 +220,13 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       if (!checkOwner(ctx, "callback [ confirmMarkKofiDonor ]")) return ctx.answer();
 
-      const targetTelegramId = ctx.queryData.donorTelegramId;
-      const user = await databaseHandler.findUserByTelegramId(targetTelegramId);
+      const telegramId = ctx.queryData.donorTelegramId;
+      const user = await databaseHandler.findUserByTelegramId(telegramId);
       if (!user) {
         await ctx.editText(code("❌ Utente non trovato."));
         return ctx.answer();
       }
-      await databaseHandler.markKofiDonor(targetTelegramId);
+      await databaseHandler.markKofiDonor(telegramId);
       await ctx.editText(code("✅ Donatore registrato con successo."));
     } catch (error) {
       await errorHandler(error, ctx);
