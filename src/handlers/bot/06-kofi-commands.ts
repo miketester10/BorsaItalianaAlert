@@ -7,6 +7,7 @@ import { DatabaseHandler } from "../database/database-handler";
 import { errorHandler } from "../error/error-handler";
 import { validateKofiDonorInput, validateKofiUserInput } from "../../schemas/input-validator.schema";
 import { confirmKofiAll, confirmKofiUser, confirmKofiNewUsers, confirmMarkKofiDonor, cancelKofiAll, cancelKofiUser, cancelKofiNewUsers, cancelMarkKofiDonor } from "./04-callbacks-data";
+import { checkOwner } from "../../utils/authorization.util";
 import { env } from "../../config/env";
 import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
 
@@ -107,12 +108,9 @@ export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: 
 };
 
 const showKofiConfirmPrompt = async (ctx: MyMessageContext, isNewUsers: boolean): Promise<void> => {
-  const telegramId = ctx.from?.id;
+  const action = `comando [ ${isNewUsers ? "/kofi_new_users" : "/kofi_all"} ]`;
 
-  if (telegramId !== OWNER_TELEGRAM_ID) {
-    logger.warn(`Tentativo non autorizzato comando [ ${isNewUsers ? "/kofi_new_users" : "/kofi_all"} ] da ${ctx.from?.firstName} (ID: ${telegramId})`);
-    return;
-  }
+  if (!checkOwner(ctx, action)) return;
 
   try {
     await ctx.sendChatAction("typing");
@@ -140,12 +138,7 @@ export const handleKofiAllCommand = async (ctx: MyMessageContext): Promise<void>
 };
 
 export const handleKofiUserCommand = async (ctx: MyMessageContext): Promise<void> => {
-  const telegramId = ctx.from?.id;
-
-  if (telegramId !== OWNER_TELEGRAM_ID) {
-    logger.warn(`Tentativo non autorizzato comando [ /kofi_user ] da ${ctx.from?.firstName} (ID: ${telegramId})`);
-    return;
-  }
+  if (!checkOwner(ctx, "comando [ /kofi_user ]")) return;
 
   try {
     await ctx.sendChatAction("typing");
@@ -201,12 +194,7 @@ export const handleKofiNewUsersCommand = async (ctx: MyMessageContext): Promise<
 };
 
 export const handleMarkKofiDonorCommand = async (ctx: MyMessageContext): Promise<void> => {
-  const telegramId = ctx.from?.id;
-
-  if (telegramId !== OWNER_TELEGRAM_ID) {
-    logger.warn(`Tentativo non autorizzato comando [ /mark_kofi_donor ] da ${ctx.from?.firstName} (ID: ${telegramId})`);
-    return;
-  }
+  if (!checkOwner(ctx, "comando [ /mark_kofi_donor ]")) return;
 
   try {
     await ctx.sendChatAction("typing");

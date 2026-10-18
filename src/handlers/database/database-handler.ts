@@ -88,9 +88,9 @@ export class DatabaseHandler {
     return alert;
   }
 
-  async findAlertById(alertId: string): Promise<Alert | null> {
-    const alert = await this.prisma.alert.findUnique({
-      where: { id: alertId },
+  async findAlertByIdAndTelegramId(alertId: string, telegramId: number): Promise<Alert | null> {
+    const alert = await this.prisma.alert.findFirst({
+      where: { id: alertId, userTelegramId: telegramId },
     });
     return alert;
   }

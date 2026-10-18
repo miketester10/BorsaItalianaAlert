@@ -17,6 +17,8 @@ import { errorHandler } from "../error/error-handler";
 import { formatPrice } from "../../utils/price-formatter";
 import { logger } from "../../logger/logger";
 import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
+import { requireTelegramId } from "../../utils/telegram-id.util";
+import { checkOwner } from "../../utils/authorization.util";
 import {
   cancelDeleteAllAlerts,
   cancelDeleteAlert,
@@ -43,7 +45,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       const alertId = ctx.queryData.alertId;
 
-      const alert = await databaseHandler.findAlertById(alertId);
+      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, requireTelegramId(ctx));
       if (!alert) {
         await ctx.editText(code(`❌ Alert non trovato.`));
         return ctx.answer();
@@ -81,7 +83,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       const alertId = ctx.queryData.alertId;
 
-      const alert = await databaseHandler.findAlertById(alertId);
+      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, requireTelegramId(ctx));
       if (!alert) {
         await ctx.editText(code(`❌ Alert non trovato.`));
         return ctx.answer();
@@ -106,7 +108,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(deleteAllAlerts, async (ctx) => {
     try {
-      const userTelegramId = ctx.from.id;
+      const userTelegramId = requireTelegramId(ctx);
       await databaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
       await ctx.editText(code(`✅ Tutti gli alerts sono stati eliminati con successo.`));
     } catch (error) {
@@ -168,6 +170,8 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(confirmKofiAll, async (ctx) => {
     try {
+      if (!checkOwner(ctx, "callback [ confirmKofiAll ]")) return ctx.answer();
+
       await sendKofiMessages(ctx, false);
     } catch (error) {
       await errorHandler(error, ctx);
@@ -178,6 +182,8 @@ export const setupCallbacks = (bot: Bot): void => {
   bot.callbackQuery(confirmKofiUser, async (ctx) => {
     let user: User | null = null;
     try {
+      if (!checkOwner(ctx, "callback [ confirmKofiUser ]")) return ctx.answer();
+
       const targetTelegramId = ctx.queryData.kofiUserTelegramId;
       user = await databaseHandler.findUserByTelegramId(targetTelegramId);
       if (!user) {
@@ -200,6 +206,8 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(confirmKofiNewUsers, async (ctx) => {
     try {
+      if (!checkOwner(ctx, "callback [ confirmKofiNewUsers ]")) return ctx.answer();
+
       await sendKofiMessages(ctx, true);
     } catch (error) {
       await errorHandler(error, ctx);
@@ -209,6 +217,8 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(confirmMarkKofiDonor, async (ctx) => {
     try {
+      if (!checkOwner(ctx, "callback [ confirmMarkKofiDonor ]")) return ctx.answer();
+
       const targetTelegramId = ctx.queryData.donorTelegramId;
       const user = await databaseHandler.findUserByTelegramId(targetTelegramId);
       if (!user) {

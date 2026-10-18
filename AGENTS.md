@@ -58,6 +58,7 @@ tests/commands|config|fixtures|helpers|interfaces|jobs|schemas|server|utils  # s
 - **Lazy bot in AlertHandler:** usa il getter `get bot()` esistente per evitare dipendenze circolari con `BotHandler`. Non importare `bot` come singleton eager da `AlertHandler`.
 - **DB ping reale:** `DatabaseHandler.connect()` fa `$connect()` + `$runCommandRaw({ ping: 1 })`. Non rimuovere il ping: `$connect()` da solo è lazy e darebbe falso OK con Mongo spento.
 - **Shutdown order** (`src/lifecycle/shutdown.ts`): 1. `stopAlertPriceJob()` 2. in parallelo `bot.stop() + server.stop() + db.disconnect()` via `Promise.allSettled` 3. `process.exit(code)`. Segnali gestiti: `SIGINT`, `SIGTERM`.
+- **Autorizzazione:** i check riservati all'owner usano `checkOwner(ctx, action)` da `src/utils/authorization.util.ts` (fail-closed, warn sui tentativi); la proprietà di un alert si verifica in query con `findAlertByIdAndTelegramId(alertId, requireTelegramId(ctx))` (null → "Alert non trovato"). Mai fidarsi degli ID arrivati nel callbackData.
 
 ## Convenzioni codice
 

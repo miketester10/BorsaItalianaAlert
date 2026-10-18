@@ -1,12 +1,10 @@
 import { blockquote, bold, code, format, italic, underline, InlineKeyboard } from "gramio";
-import { env } from "../../config/env";
 import { MyMessageContext } from "../../types/custom-context.type";
 import { logger } from "../../logger/logger";
 import { errorHandler } from "../error/error-handler";
 import { kofiKeyboard } from "./06-kofi-commands";
 import { requireTelegramId } from "../../utils/telegram-id.util";
-
-const OWNER_TELEGRAM_ID = env.OWNER_TELEGRAM_ID;
+import { checkOwner } from "../../utils/authorization.util";
 
 export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> => {
   try {
@@ -67,9 +65,7 @@ export const handleHelpCommand = async (ctx: MyMessageContext): Promise<void> =>
 };
 
 export const handleAdminCommand = async (ctx: MyMessageContext): Promise<void> => {
-  const telegramId = ctx.from?.id;
-
-  if (telegramId !== OWNER_TELEGRAM_ID) {
+  if (!checkOwner(ctx, "comando [ /admin ]")) {
     await ctx.reply(code("⚠️ Comando riservato all'admin."));
     return;
   }

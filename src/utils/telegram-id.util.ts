@@ -1,7 +1,7 @@
 import type { MyCallbackQueryContext, MyMessageContext } from "../types/custom-context.type";
 
 /**
- * Estrae il Telegram ID del mittente o lancia se assente.
+ * Estrae il Telegram ID del mittente o lancia errore se assente.
  * Sostituisce `ctx.from?.id!`: il throw finisce nel `try/catch` del chiamante
  * (`errorHandler`), mai `undefined` silenzioso a runtime.
  */
