@@ -17,7 +17,6 @@ import { errorHandler } from "../error/error-handler";
 import { formatPrice } from "../../utils/price-formatter";
 import { logger } from "../../logger/logger";
 import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
-import { requireTelegramId } from "../../utils/telegram-id.util";
 import { checkOwner } from "../../utils/authorization.util";
 import {
   cancelDeleteAllAlerts,
@@ -44,8 +43,9 @@ export const setupCallbacks = (bot: Bot): void => {
   bot.callbackQuery(preDeleteAlert, async (ctx) => {
     try {
       const alertId = ctx.queryData.alertId;
+      const userTelegramId = ctx.from.id;
 
-      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, requireTelegramId(ctx));
+      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, userTelegramId);
       if (!alert) {
         await ctx.editText(code(`❌ Alert non trovato.`));
         return ctx.answer();
@@ -82,8 +82,9 @@ export const setupCallbacks = (bot: Bot): void => {
   bot.callbackQuery(deleteAlert, async (ctx) => {
     try {
       const alertId = ctx.queryData.alertId;
+      const userTelegramId = ctx.from.id;
 
-      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, requireTelegramId(ctx));
+      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, userTelegramId);
       if (!alert) {
         await ctx.editText(code(`❌ Alert non trovato.`));
         return ctx.answer();
@@ -108,7 +109,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(deleteAllAlerts, async (ctx) => {
     try {
-      const userTelegramId = requireTelegramId(ctx);
+      const userTelegramId = ctx.from.id;
       await databaseHandler.deleteAllAlertsByTelegramId(userTelegramId);
       await ctx.editText(code(`✅ Tutti gli alerts sono stati eliminati con successo.`));
     } catch (error) {
