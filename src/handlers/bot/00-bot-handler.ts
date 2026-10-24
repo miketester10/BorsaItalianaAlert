@@ -1,6 +1,7 @@
 import { Bot } from "gramio";
 import { env } from "../../config/env";
 import { logger } from "../../logger/logger";
+import { BotCommand } from "../../enums/bot-command.enum";
 import { MyMessageContext } from "../../types/custom-context.type";
 import { handleHelpCommand, handleStartCommand, handleAdminCommand } from "./01-commands-basic.helper";
 import { handlePrezzoCommand, handleAlertCommand, handleAlertsAttiviCommand, handleEliminaAlertsCommand } from "./02-commands-helper";
@@ -45,24 +46,24 @@ export class BotHandler {
       const commands_set = await this.bot.api.setMyCommands({
         commands: [
           {
-            command: "prezzo",
+            command: BotCommand.PREZZO,
             description: "<ISIN> - Mostra il prezzo attuale",
           },
           {
-            command: "alert",
+            command: BotCommand.ALERT,
             description: "<ISIN> <prezzo> - Inserisci alert",
           },
           {
-            command: "alerts_attivi",
+            command: BotCommand.ALERTS_ATTIVI,
             description: "Lista alerts attivi",
           },
           {
-            command: "elimina_alerts",
+            command: BotCommand.ELIMINA_ALERTS,
             description: "Elimina tutti gli alerts attivi",
           },
-          { command: "start", description: "Avvia il bot" },
-          { command: "help", description: "Mostra l'elenco dei comandi disponibili" },
-          { command: "admin", description: "Mostra i comandi riservati all'admin" },
+          { command: BotCommand.START, description: "Avvia il bot" },
+          { command: BotCommand.HELP, description: "Mostra l'elenco dei comandi disponibili" },
+          { command: BotCommand.ADMIN, description: "Mostra i comandi riservati all'admin" },
         ],
       });
       return commands_set;
@@ -79,37 +80,37 @@ export class BotHandler {
       return next();
     });
 
-    this.bot.command("prezzo", async (ctx: MyMessageContext) => {
+    this.bot.command(BotCommand.PREZZO, async (ctx: MyMessageContext) => {
       await handlePrezzoCommand(ctx);
     });
-    this.bot.command("alert", async (ctx: MyMessageContext) => {
+    this.bot.command(BotCommand.ALERT, async (ctx: MyMessageContext) => {
       await handleAlertCommand(ctx);
     });
-    this.bot.command("alerts_attivi", async (ctx: MyMessageContext) => {
+    this.bot.command(BotCommand.ALERTS_ATTIVI, async (ctx: MyMessageContext) => {
       await handleAlertsAttiviCommand(ctx);
     });
-    this.bot.command("elimina_alerts", async (ctx: MyMessageContext) => {
+    this.bot.command(BotCommand.ELIMINA_ALERTS, async (ctx: MyMessageContext) => {
       await handleEliminaAlertsCommand(ctx);
     });
-    this.bot.command("start", async (ctx: MyMessageContext) => {
+    this.bot.command(BotCommand.START, async (ctx: MyMessageContext) => {
       await handleStartCommand(ctx);
     });
-    this.bot.command("help", async (ctx: MyMessageContext) => {
+    this.bot.command(BotCommand.HELP, async (ctx: MyMessageContext) => {
       await handleHelpCommand(ctx);
     });
-    this.bot.command("admin", async (ctx: MyMessageContext) => {
+    this.bot.command(BotCommand.ADMIN, async (ctx: MyMessageContext) => {
       await handleAdminCommand(ctx);
     });
-    this.bot.command("kofi_all", async (ctx: MyMessageContext) => {
+    this.bot.command(BotCommand.KOFI_ALL, async (ctx: MyMessageContext) => {
       await handleKofiAllCommand(ctx);
     });
-    this.bot.command("kofi_user", async (ctx: MyMessageContext) => {
+    this.bot.command(BotCommand.KOFI_USER, async (ctx: MyMessageContext) => {
       await handleKofiUserCommand(ctx);
     });
-    this.bot.command("kofi_new_users", async (ctx: MyMessageContext) => {
+    this.bot.command(BotCommand.KOFI_NEW_USERS, async (ctx: MyMessageContext) => {
       await handleKofiNewUsersCommand(ctx);
     });
-    this.bot.command("mark_kofi_donor", async (ctx: MyMessageContext) => {
+    this.bot.command(BotCommand.MARK_KOFI_DONOR, async (ctx: MyMessageContext) => {
       await handleMarkKofiDonorCommand(ctx);
     });
     // Handle Callback

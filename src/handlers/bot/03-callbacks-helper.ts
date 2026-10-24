@@ -18,6 +18,7 @@ import { formatPrice } from "../../utils/price-formatter";
 import { logger } from "../../logger/logger";
 import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
 import { checkOwner } from "../../utils/authorization.util";
+import { AuthorizationAction } from "../../enums/authorization-action.enum";
 import {
   cancelDeleteAllAlerts,
   cancelDeleteAlert,
@@ -171,7 +172,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(confirmKofiAll, async (ctx) => {
     try {
-      if (!checkOwner(ctx, "callback [ confirmKofiAll ]")) return ctx.answer();
+      if (!checkOwner(ctx, AuthorizationAction.CONFIRM_KOFI_ALL_CALLBACK)) return ctx.answer();
 
       await sendKofiMessages(ctx, false);
     } catch (error) {
@@ -183,7 +184,7 @@ export const setupCallbacks = (bot: Bot): void => {
   bot.callbackQuery(confirmKofiUser, async (ctx) => {
     let user: User | null = null;
     try {
-      if (!checkOwner(ctx, "callback [ confirmKofiUser ]")) return ctx.answer();
+      if (!checkOwner(ctx, AuthorizationAction.CONFIRM_KOFI_USER_CALLBACK)) return ctx.answer();
 
       const telegramId = ctx.queryData.kofiUserTelegramId;
       user = await databaseHandler.findUserByTelegramId(telegramId);
@@ -207,7 +208,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(confirmKofiNewUsers, async (ctx) => {
     try {
-      if (!checkOwner(ctx, "callback [ confirmKofiNewUsers ]")) return ctx.answer();
+      if (!checkOwner(ctx, AuthorizationAction.CONFIRM_KOFI_NEW_USERS_CALLBACK)) return ctx.answer();
 
       await sendKofiMessages(ctx, true);
     } catch (error) {
@@ -218,7 +219,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(confirmMarkKofiDonor, async (ctx) => {
     try {
-      if (!checkOwner(ctx, "callback [ confirmMarkKofiDonor ]")) return ctx.answer();
+      if (!checkOwner(ctx, AuthorizationAction.CONFIRM_MARK_KOFI_DONOR_CALLBACK)) return ctx.answer();
 
       const telegramId = ctx.queryData.donorTelegramId;
       const user = await databaseHandler.findUserByTelegramId(telegramId);

@@ -1,5 +1,6 @@
 import type { MyCallbackQueryContext, MyMessageContext } from "../types/custom-context.type";
 import { env } from "../config/env";
+import { AuthorizationAction } from "../enums/authorization-action.enum";
 import { logger } from "../logger/logger";
 
 const OWNER_TELEGRAM_ID = env.OWNER_TELEGRAM_ID;
@@ -11,9 +12,9 @@ const OWNER_TELEGRAM_ID = env.OWNER_TELEGRAM_ID;
  * anche fuori dai `try`, quindi un throw non finirebbe in `errorHandler`.
  *
  * @param ctx - Contesto Telegram del comando o del callback (da qui si legge il mittente).
- * @param action - Etichetta per il log, es. "comando [ /kofi_user ]" o "callback [ confirmKofiAll ]"
+ * @param action - Azione protetta (`AuthorizationAction`), usata come etichetta nel log.
  */
-export const checkOwner = (ctx: MyMessageContext | MyCallbackQueryContext, action: string): boolean => {
+export const checkOwner = (ctx: MyMessageContext | MyCallbackQueryContext, action: AuthorizationAction): boolean => {
   const telegramId = ctx.from?.id;
 
   if (typeof telegramId === "number" && telegramId === OWNER_TELEGRAM_ID) return true;

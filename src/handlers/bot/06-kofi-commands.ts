@@ -8,6 +8,7 @@ import { errorHandler } from "../error/error-handler";
 import { validateKofiDonorInput, validateKofiUserInput } from "../../schemas/input-validator.schema";
 import { confirmKofiAll, confirmKofiUser, confirmKofiNewUsers, confirmMarkKofiDonor, cancelKofiAll, cancelKofiUser, cancelKofiNewUsers, cancelMarkKofiDonor } from "./04-callbacks-data";
 import { checkOwner } from "../../utils/authorization.util";
+import { AuthorizationAction } from "../../enums/authorization-action.enum";
 import { env } from "../../config/env";
 import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
 
@@ -108,7 +109,7 @@ export const sendKofiMessages = async (ctx: MyCallbackQueryContext, isNewUsers: 
 };
 
 const showKofiConfirmPrompt = async (ctx: MyMessageContext, isNewUsers: boolean): Promise<void> => {
-  const action = `comando [ ${isNewUsers ? "/kofi_new_users" : "/kofi_all"} ]`;
+  const action = isNewUsers ? AuthorizationAction.KOFI_NEW_USERS_COMMAND : AuthorizationAction.KOFI_ALL_COMMAND;
 
   if (!checkOwner(ctx, action)) return;
 
@@ -138,7 +139,7 @@ export const handleKofiAllCommand = async (ctx: MyMessageContext): Promise<void>
 };
 
 export const handleKofiUserCommand = async (ctx: MyMessageContext): Promise<void> => {
-  if (!checkOwner(ctx, "comando [ /kofi_user ]")) return;
+  if (!checkOwner(ctx, AuthorizationAction.KOFI_USER_COMMAND)) return;
 
   try {
     await ctx.sendChatAction("typing");
@@ -194,7 +195,7 @@ export const handleKofiNewUsersCommand = async (ctx: MyMessageContext): Promise<
 };
 
 export const handleMarkKofiDonorCommand = async (ctx: MyMessageContext): Promise<void> => {
-  if (!checkOwner(ctx, "comando [ /mark_kofi_donor ]")) return;
+  if (!checkOwner(ctx, AuthorizationAction.MARK_KOFI_DONOR_COMMAND)) return;
 
   try {
     await ctx.sendChatAction("typing");

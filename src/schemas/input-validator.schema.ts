@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BotCommand } from "../enums/bot-command.enum";
 
 // Validazione ISIN: 2 lettere, 9 alfanumerici, 1 cifra finale (case-insensitive, normalizzato a maiuscolo)
 const isinSchema = z.preprocess(
@@ -77,10 +78,10 @@ export const validateAlertInput = (
   rawAlertPrice: string | undefined,
 ): ValidateResult<AlertValidated> => {
   if (!rawIsin) {
-    return { success: false, errors: ["L'isin è richiesto per il comando /alert"] };
+    return { success: false, errors: [`L'isin è richiesto per il comando /${BotCommand.ALERT}`] };
   }
   if (!rawAlertPrice) {
-    return { success: false, errors: ["Il prezzo è richiesto per il comando /alert"] };
+    return { success: false, errors: [`Il prezzo è richiesto per il comando /${BotCommand.ALERT}`] };
   }
   const result = alertSchema.safeParse({ isin: rawIsin, alertPrice: rawAlertPrice });
   if (!result.success) {
