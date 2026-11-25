@@ -12,7 +12,7 @@ import {
 import { User } from "@prisma/client";
 import { MyCallbackQueryContext } from "../../types/custom-context.type";
 import { DatabaseHandler } from "../database/database-handler";
-import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./02-commands-helper";
+import { handleAlertsAttiviCommand, type PriceCommands } from "./02-commands-helper";
 import { errorHandler } from "../error/error-handler";
 import { formatPrice } from "../../utils/price-formatter";
 import { logger } from "../../logger/logger";
@@ -40,7 +40,7 @@ import { sendKofiMessages, sendKofiMessageToUser } from "./06-kofi-commands";
 
 const databaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
 
-export const setupCallbacks = (bot: Bot): void => {
+export const setupCallbacks = (bot: Bot, priceCommands: Pick<PriceCommands, "handlePrezzoCommand">): void => {
   bot.callbackQuery(preDeleteAlert, async (ctx) => {
     try {
       const alertId = ctx.queryData.alertId;
@@ -132,7 +132,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       const isin = ctx.queryData.isin;
 
-      const message = await handlePrezzoCommand(ctx, isin);
+      const message = await priceCommands.handlePrezzoCommand(ctx, isin);
       const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
         reply_markup: new InlineKeyboard().text(
           "🔄 Aggiorna prezzo",
@@ -152,7 +152,7 @@ export const setupCallbacks = (bot: Bot): void => {
       const isin = ctx.queryData.isin;
       const alertId = ctx.queryData.alertId;
 
-      const message = await handlePrezzoCommand(ctx, isin);
+      const message = await priceCommands.handlePrezzoCommand(ctx, isin);
       const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
         reply_markup: new InlineKeyboard()
           .text(

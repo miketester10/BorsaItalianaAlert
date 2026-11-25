@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import type { MyMessageContext } from "../../src/types/custom-context.type";
+import type { Bot } from "gramio";
+import { currentPriceFromCallbackAlertsAttivi, currentPriceFromComandoPrezzo } from "../../src/handlers/bot/04-callbacks-data";
+import type { MyCallbackQueryContext, MyMessageContext } from "../../src/types/custom-context.type";
 import {
   createValidResponse,
   createNotFoundResponse,
   createNoPriceResponse,
 } from "../fixtures/borsa-italiana-response";
 import {
-  getPriceByIsin,
+  createPriceProviderMock,
   handleError,
   loadCommandsHandler,
   registerCommandMocks,
@@ -23,7 +25,8 @@ const reply = mock(async (..._args: unknown[]): Promise<void> => {});
 const sendChatAction = mock(async (_action: string): Promise<void> => {});
 
 // Import dinamico: i mock devono essere registrati prima del modulo testato.
-const { handlePrezzoCommand } = await loadCommandsHandler();
+const { PriceCommands } = await loadCommandsHandler();
+const { setupCallbacks } = await import("../../src/handlers/bot/03-callbacks-helper");
 
 // Crea un contesto Telegram minimale per simulare un messaggio.
 const createContext = (text: string): MyMessageContext => {
@@ -52,43 +55,69 @@ const getReplyMessage = (): string => {
 };
 
 describe("handlePrezzoCommand", () => {
+  let priceProvider: ReturnType<typeof createPriceProviderMock>;
+  let priceCommands: InstanceType<typeof PriceCommands>;
+
   beforeEach(() => {
-    // Reset condiviso: default valido + pulizia chiamate (vedi shared-mocks).
     resetSharedMocks();
+    priceProvider = createPriceProviderMock();
+    priceCommands = new PriceCommands(priceProvider);
     reply.mockClear();
     sendChatAction.mockClear();
   });
 
   test("rifiuta un ISIN mancante senza chiamare l'API", async () => {
-    await handlePrezzoCommand(createContext("/prezzo"));
+    await priceCommands.handlePrezzoCommand(createContext("/prezzo"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Inserisci un ISIN valido.");
-    expect(getPriceByIsin).not.toHaveBeenCalled();
+    expect(priceProvider.getPriceByIsin).not.toHaveBeenCalled();
   });
 
   test("rifiuta un ISIN non valido senza chiamare l'API", async () => {
-    await handlePrezzoCommand(createContext("/prezzo ISIN-ERRATO"));
+    await priceCommands.handlePrezzoCommand(createContext("/prezzo ISIN-ERRATO"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Inserisci un ISIN valido.");
-    expect(getPriceByIsin).not.toHaveBeenCalled();
+    expect(priceProvider.getPriceByIsin).not.toHaveBeenCalled();
   });
 
   test("gestisce una risposta API con prezzo valido", async () => {
-    await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
+    await priceCommands.handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Label: BTP PER I TEST");
     expect(getReplyMessage()).toContain("Prezzo: 100€");
-    expect(getPriceByIsin).toHaveBeenCalledTimes(1);
+    expect(priceProvider.getPriceByIsin).toHaveBeenCalledTimes(1);
     expect(handleError).not.toHaveBeenCalled();
   });
 
-  test("gestisce un ISIN non trovato dall'API", async () => {
-    getPriceByIsin.mockImplementation(async () => createNotFoundResponse());
+  test("usa il provider iniettato nei callback di aggiornamento prezzo", async () => {
+    const callbackQuery = mock((_data: unknown, _handler: (ctx: MyCallbackQueryContext) => Promise<unknown>) => {});
+    setupCallbacks({ callbackQuery } as unknown as Bot, priceCommands);
+    const isin = "IT0005518128";
+    priceProvider.getPriceByIsin.mockResolvedValue(createValidResponse(123));
 
-    await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
+    for (const callbackData of [currentPriceFromComandoPrezzo, currentPriceFromCallbackAlertsAttivi]) {
+      const registration = callbackQuery.mock.calls.find(([data]) => data === callbackData);
+      if (!registration) throw new Error("Callback di aggiornamento prezzo non registrato");
+      const editText = mock(async (_message: unknown) => {});
+      const answer = mock(async () => {});
+      const ctx = { queryData: { isin, alertId: "alert-test" }, editText, answer } as unknown as MyCallbackQueryContext;
+
+      await registration[1](ctx);
+
+      expect(String(editText.mock.calls[0]?.[0])).toContain("Prezzo: 123€");
+      expect(answer).toHaveBeenCalledTimes(1);
+    }
+    expect(priceProvider.getPriceByIsin).toHaveBeenCalledTimes(2);
+    expect(priceProvider.getPriceByIsin).toHaveBeenCalledWith(isin);
+  });
+
+  test("gestisce un ISIN non trovato dall'API", async () => {
+    priceProvider.getPriceByIsin.mockImplementation(async () => createNotFoundResponse());
+
+    await priceCommands.handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("ISIN non valido o non trovato.");
@@ -96,9 +125,9 @@ describe("handlePrezzoCommand", () => {
   });
 
   test("gestisce un prezzo assente", async () => {
-    getPriceByIsin.mockImplementation(async () => createNoPriceResponse());
+    priceProvider.getPriceByIsin.mockImplementation(async () => createNoPriceResponse());
 
-    await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
+    await priceCommands.handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Prezzo non disponibile.");
@@ -106,9 +135,9 @@ describe("handlePrezzoCommand", () => {
   });
 
   test("gestisce un prezzo uguale a zero", async () => {
-    getPriceByIsin.mockImplementation(async () => createValidResponse(0));
+    priceProvider.getPriceByIsin.mockImplementation(async () => createValidResponse(0));
 
-    await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
+    await priceCommands.handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Prezzo non disponibile.");
@@ -116,11 +145,11 @@ describe("handlePrezzoCommand", () => {
   });
 
   test("inoltra gli errori API al gestore degli errori", async () => {
-    getPriceByIsin.mockImplementation(async () => {
+    priceProvider.getPriceByIsin.mockImplementation(async () => {
       throw new Error("Errore API simulato");
     });
 
-    await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
+    await priceCommands.handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
     expect(handleError).toHaveBeenCalledTimes(1);
     expect(reply).not.toHaveBeenCalled();

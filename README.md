@@ -31,7 +31,7 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
   - [Zod](https://zod.dev/) (Validazione runtime degli input)
 - **Database:** MongoDB con Prisma
 - **Containerizzazione:** Docker
-- **Pattern:** Singleton, Separation of Concerns
+- **Pattern:** Dependency Injection per i comandi prezzo, Singleton per gli handler esistenti, Separation of Concerns
 
 ## Iniziare
 
@@ -227,8 +227,8 @@ La pipeline si aspetta che il progetto sul VPS sia in `/home/ubuntu/BorsaItalian
 
 ### Design Patterns
 
-- **Singleton Pattern:** Implementato in tutti gli handler per garantire istanze uniche
-- **Service Locator leggero:** Le singleton vengono risolte tramite `getInstance()` nei moduli di orchestrazione
+- **Dependency Injection per i prezzi.** `main.ts` passa `ApiHandler` al costruttore di `PriceCommands` tramite il contratto `PriceProvider`. `BotHandler` registra `/prezzo`, `/alert` e i callback di aggiornamento usando la stessa istanza di `PriceCommands`. I test dei comandi possono fornire un provider finto.
+- **Singleton.** Gli handler esistenti sono accessibili tramite `getInstance()`. Il controllo periodico accede ancora a `ApiHandler` in questo modo.
 - **Separation of Concerns:** Ogni handler ha responsabilità specifiche
 
 ### Gestione Errori

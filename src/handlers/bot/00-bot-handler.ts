@@ -4,7 +4,7 @@ import { logger } from "../../logger/logger";
 import { BotCommand } from "../../enums/bot-command.enum";
 import { MyMessageContext } from "../../types/custom-context.type";
 import { handleHelpCommand, handleStartCommand, handleAdminCommand } from "./01-commands-basic.helper";
-import { handlePrezzoCommand, handleAlertCommand, handleAlertsAttiviCommand, handleEliminaAlertsCommand } from "./02-commands-helper";
+import { type PriceCommands, handleAlertsAttiviCommand, handleEliminaAlertsCommand } from "./02-commands-helper";
 import { setupCallbacks } from "./03-callbacks-helper";
 import { userHandler } from "./05-user-handler";
 import { handleKofiAllCommand, handleKofiNewUsersCommand, handleMarkKofiDonorCommand, handleKofiUserCommand } from "./06-kofi-commands";
@@ -26,8 +26,8 @@ export class BotHandler {
     return BotHandler._instance;
   }
 
-  async start(): Promise<void> {
-    await this.initializeCommands();
+  async start(priceCommands: PriceCommands): Promise<void> {
+    await this.initializeCommands(priceCommands);
     await this.bot.start();
 
     // Inizializza il menu dei comandi Telegram
@@ -74,17 +74,17 @@ export class BotHandler {
     }
   }
 
-  private async initializeCommands(): Promise<void> {
+  private async initializeCommands(priceCommands: PriceCommands): Promise<void> {
     this.bot.on(["message", "callback_query"], async (ctx, next) => {
       await userHandler(ctx);
       return next();
     });
 
     this.bot.command(BotCommand.PREZZO, async (ctx: MyMessageContext) => {
-      await handlePrezzoCommand(ctx);
+      await priceCommands.handlePrezzoCommand(ctx);
     });
     this.bot.command(BotCommand.ALERT, async (ctx: MyMessageContext) => {
-      await handleAlertCommand(ctx);
+      await priceCommands.handleAlertCommand(ctx);
     });
     this.bot.command(BotCommand.ALERTS_ATTIVI, async (ctx: MyMessageContext) => {
       await handleAlertsAttiviCommand(ctx);
@@ -114,6 +114,6 @@ export class BotHandler {
       await handleMarkKofiDonorCommand(ctx);
     });
     // Handle Callback
-    setupCallbacks(this.bot);
+    setupCallbacks(this.bot, priceCommands);
   }
 }

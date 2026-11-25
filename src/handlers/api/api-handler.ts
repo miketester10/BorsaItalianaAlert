@@ -2,6 +2,8 @@ import axios from "axios";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
 import { env } from "../../config/env";
+import type { BorsaItalianaResponse } from "../../interfaces/borsa-italiana-response.interface";
+import type { PriceProvider } from "../../interfaces/price-provider.interface";
 
 // Reuse TCP/TLS connections and set a sane timeout
 const httpAgent = new HttpAgent({
@@ -19,7 +21,7 @@ const httpClient = axios.create({
   httpsAgent,
 });
 
-export class ApiHandler {
+export class ApiHandler implements PriceProvider {
   private static _instance: ApiHandler;
 
   private constructor() {}
@@ -31,8 +33,8 @@ export class ApiHandler {
     return ApiHandler._instance;
   }
 
-  async getPriceByIsin<T>(isin: string): Promise<T> {
-    const response = await httpClient.get<T>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
+  async getPriceByIsin(isin: string): Promise<BorsaItalianaResponse> {
+    const response = await httpClient.get<BorsaItalianaResponse>(`${env.BORSA_ITALIANA_API}${isin}${env.BORSA_ITALIANA_API_TAIL}`, {
       headers: { Authorization: `Bearer ${env.BORSA_ITALIANA_JWT}` },
     });
     return response.data;

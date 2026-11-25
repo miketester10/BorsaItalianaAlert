@@ -1,6 +1,6 @@
 import { mock } from "bun:test";
 import type { Alert } from "@prisma/client";
-import type { BorsaItalianaResponse } from "../../src/interfaces/borsa-italiana-response.interface";
+import type { PriceProvider } from "../../src/interfaces/price-provider.interface";
 import type { MyMessageContext } from "../../src/types/custom-context.type";
 import { createValidResponse } from "../fixtures/borsa-italiana-response";
 
@@ -17,10 +17,12 @@ import { createValidResponse } from "../fixtures/borsa-italiana-response";
  * (`calculateCondition`) sono puri e restano quelli reali.
  */
 
-// Simula la chiamata API di Borsa Italiana per ISIN.
-export const getPriceByIsin = mock(
-  async (_isin: string): Promise<BorsaItalianaResponse> => createValidResponse(100),
-);
+export const createPriceProviderMock = () => ({
+  getPriceByIsin: mock<PriceProvider["getPriceByIsin"]>(async () => createValidResponse(100)),
+});
+
+// Il controllo periodico usa ancora il mock del modulo ApiHandler.
+export const { getPriceByIsin } = createPriceProviderMock();
 
 // Simula le query del database (superset: copre comandi e job).
 export const findAllAlerts = mock(async (): Promise<Alert[]> => []);

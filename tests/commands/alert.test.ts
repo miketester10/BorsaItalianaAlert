@@ -9,7 +9,7 @@ import {
 import {
   createAlert,
   findAlert,
-  getPriceByIsin,
+  createPriceProviderMock,
   handleError,
   loadCommandsHandler,
   registerCommandMocks,
@@ -26,7 +26,7 @@ const reply = mock(async (..._args: unknown[]): Promise<void> => {});
 const sendChatAction = mock(async (_action: string): Promise<void> => {});
 
 // Import dinamico: i mock devono essere registrati prima del modulo testato.
-const { handleAlertCommand } = await loadCommandsHandler();
+const { PriceCommands } = await loadCommandsHandler();
 
 // Crea un contesto Telegram minimale per simulare un messaggio.
 const createContext = (text: string): MyMessageContext => {
@@ -55,45 +55,49 @@ const getReplyMessage = (): string => {
 };
 
 describe("handleAlertCommand", () => {
+  let priceProvider: ReturnType<typeof createPriceProviderMock>;
+  let priceCommands: InstanceType<typeof PriceCommands>;
+
   beforeEach(() => {
-    // Reset condiviso: default valido + pulizia chiamate (vedi shared-mocks).
     resetSharedMocks();
+    priceProvider = createPriceProviderMock();
+    priceCommands = new PriceCommands(priceProvider);
     reply.mockClear();
     sendChatAction.mockClear();
   });
 
   test("rifiuta un input non valido senza chiamare API o database", async () => {
-    await handleAlertCommand(createContext("/alert ISIN-ERRATO 10"));
+    await priceCommands.handleAlertCommand(createContext("/alert ISIN-ERRATO 10"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Inserisci un ISIN ed un prezzo valido.");
-    expect(getPriceByIsin).not.toHaveBeenCalled();
+    expect(priceProvider.getPriceByIsin).not.toHaveBeenCalled();
     expect(findAlert).not.toHaveBeenCalled();
     expect(createAlert).not.toHaveBeenCalled();
   });
 
   test("rifiuta un prezzo mancante senza chiamare API o database", async () => {
-    await handleAlertCommand(createContext("/alert IT0005518128"));
+    await priceCommands.handleAlertCommand(createContext("/alert IT0005518128"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Inserisci un ISIN ed un prezzo valido.");
-    expect(getPriceByIsin).not.toHaveBeenCalled();
+    expect(priceProvider.getPriceByIsin).not.toHaveBeenCalled();
     expect(findAlert).not.toHaveBeenCalled();
   });
 
   test("non ricrea un alert già registrato", async () => {
     findAlert.mockImplementation(async () => ({ id: "alert-esistente" }) as unknown as Alert);
 
-    await handleAlertCommand(createContext("/alert IT0005518128 90"));
+    await priceCommands.handleAlertCommand(createContext("/alert IT0005518128 90"));
 
     expect(getReplyMessage()).toContain("Alert già registrato.");
     expect(createAlert).not.toHaveBeenCalled();
-    expect(getPriceByIsin).not.toHaveBeenCalled();
+    expect(priceProvider.getPriceByIsin).not.toHaveBeenCalled();
     expect(handleError).not.toHaveBeenCalled();
   });
 
   test("registra un alert sopra soglia con condizione above", async () => {
-    await handleAlertCommand(createContext("/alert IT0005518128 90"));
+    await priceCommands.handleAlertCommand(createContext("/alert IT0005518128 90"));
 
     expect(getReplyMessage()).toContain("Alert registrato con successo.");
     expect(createAlert).toHaveBeenCalledTimes(1);
@@ -110,7 +114,7 @@ describe("handleAlertCommand", () => {
   });
 
   test("registra un alert sotto soglia con condizione below", async () => {
-    await handleAlertCommand(createContext("/alert IT0005518128 110"));
+    await priceCommands.handleAlertCommand(createContext("/alert IT0005518128 110"));
 
     expect(getReplyMessage()).toContain("Alert registrato con successo.");
     expect(createAlert).toHaveBeenCalledWith(
@@ -122,7 +126,7 @@ describe("handleAlertCommand", () => {
   });
 
   test("registra con condizione equal se il prezzo è uguale alla soglia", async () => {
-    await handleAlertCommand(createContext("/alert IT0005518128 100"));
+    await priceCommands.handleAlertCommand(createContext("/alert IT0005518128 100"));
 
     expect(getReplyMessage()).toContain("Alert registrato con successo.");
     expect(createAlert).toHaveBeenCalledWith(
@@ -135,9 +139,9 @@ describe("handleAlertCommand", () => {
   });
 
   test("non registra nulla se l'ISIN non esiste", async () => {
-    getPriceByIsin.mockImplementation(async () => createNotFoundResponse());
+    priceProvider.getPriceByIsin.mockImplementation(async () => createNotFoundResponse());
 
-    await handleAlertCommand(createContext("/alert IT0005518128 90"));
+    await priceCommands.handleAlertCommand(createContext("/alert IT0005518128 90"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("ISIN non trovato. Nessun alert registrato.");
@@ -146,9 +150,9 @@ describe("handleAlertCommand", () => {
   });
 
   test("non registra nulla se il prezzo non è disponibile", async () => {
-    getPriceByIsin.mockImplementation(async () => createNoPriceResponse());
+    priceProvider.getPriceByIsin.mockImplementation(async () => createNoPriceResponse());
 
-    await handleAlertCommand(createContext("/alert IT0005518128 90"));
+    await priceCommands.handleAlertCommand(createContext("/alert IT0005518128 90"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Prezzo non disponibile. Nessun alert registrato.");
@@ -157,20 +161,20 @@ describe("handleAlertCommand", () => {
   });
 
   test("non registra nulla se il prezzo è zero", async () => {
-    getPriceByIsin.mockImplementation(async () => createValidResponse(0));
+    priceProvider.getPriceByIsin.mockImplementation(async () => createValidResponse(0));
 
-    await handleAlertCommand(createContext("/alert IT0005518128 90"));
+    await priceCommands.handleAlertCommand(createContext("/alert IT0005518128 90"));
 
     expect(getReplyMessage()).toContain("Prezzo non disponibile. Nessun alert registrato.");
     expect(createAlert).not.toHaveBeenCalled();
   });
 
   test("inoltra gli errori API al gestore degli errori", async () => {
-    getPriceByIsin.mockImplementation(async () => {
+    priceProvider.getPriceByIsin.mockImplementation(async () => {
       throw new Error("Errore API simulato");
     });
 
-    await handleAlertCommand(createContext("/alert IT0005518128 90"));
+    await priceCommands.handleAlertCommand(createContext("/alert IT0005518128 90"));
 
     expect(handleError).toHaveBeenCalledTimes(1);
     expect(createAlert).not.toHaveBeenCalled();
