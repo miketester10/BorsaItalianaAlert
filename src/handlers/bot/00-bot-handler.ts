@@ -1,30 +1,25 @@
-import { Bot } from "gramio";
-import { env } from "../../config/env";
+import type { Bot } from "gramio";
 import { logger } from "../../logger/logger";
 import { BotCommand } from "../../enums/bot-command.enum";
 import { MyMessageContext } from "../../types/custom-context.type";
 import { handleHelpCommand, handleStartCommand, handleAdminCommand } from "./01-commands-basic.helper";
-import { handlePrezzoCommand, handleAlertCommand, handleAlertsAttiviCommand, handleEliminaAlertsCommand } from "./02-commands-helper";
+import type { AlertCommands } from "./02-commands-helper";
 import { setupCallbacks } from "./03-callbacks-helper";
 import { userHandler } from "./05-user-handler";
-import { handleKofiAllCommand, handleKofiNewUsersCommand, handleMarkKofiDonorCommand, handleKofiUserCommand } from "./06-kofi-commands";
+import type { KofiCommands } from "./06-kofi-commands";
+import type { AlertRepository } from "../../interfaces/alert-repository.interface";
+import type { UserRepository } from "../../interfaces/user-repository.interface";
+import type { OwnerCheck } from "../../utils/authorization.util";
 
 export class BotHandler {
-  private readonly BOT_TOKEN: string = env.BOT_TOKEN;
-
-  private static _instance: BotHandler;
-  readonly bot: Bot;
-
-  private constructor() {
-    this.bot = new Bot(this.BOT_TOKEN);
-  }
-
-  static getInstance(): BotHandler {
-    if (!BotHandler._instance) {
-      BotHandler._instance = new BotHandler();
-    }
-    return BotHandler._instance;
-  }
+  constructor(
+    private readonly bot: Bot,
+    private readonly alertRepository: AlertRepository,
+    private readonly userRepository: UserRepository,
+    private readonly alertCommands: AlertCommands,
+    private readonly kofiCommands: KofiCommands,
+    private readonly checkOwner: OwnerCheck,
+  ) {}
 
   async start(): Promise<void> {
     await this.initializeCommands();
@@ -76,21 +71,21 @@ export class BotHandler {
 
   private async initializeCommands(): Promise<void> {
     this.bot.on(["message", "callback_query"], async (ctx, next) => {
-      await userHandler(ctx);
+      await userHandler(ctx, this.userRepository);
       return next();
     });
 
     this.bot.command(BotCommand.PREZZO, async (ctx: MyMessageContext) => {
-      await handlePrezzoCommand(ctx);
+      await this.alertCommands.handlePrezzoCommand(ctx);
     });
     this.bot.command(BotCommand.ALERT, async (ctx: MyMessageContext) => {
-      await handleAlertCommand(ctx);
+      await this.alertCommands.handleAlertCommand(ctx);
     });
     this.bot.command(BotCommand.ALERTS_ATTIVI, async (ctx: MyMessageContext) => {
-      await handleAlertsAttiviCommand(ctx);
+      await this.alertCommands.handleAlertsAttiviCommand(ctx);
     });
     this.bot.command(BotCommand.ELIMINA_ALERTS, async (ctx: MyMessageContext) => {
-      await handleEliminaAlertsCommand(ctx);
+      await this.alertCommands.handleEliminaAlertsCommand(ctx);
     });
     this.bot.command(BotCommand.START, async (ctx: MyMessageContext) => {
       await handleStartCommand(ctx);
@@ -99,21 +94,28 @@ export class BotHandler {
       await handleHelpCommand(ctx);
     });
     this.bot.command(BotCommand.ADMIN, async (ctx: MyMessageContext) => {
-      await handleAdminCommand(ctx);
+      await handleAdminCommand(ctx, this.checkOwner);
     });
     this.bot.command(BotCommand.KOFI_ALL, async (ctx: MyMessageContext) => {
-      await handleKofiAllCommand(ctx);
+      await this.kofiCommands.handleKofiAllCommand(ctx);
     });
     this.bot.command(BotCommand.KOFI_USER, async (ctx: MyMessageContext) => {
-      await handleKofiUserCommand(ctx);
+      await this.kofiCommands.handleKofiUserCommand(ctx);
     });
     this.bot.command(BotCommand.KOFI_NEW_USERS, async (ctx: MyMessageContext) => {
-      await handleKofiNewUsersCommand(ctx);
+      await this.kofiCommands.handleKofiNewUsersCommand(ctx);
     });
     this.bot.command(BotCommand.MARK_KOFI_DONOR, async (ctx: MyMessageContext) => {
-      await handleMarkKofiDonorCommand(ctx);
+      await this.kofiCommands.handleMarkKofiDonorCommand(ctx);
     });
     // Handle Callback
-    setupCallbacks(this.bot);
+    setupCallbacks(
+      this.bot,
+      this.alertRepository,
+      this.userRepository,
+      this.alertCommands,
+      this.kofiCommands,
+      this.checkOwner,
+    );
   }
 }

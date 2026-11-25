@@ -1,10 +1,10 @@
 import { format, FormattableString, italic, underline, InlineKeyboard, blockquote, code, bold } from "gramio";
-import { BorsaItalianaResponse, getLastPriceStatus } from "../../interfaces/borsa-italiana-response.interface";
 import { isCallbackContext, MyCallbackQueryContext, MyMessageContext } from "../../types/custom-context.type";
 import { logger } from "../../logger/logger";
-import { DatabaseHandler } from "../database/database-handler";
-import { ApiHandler } from "../api/api-handler";
-import { AlertHandler } from "../alert/alert-handler";
+import type { AlertRepository } from "../../interfaces/alert-repository.interface";
+import { getLastPriceStatus } from "../../interfaces/borsa-italiana-response.interface";
+import type { PriceProvider } from "../../interfaces/price-provider.interface";
+import { calculateCondition } from "../../utils/alert-condition.util";
 import { errorHandler } from "../error/error-handler";
 import { TelegramOptionsCustom } from "../../types/telegram-options-custom.type";
 import { validateAlertInput, validatePrezzoInput } from "../../schemas/input-validator.schema";
@@ -13,189 +13,190 @@ import { formatPrice } from "../../utils/price-formatter";
 import { currentPriceFromComandoPrezzo, preDeleteAlert, deleteAllAlerts, cancelDeleteAllAlerts } from "./04-callbacks-data";
 import { replyOrEdit } from "./reply-or-edit.helper";
 
-const databaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
-const apiHandler: ApiHandler = ApiHandler.getInstance();
-const alertHandler: AlertHandler = AlertHandler.getInstance();
+export class AlertCommands {
+  constructor(
+    private readonly alertRepository: Pick<AlertRepository, "findAlert" | "createAlert" | "findAllAlertsByTelegramId">,
+    private readonly priceProvider: PriceProvider,
+  ) {}
 
-export async function handlePrezzoCommand(ctx: MyMessageContext): Promise<void>;
-export async function handlePrezzoCommand(ctx: MyCallbackQueryContext, isinFromCallback: string): Promise<FormattableString>;
-export async function handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQueryContext, isinFromCallback?: string): Promise<FormattableString | void> {
-  const isinRaw = ctx.update?.message?.text?.trim().split(/\s+/)[1];
-  let isin: string;
-  let message: FormattableString;
+  handlePrezzoCommand(ctx: MyMessageContext): Promise<void>;
+  handlePrezzoCommand(ctx: MyCallbackQueryContext, isinFromCallback: string): Promise<FormattableString>;
+  async handlePrezzoCommand(ctx: MyMessageContext | MyCallbackQueryContext, isinFromCallback?: string): Promise<FormattableString | void> {
+    const isinRaw = ctx.update?.message?.text?.trim().split(/\s+/)[1];
+    let isin: string;
+    let message: FormattableString;
 
-  try {
-    if (!isCallbackContext(ctx)) {
-      await ctx.sendChatAction("typing");
+    try {
+      if (!isCallbackContext(ctx)) {
+        await ctx.sendChatAction("typing");
 
-      const validation = validatePrezzoInput(isinRaw);
+        const validation = validatePrezzoInput(isinRaw);
 
-      if (!validation.success) {
-        logger.error(validation.errors);
-        message = code(`⚠️ Inserisci un ISIN valido.`);
-        await ctx.reply(message);
-        return;
+        if (!validation.success) {
+          logger.error(validation.errors);
+          message = code(`⚠️ Inserisci un ISIN valido.`);
+          await ctx.reply(message);
+          return;
+        } else {
+          isin = validation.data;
+        }
       } else {
-        isin = validation.data;
+        if (!isinFromCallback) throw new Error(`ISIN non ricevuto dalla Callback`);
+        isin = isinFromCallback;
       }
-    } else {
-      if (!isinFromCallback) throw new Error(`ISIN non ricevuto dalla Callback`);
-      isin = isinFromCallback;
-    }
 
-    const response = await apiHandler.getPriceByIsin<BorsaItalianaResponse>(isin);
-
-    const status = getLastPriceStatus(response);
-    if (status.kind === "ok") {
-      const currentPrice = status.price;
-      const label = status.label;
-      message = blockquote(
-        format`${bold("🆔 ISIN:")} ${code(isin)}
+      const response = await this.priceProvider.getPriceByIsin(isin);
+      const status = getLastPriceStatus(response);
+      if (status.kind === "ok") {
+        const currentPrice = status.price;
+        const label = status.label;
+        message = blockquote(
+          format`${bold("🆔 ISIN:")} ${code(isin)}
                     ${bold("🏷️ Label:")} ${code(label)}
                     ${bold("💰 Prezzo:")} ${code(`${formatPrice(currentPrice)}€`)}
                   `,
-      );
-      logger.info(`Ultimo prezzo: ${currentPrice}€`);
-    } else if (status.kind === "nodata") {
-      message = code(`⚠️ Prezzo non disponibile. Riprova più tardi.`);
-      logger.warn(`ISIN ${isin} senza prezzo valido. Ricevuto: ${String(status.raw)}`);
-    } else {
-      message = code(`⚠️ ISIN non valido o non trovato.`);
-      logger.warn(`ISIN ${isin} non valido o non trovato.`);
-      await replyOrEdit(ctx, message);
-      return;
-    }
+        );
+        logger.info(`Ultimo prezzo: ${currentPrice}€`);
+      } else if (status.kind === "nodata") {
+        message = code(`⚠️ Prezzo non disponibile. Riprova più tardi.`);
+        logger.warn(`ISIN ${isin} senza prezzo valido. Ricevuto: ${String(status.raw)}`);
+      } else {
+        message = code(`⚠️ ISIN non valido o non trovato.`);
+        logger.warn(`ISIN ${isin} non valido o non trovato.`);
+        await replyOrEdit(ctx, message);
+        return;
+      }
 
-    if (isCallbackContext(ctx)) {
-      return message;
-    } else {
-      const replyOptions: TelegramOptionsCustom = {
-        reply_markup: new InlineKeyboard().text("🔄 Aggiorna prezzo", currentPriceFromComandoPrezzo.pack({ isin })),
-      };
-      await replyOrEdit(ctx, message, replyOptions);
+      if (isCallbackContext(ctx)) {
+        return message;
+      } else {
+        const replyOptions: TelegramOptionsCustom = {
+          reply_markup: new InlineKeyboard().text("🔄 Aggiorna prezzo", currentPriceFromComandoPrezzo.pack({ isin })),
+        };
+        await replyOrEdit(ctx, message, replyOptions);
+      }
+    } catch (error) {
+      await errorHandler(error, ctx);
     }
-  } catch (error) {
-    await errorHandler(error, ctx);
   }
-}
 
-export const handleAlertCommand = async (ctx: MyMessageContext): Promise<void> => {
-  const [command, isinRaw, priceRaw] = ctx.update?.message?.text?.trim().split(/\s+/) as [string, string | undefined, string | undefined];
-  let message: FormattableString;
+  async handleAlertCommand(ctx: MyMessageContext): Promise<void> {
+    const [, isinRaw, priceRaw] = ctx.update?.message?.text?.trim().split(/\s+/) as [string, string | undefined, string | undefined];
+    let message: FormattableString;
 
-  try {
-    const telegramId = requireTelegramId(ctx);
-    await ctx.sendChatAction("typing");
-
-    const validation = validateAlertInput(isinRaw, priceRaw);
-
-    if (!validation.success) {
-      logger.error(validation.errors);
-      message = code(`⚠️ Inserisci un ISIN ed un prezzo valido.`);
-      await ctx.reply(message);
-      return;
-    }
-
-    const { isin, alertPrice } = validation.data;
-
-    const existingAlert = await databaseHandler.findAlert(telegramId, isin, alertPrice);
-    if (existingAlert) {
-      message = code(`⚠️ Alert già registrato.`);
-      logger.warn(`Alert già registrato.`);
-      await ctx.reply(message);
-      return;
-    }
-
-    const response = await apiHandler.getPriceByIsin<BorsaItalianaResponse>(isin);
-
-    const status = getLastPriceStatus(response);
-    if (status.kind === "ok") {
-      const lastCheckPrice = status.price;
-      const label = status.label;
-      const lastCondition = alertHandler.calculateCondition(lastCheckPrice, alertPrice);
-      await databaseHandler.createAlert({ userTelegramId: telegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
-      message = code(`✅ Alert registrato con successo.`);
-      logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${formatPrice(alertPrice)}€`);
-    } else if (status.kind === "nodata") {
-      message = code(`⚠️ Prezzo non disponibile. Nessun alert registrato. Riprova più tardi.`);
-      logger.warn(`ISIN ${isin} senza prezzo valido. Nessun alert registrato. Ricevuto: ${String(status.raw)}`);
-    } else {
-      message = code(`⚠️ ISIN non trovato. Nessun alert registrato.`);
-      logger.warn(`ISIN ${isin} non trovato. Nessun alert registrato.`);
-    }
-
-    await ctx.reply(message);
-  } catch (error) {
-    await errorHandler(error, ctx);
-  }
-};
-
-export const handleAlertsAttiviCommand = async (ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> => {
-  let message: string | FormattableString;
-  let replyOptions: TelegramOptionsCustom = {};
-
-  try {
-    const telegramId = requireTelegramId(ctx);
-    if (!isCallbackContext(ctx)) {
+    try {
+      const telegramId = requireTelegramId(ctx);
       await ctx.sendChatAction("typing");
+
+      const validation = validateAlertInput(isinRaw, priceRaw);
+
+      if (!validation.success) {
+        logger.error(validation.errors);
+        message = code(`⚠️ Inserisci un ISIN ed un prezzo valido.`);
+        await ctx.reply(message);
+        return;
+      }
+
+      const { isin, alertPrice } = validation.data;
+
+      const existingAlert = await this.alertRepository.findAlert(telegramId, isin, alertPrice);
+      if (existingAlert) {
+        message = code(`⚠️ Alert già registrato.`);
+        logger.warn(`Alert già registrato.`);
+        await ctx.reply(message);
+        return;
+      }
+
+      const response = await this.priceProvider.getPriceByIsin(isin);
+      const status = getLastPriceStatus(response);
+      if (status.kind === "ok") {
+        const lastCheckPrice = status.price;
+        const label = status.label;
+        const lastCondition = calculateCondition(lastCheckPrice, alertPrice);
+        await this.alertRepository.createAlert({ userTelegramId: telegramId, isin, label, alertPrice, lastCondition, lastCheckPrice });
+        message = code(`✅ Alert registrato con successo.`);
+        logger.info(`Alert per ISIN ${isin} registrato con successo. Alert price: ${formatPrice(alertPrice)}€`);
+      } else if (status.kind === "nodata") {
+        message = code(`⚠️ Prezzo non disponibile. Nessun alert registrato. Riprova più tardi.`);
+        logger.warn(`ISIN ${isin} senza prezzo valido. Nessun alert registrato. Ricevuto: ${String(status.raw)}`);
+      } else {
+        message = code(`⚠️ ISIN non trovato. Nessun alert registrato.`);
+        logger.warn(`ISIN ${isin} non trovato. Nessun alert registrato.`);
+      }
+
+      await ctx.reply(message);
+    } catch (error) {
+      await errorHandler(error, ctx);
     }
+  }
 
-    const alerts = await databaseHandler.findAllAlertsByTelegramId(telegramId);
+  async handleAlertsAttiviCommand(ctx: MyMessageContext | MyCallbackQueryContext): Promise<void> {
+    let message: string | FormattableString;
+    let replyOptions: TelegramOptionsCustom = {};
 
-    if (alerts.length > 0) {
-      // Ordina gli alert per ISIN (alfabetico) e per prezzo (decrescente)
-      alerts.sort((a, b) => {
-        const isinCompare = a.isin.localeCompare(b.isin);
-        if (isinCompare !== 0) return isinCompare;
-        return b.alertPrice - a.alertPrice;
-      });
+    try {
+      const telegramId = requireTelegramId(ctx);
+      if (!isCallbackContext(ctx)) {
+        await ctx.sendChatAction("typing");
+      }
 
-      message = blockquote(
-        format`${bold("📋 Lista degli alerts attivi")}
+      const alerts = await this.alertRepository.findAllAlertsByTelegramId(telegramId);
+
+      if (alerts.length > 0) {
+        // Ordina gli alert per ISIN (alfabetico) e per prezzo (decrescente)
+        alerts.sort((a, b) => {
+          const isinCompare = a.isin.localeCompare(b.isin);
+          if (isinCompare !== 0) return isinCompare;
+          return b.alertPrice - a.alertPrice;
+        });
+
+        message = blockquote(
+          format`${bold("📋 Lista degli alerts attivi")}
 
                     ${underline(italic("Seleziona un alert per eliminarlo \no per controllare il prezzo attuale"))}
                   `,
-      );
+        );
 
-      // Creo i pulsanti inline per ogni alert
-      const keyboard = new InlineKeyboard();
-      alerts.forEach((alert, _index) => {
-        let textButton = `${_index + 1}: ${alert.isin} - ${formatPrice(alert.alertPrice)}€`;
-        keyboard.text(textButton, preDeleteAlert.pack({ alertId: alert.id }), { style: "primary" }).row();
-      });
+        // Creo i pulsanti inline per ogni alert
+        const keyboard = new InlineKeyboard();
+        alerts.forEach((alert, _index) => {
+          let textButton = `${_index + 1}: ${alert.isin} - ${formatPrice(alert.alertPrice)}€`;
+          keyboard.text(textButton, preDeleteAlert.pack({ alertId: alert.id }), { style: "primary" }).row();
+        });
 
-      replyOptions = { reply_markup: keyboard };
-    } else {
-      message = code(`⚠️ Non hai nessun alert attivo.`);
+        replyOptions = { reply_markup: keyboard };
+      } else {
+        message = code(`⚠️ Non hai nessun alert attivo.`);
+      }
+
+      await replyOrEdit(ctx, message, replyOptions);
+    } catch (error) {
+      await errorHandler(error, ctx);
     }
-
-    await replyOrEdit(ctx, message, replyOptions);
-  } catch (error) {
-    await errorHandler(error, ctx);
   }
-};
 
-export const handleEliminaAlertsCommand = async (ctx: MyMessageContext): Promise<void> => {
-  let message: string | FormattableString;
-  let replyOptions: TelegramOptionsCustom = {};
+  async handleEliminaAlertsCommand(ctx: MyMessageContext): Promise<void> {
+    let message: string | FormattableString;
+    let replyOptions: TelegramOptionsCustom = {};
 
-  try {
-    const telegramId = requireTelegramId(ctx);
-    await ctx.sendChatAction("typing");
+    try {
+      const telegramId = requireTelegramId(ctx);
+      await ctx.sendChatAction("typing");
 
-    const alerts = await databaseHandler.findAllAlertsByTelegramId(telegramId);
+      const alerts = await this.alertRepository.findAllAlertsByTelegramId(telegramId);
 
-    if (alerts.length > 0) {
-      message = blockquote(format`${bold("⚠️ Vuoi eliminare tutti gli alerts attivi?")}`);
-      replyOptions.reply_markup = new InlineKeyboard()
-        .text("✅ Sì", deleteAllAlerts.pack(), { style: "success" })
-        .text("❌ No", cancelDeleteAllAlerts.pack(), { style: "danger" });
-    } else {
-      message = code(`⚠️ Non hai nessun alert attivo da eliminare.`);
+      if (alerts.length > 0) {
+        message = blockquote(format`${bold("⚠️ Vuoi eliminare tutti gli alerts attivi?")}`);
+        replyOptions.reply_markup = new InlineKeyboard()
+          .text("✅ Sì", deleteAllAlerts.pack(), { style: "success" })
+          .text("❌ No", cancelDeleteAllAlerts.pack(), { style: "danger" });
+      } else {
+        message = code(`⚠️ Non hai nessun alert attivo da eliminare.`);
+      }
+
+      await ctx.reply(message, replyOptions);
+    } catch (error) {
+      await errorHandler(error, ctx);
     }
-
-    await ctx.reply(message, replyOptions);
-  } catch (error) {
-    await errorHandler(error, ctx);
   }
-};
+}

@@ -1,23 +1,12 @@
 import express, { Request, Response, Express } from "express";
 import { Server } from "http";
-import { env } from "../../config/env";
 import { logger } from "../../logger/logger";
 
 export class ServerHandler {
-  private readonly EXPRESS_PORT: number = env.PORT;
-
-  private static _instance: ServerHandler;
   private readonly app: Express = express();
   private server: Server | null = null;
 
-  private constructor() {}
-
-  static getInstance(): ServerHandler {
-    if (!ServerHandler._instance) {
-      ServerHandler._instance = new ServerHandler();
-    }
-    return ServerHandler._instance;
-  }
+  constructor(private readonly port: number) {}
 
   async start(): Promise<void> {
     // Setup Health route
@@ -26,8 +15,8 @@ export class ServerHandler {
     });
 
     return new Promise<void>((resolve, reject) => {
-      this.server = this.app.listen(this.EXPRESS_PORT, () => {
-        logger.info(`✅ Server ready on port ${this.EXPRESS_PORT}`);
+      this.server = this.app.listen(this.port, () => {
+        logger.info(`✅ Server ready on port ${this.port}`);
         resolve();
       });
 

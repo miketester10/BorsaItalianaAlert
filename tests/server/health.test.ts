@@ -1,22 +1,22 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { registerCommandMocks } from "../helpers/shared-mocks";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { ServerHandler } from "../../src/handlers/server/server-handler";
 
-// Mock condivisi tra file: vedi shared-mocks (evita contaminazioni nel registry).
-registerCommandMocks();
-
-// Import dinamico: i mock devono essere registrati prima del modulo testato.
-const { ServerHandler } = await import("../../src/handlers/server/server-handler");
-
-const BASE_URL = "http://localhost:3999";
+const PORT = 3999;
+const BASE_URL = `http://localhost:${PORT}`;
 
 describe("ServerHandler /health", () => {
+  let server: ServerHandler;
+
+  beforeEach(() => {
+    server = new ServerHandler(PORT);
+  });
+
   afterEach(async () => {
-    // Chiude sempre il server, anche se il test fallisce.
-    await ServerHandler.getInstance().stop();
+    await server.stop();
   });
 
   test("risponde 200 con status OK su /health", async () => {
-    await ServerHandler.getInstance().start();
+    await server.start();
 
     const response = await fetch(`${BASE_URL}/health`);
 
@@ -25,7 +25,7 @@ describe("ServerHandler /health", () => {
   });
 
   test("non espone altre route oltre /health", async () => {
-    await ServerHandler.getInstance().start();
+    await server.start();
 
     const response = await fetch(`${BASE_URL}/route-inesistente`);
 

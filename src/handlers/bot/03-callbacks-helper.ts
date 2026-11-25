@@ -11,13 +11,14 @@ import {
 } from "gramio";
 import { User } from "@prisma/client";
 import { MyCallbackQueryContext } from "../../types/custom-context.type";
-import { DatabaseHandler } from "../database/database-handler";
-import { handleAlertsAttiviCommand, handlePrezzoCommand } from "./02-commands-helper";
+import type { AlertRepository } from "../../interfaces/alert-repository.interface";
+import type { UserRepository } from "../../interfaces/user-repository.interface";
+import type { AlertCommands } from "./02-commands-helper";
 import { errorHandler } from "../error/error-handler";
 import { formatPrice } from "../../utils/price-formatter";
 import { logger } from "../../logger/logger";
 import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
-import { checkOwner } from "../../utils/authorization.util";
+import type { OwnerCheck } from "../../utils/authorization.util";
 import { AuthorizationAction } from "../../enums/authorization-action.enum";
 import {
   cancelDeleteAllAlerts,
@@ -36,17 +37,22 @@ import {
   deleteAlert,
   preDeleteAlert,
 } from "./04-callbacks-data";
-import { sendKofiMessages, sendKofiMessageToUser } from "./06-kofi-commands";
+import { type KofiCommands, sendKofiMessageToUser } from "./06-kofi-commands";
 
-const databaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
-
-export const setupCallbacks = (bot: Bot): void => {
+export const setupCallbacks = (
+  bot: Bot,
+  alertRepository: AlertRepository,
+  userRepository: UserRepository,
+  alertCommands: AlertCommands,
+  kofiCommands: KofiCommands,
+  checkOwner: OwnerCheck,
+): void => {
   bot.callbackQuery(preDeleteAlert, async (ctx) => {
     try {
       const alertId = ctx.queryData.alertId;
       const telegramId = ctx.from.id;
 
-      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, telegramId);
+      const alert = await alertRepository.findAlertByIdAndTelegramId(alertId, telegramId);
       if (!alert) {
         await ctx.editText(code(`❌ Alert non trovato.`));
         return ctx.answer();
@@ -85,14 +91,14 @@ export const setupCallbacks = (bot: Bot): void => {
       const alertId = ctx.queryData.alertId;
       const telegramId = ctx.from.id;
 
-      const alert = await databaseHandler.findAlertByIdAndTelegramId(alertId, telegramId);
+      const alert = await alertRepository.findAlertByIdAndTelegramId(alertId, telegramId);
       if (!alert) {
         await ctx.editText(code(`❌ Alert non trovato.`));
         return ctx.answer();
       }
 
-      await databaseHandler.deleteAlertById(alertId);
-      await handleAlertsAttiviCommand(ctx);
+      await alertRepository.deleteAlertById(alertId);
+      await alertCommands.handleAlertsAttiviCommand(ctx);
     } catch (error) {
       await errorHandler(error, ctx);
     }
@@ -101,7 +107,7 @@ export const setupCallbacks = (bot: Bot): void => {
 
   bot.callbackQuery(cancelDeleteAlert, async (ctx) => {
     try {
-      await handleAlertsAttiviCommand(ctx);
+      await alertCommands.handleAlertsAttiviCommand(ctx);
     } catch (error) {
       await errorHandler(error, ctx);
     }
@@ -111,7 +117,7 @@ export const setupCallbacks = (bot: Bot): void => {
   bot.callbackQuery(deleteAllAlerts, async (ctx) => {
     try {
       const telegramId = ctx.from.id;
-      await databaseHandler.deleteAllAlertsByTelegramId(telegramId);
+      await alertRepository.deleteAllAlertsByTelegramId(telegramId);
       await ctx.editText(code(`✅ Tutti gli alerts sono stati eliminati con successo.`));
     } catch (error) {
       await errorHandler(error, ctx);
@@ -132,7 +138,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       const isin = ctx.queryData.isin;
 
-      const message = await handlePrezzoCommand(ctx, isin);
+      const message = await alertCommands.handlePrezzoCommand(ctx, isin);
       const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
         reply_markup: new InlineKeyboard().text(
           "🔄 Aggiorna prezzo",
@@ -152,7 +158,7 @@ export const setupCallbacks = (bot: Bot): void => {
       const isin = ctx.queryData.isin;
       const alertId = ctx.queryData.alertId;
 
-      const message = await handlePrezzoCommand(ctx, isin);
+      const message = await alertCommands.handlePrezzoCommand(ctx, isin);
       const replyOptions: Partial<TelegramParams.EditMessageTextParams> = {
         reply_markup: new InlineKeyboard()
           .text(
@@ -174,7 +180,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       if (!checkOwner(ctx, AuthorizationAction.CONFIRM_KOFI_ALL_CALLBACK)) return ctx.answer();
 
-      await sendKofiMessages(ctx, false);
+      await kofiCommands.sendKofiMessages(ctx, false);
     } catch (error) {
       await errorHandler(error, ctx);
     }
@@ -187,19 +193,19 @@ export const setupCallbacks = (bot: Bot): void => {
       if (!checkOwner(ctx, AuthorizationAction.CONFIRM_KOFI_USER_CALLBACK)) return ctx.answer();
 
       const telegramId = ctx.queryData.kofiUserTelegramId;
-      user = await databaseHandler.findUserByTelegramId(telegramId);
+      user = await userRepository.findUserByTelegramId(telegramId);
       if (!user) {
         await ctx.editText(code("❌ Utente non trovato."));
         return ctx.answer();
       }
       await sendKofiMessageToUser(ctx, telegramId, user.name);
-      await databaseHandler.updateKofiNotifiedBatch([telegramId]);
+      await userRepository.updateKofiNotifiedBatch([telegramId]);
       await ctx.editText(code(`✅ Messaggio inviato a ${user.name}.`));
     } catch (error) {
       await errorHandler(error, ctx);
       const status = getUserStatusFromTelegramError(error);
       if (status && user) {
-        await databaseHandler.updateUserStatus(user.telegramId, status);
+        await userRepository.updateUserStatus(user.telegramId, status);
         logger.warn(`Utente ${user.telegramId} marcato come ${status}`);
       }
     }
@@ -210,7 +216,7 @@ export const setupCallbacks = (bot: Bot): void => {
     try {
       if (!checkOwner(ctx, AuthorizationAction.CONFIRM_KOFI_NEW_USERS_CALLBACK)) return ctx.answer();
 
-      await sendKofiMessages(ctx, true);
+      await kofiCommands.sendKofiMessages(ctx, true);
     } catch (error) {
       await errorHandler(error, ctx);
     }
@@ -222,12 +228,12 @@ export const setupCallbacks = (bot: Bot): void => {
       if (!checkOwner(ctx, AuthorizationAction.CONFIRM_MARK_KOFI_DONOR_CALLBACK)) return ctx.answer();
 
       const telegramId = ctx.queryData.donorTelegramId;
-      const user = await databaseHandler.findUserByTelegramId(telegramId);
+      const user = await userRepository.findUserByTelegramId(telegramId);
       if (!user) {
         await ctx.editText(code("❌ Utente non trovato."));
         return ctx.answer();
       }
-      await databaseHandler.markKofiDonor(telegramId);
+      await userRepository.markKofiDonor(telegramId);
       await ctx.editText(code("✅ Donatore registrato con successo."));
     } catch (error) {
       await errorHandler(error, ctx);

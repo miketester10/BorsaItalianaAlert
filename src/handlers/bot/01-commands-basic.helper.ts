@@ -1,4 +1,4 @@
-import { blockquote, bold, code, format, italic, underline, InlineKeyboard } from "gramio";
+import { blockquote, bold, code, format, italic, underline } from "gramio";
 import { MyMessageContext } from "../../types/custom-context.type";
 import { logger } from "../../logger/logger";
 import { BotCommand } from "../../enums/bot-command.enum";
@@ -6,7 +6,7 @@ import { AuthorizationAction } from "../../enums/authorization-action.enum";
 import { errorHandler } from "../error/error-handler";
 import { kofiKeyboard } from "./06-kofi-commands";
 import { requireTelegramId } from "../../utils/telegram-id.util";
-import { checkOwner } from "../../utils/authorization.util";
+import type { OwnerCheck } from "../../utils/authorization.util";
 
 export const handleStartCommand = async (ctx: MyMessageContext): Promise<void> => {
   try {
@@ -66,7 +66,7 @@ export const handleHelpCommand = async (ctx: MyMessageContext): Promise<void> =>
   }
 };
 
-export const handleAdminCommand = async (ctx: MyMessageContext): Promise<void> => {
+export const handleAdminCommand = async (ctx: MyMessageContext, checkOwner: OwnerCheck): Promise<void> => {
   if (!checkOwner(ctx, AuthorizationAction.ADMIN_COMMAND)) {
     await ctx.reply(code("⚠️ Comando riservato all'admin."));
     return;

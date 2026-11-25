@@ -1,40 +1,28 @@
-import { Alert, Condition } from "@prisma/client";
-import { DatabaseHandler } from "../database/database-handler";
-import { ApiHandler } from "../api/api-handler";
-import { logger } from "../../logger/logger";
-import { BorsaItalianaResponse, getLastPriceStatus } from "../../interfaces/borsa-italiana-response.interface";
-import { UpdateAlertDto } from "../../dto/update-alert.dto";
-import { BotHandler } from "../bot/00-bot-handler";
-import { Bot, blockquote, bold, code, format, underline } from "gramio";
+import { type Alert, Condition } from "@prisma/client";
 import pLimit from "p-limit";
-import { formatPrice } from "../../utils/price-formatter";
-import { getUserStatusFromTelegramError } from "../../utils/user-status.util";
+import type { AlertRepository } from "../../interfaces/alert-repository.interface";
+import { getLastPriceStatus } from "../../interfaces/borsa-italiana-response.interface";
+import type { NotificationService } from "../../interfaces/notification-service.interface";
+import type { PriceProvider } from "../../interfaces/price-provider.interface";
+import type { UserRepository } from "../../interfaces/user-repository.interface";
+import type { UpdateAlertDto } from "../../dto/update-alert.dto";
+import { logger } from "../../logger/logger";
+import { calculateCondition } from "../../utils/alert-condition.util";
 
 export class AlertHandler {
-  private static _instance: AlertHandler;
-  private readonly databaseHandler: DatabaseHandler = DatabaseHandler.getInstance();
-  private readonly apiHandler: ApiHandler = ApiHandler.getInstance();
-
-  // Lazy init: ottengo l'istanza del bot solo quando serve (evito il problema della dipendenza circolare)
-  private get bot(): Bot {
-    return BotHandler.getInstance().bot;
-  }
-
-  private constructor() {}
-
-  static getInstance(): AlertHandler {
-    if (!AlertHandler._instance) {
-      AlertHandler._instance = new AlertHandler();
-    }
-    return AlertHandler._instance;
-  }
+  constructor(
+    private readonly alertRepository: Pick<AlertRepository, "findAllAlerts" | "updateAlert">,
+    private readonly userRepository: Pick<UserRepository, "updateUserStatus">,
+    private readonly priceProvider: PriceProvider,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   /**
    * Controlla tutti gli alert, confronta il prezzo corrente con alertPrice,
    * invia notifiche se la condizione è cambiata e aggiorna il DB.
    */
   async checkAndNotifyAlerts(): Promise<void> {
-    const alerts = await this.databaseHandler.findAllAlerts({ onlyActiveUsers: true });
+    const alerts = await this.alertRepository.findAllAlerts({ onlyActiveUsers: true });
     if (alerts.length === 0) return;
 
     // Ottimizzazione: prendo tutti gli ISIN unici per ridurre chiamate API
@@ -46,7 +34,7 @@ export class AlertHandler {
     const requests = isins.map((isin) =>
       limit(async () => {
         try {
-          const response = await this.apiHandler.getPriceByIsin<BorsaItalianaResponse>(isin);
+          const response = await this.priceProvider.getPriceByIsin(isin);
           return { isin, response };
         } catch (error) {
           throw new Error(`ISIN ${isin} - ${(error as Error).message}`);
@@ -97,17 +85,16 @@ export class AlertHandler {
         continue;
       }
 
-      const newCondition = this.calculateCondition(currentPrice, alert.alertPrice);
+      const newCondition = calculateCondition(currentPrice, alert.alertPrice);
 
       if (this.shouldNotify(alert, newCondition)) {
-        try {
-          await this.sendNotification(alert, currentPrice, newCondition);
-        } catch (error) {
+        const notification = await this.notificationService.sendAlert(alert, currentPrice, newCondition);
+        if (!notification.sent) {
+          const { error, userStatus } = notification;
           logger.error(`Errore nell'invio della notifica allo user ${alert.userTelegramId}: ${(error as Error).message}`);
-          const status = getUserStatusFromTelegramError(error);
-          if (status) {
-            await this.databaseHandler.updateUserStatus(alert.userTelegramId, status);
-            logger.warn(`User ${alert.userTelegramId} marcato come ${status}`);
+          if (userStatus) {
+            await this.userRepository.updateUserStatus(alert.userTelegramId, userStatus);
+            logger.warn(`User ${alert.userTelegramId} marcato come ${userStatus}`);
           }
           continue;
         }
@@ -120,15 +107,6 @@ export class AlertHandler {
         }
       }
     }
-  }
-
-  /**
-   * Determina la condizione attuale (above, below, equal)
-   */
-  calculateCondition(currentPrice: number, alertPrice: number): Condition {
-    if (currentPrice > alertPrice) return Condition.above;
-    if (currentPrice < alertPrice) return Condition.below;
-    return Condition.equal;
   }
 
   /**
@@ -147,28 +125,6 @@ export class AlertHandler {
       lastCondition: condition,
       lastCheckPrice: price,
     };
-    await this.databaseHandler.updateAlert(updateAlertDto);
-  }
-
-  /**
-   * Invia la notifica a Telegram
-   */
-  private async sendNotification(alert: Alert, price: number, condition: Condition): Promise<void> {
-    const priceMovementLine = condition === Condition.above ? format`🟢 Il prezzo ha ${bold("SUPERATO")}` : format`🔴 Il prezzo è ${bold("SCESO")} sotto`;
-
-    const message = blockquote(
-      format`🚨 ${bold(format`${underline("ALERT")}`)}
-
-                    ${bold("🆔 ISIN:")} ${code(alert.isin)}
-                    ${bold("🏷️ Label:")} ${code(alert.label)}
-                    ${priceMovementLine} ${code(`${formatPrice(alert.alertPrice)}€`)}
-                    ${bold("💰 Prezzo attuale:")} ${code(`${price}€`)}
-                `,
-    );
-
-    await this.bot.api.sendMessage({
-      chat_id: alert.userTelegramId,
-      text: message,
-    });
+    await this.alertRepository.updateAlert(updateAlertDto);
   }
 }

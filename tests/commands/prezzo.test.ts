@@ -1,29 +1,18 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { AlertCommands } from "../../src/handlers/bot/02-commands-helper";
 import type { MyMessageContext } from "../../src/types/custom-context.type";
 import {
   createValidResponse,
   createNotFoundResponse,
   createNoPriceResponse,
 } from "../fixtures/borsa-italiana-response";
-import {
-  getPriceByIsin,
-  handleError,
-  loadCommandsHandler,
-  registerCommandMocks,
-  resetSharedMocks,
-} from "../helpers/shared-mocks";
-
-// Mock condivisi tra file: vedi shared-mocks (evita contaminazioni nel registry).
-registerCommandMocks();
+import { createAlertRepositoryMock, createPriceProviderMock } from "../helpers/shared-mocks";
 
 // Simula la funzione che invia una risposta Telegram.
 const reply = mock(async (..._args: unknown[]): Promise<void> => {});
 
 // Simula l'azione Telegram "typing".
 const sendChatAction = mock(async (_action: string): Promise<void> => {});
-
-// Import dinamico: i mock devono essere registrati prima del modulo testato.
-const { handlePrezzoCommand } = await loadCommandsHandler();
 
 // Crea un contesto Telegram minimale per simulare un messaggio.
 const createContext = (text: string): MyMessageContext => {
@@ -52,77 +41,78 @@ const getReplyMessage = (): string => {
 };
 
 describe("handlePrezzoCommand", () => {
+  let alertRepository: ReturnType<typeof createAlertRepositoryMock>;
+  let priceProvider: ReturnType<typeof createPriceProviderMock>;
+  let commands: AlertCommands;
+
   beforeEach(() => {
-    // Reset condiviso: default valido + pulizia chiamate (vedi shared-mocks).
-    resetSharedMocks();
+    alertRepository = createAlertRepositoryMock();
+    priceProvider = createPriceProviderMock();
+    commands = new AlertCommands(alertRepository, priceProvider);
     reply.mockClear();
     sendChatAction.mockClear();
   });
 
   test("rifiuta un ISIN mancante senza chiamare l'API", async () => {
-    await handlePrezzoCommand(createContext("/prezzo"));
+    await commands.handlePrezzoCommand(createContext("/prezzo"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Inserisci un ISIN valido.");
-    expect(getPriceByIsin).not.toHaveBeenCalled();
+    expect(priceProvider.getPriceByIsin).not.toHaveBeenCalled();
   });
 
   test("rifiuta un ISIN non valido senza chiamare l'API", async () => {
-    await handlePrezzoCommand(createContext("/prezzo ISIN-ERRATO"));
+    await commands.handlePrezzoCommand(createContext("/prezzo ISIN-ERRATO"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Inserisci un ISIN valido.");
-    expect(getPriceByIsin).not.toHaveBeenCalled();
+    expect(priceProvider.getPriceByIsin).not.toHaveBeenCalled();
   });
 
   test("gestisce una risposta API con prezzo valido", async () => {
-    await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
+    await commands.handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Label: BTP PER I TEST");
     expect(getReplyMessage()).toContain("Prezzo: 100€");
-    expect(getPriceByIsin).toHaveBeenCalledTimes(1);
-    expect(handleError).not.toHaveBeenCalled();
+    expect(priceProvider.getPriceByIsin).toHaveBeenCalledTimes(1);
   });
 
   test("gestisce un ISIN non trovato dall'API", async () => {
-    getPriceByIsin.mockImplementation(async () => createNotFoundResponse());
+    priceProvider.getPriceByIsin.mockImplementation(async () => createNotFoundResponse());
 
-    await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
+    await commands.handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("ISIN non valido o non trovato.");
-    expect(handleError).not.toHaveBeenCalled();
   });
 
   test("gestisce un prezzo assente", async () => {
-    getPriceByIsin.mockImplementation(async () => createNoPriceResponse());
+    priceProvider.getPriceByIsin.mockImplementation(async () => createNoPriceResponse());
 
-    await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
+    await commands.handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Prezzo non disponibile.");
-    expect(handleError).not.toHaveBeenCalled();
   });
 
   test("gestisce un prezzo uguale a zero", async () => {
-    getPriceByIsin.mockImplementation(async () => createValidResponse(0));
+    priceProvider.getPriceByIsin.mockImplementation(async () => createValidResponse(0));
 
-    await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
+    await commands.handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
     expect(reply).toHaveBeenCalledTimes(1);
     expect(getReplyMessage()).toContain("Prezzo non disponibile.");
-    expect(handleError).not.toHaveBeenCalled();
   });
 
   test("inoltra gli errori API al gestore degli errori", async () => {
-    getPriceByIsin.mockImplementation(async () => {
+    priceProvider.getPriceByIsin.mockImplementation(async () => {
       throw new Error("Errore API simulato");
     });
 
-    await handlePrezzoCommand(createContext("/prezzo IT0005518128"));
+    await commands.handlePrezzoCommand(createContext("/prezzo IT0005518128"));
 
-    expect(handleError).toHaveBeenCalledTimes(1);
-    expect(reply).not.toHaveBeenCalled();
+    expect(reply).toHaveBeenCalledTimes(1);
+    expect(getReplyMessage()).toContain("Si è verificato un errore. Riprova più tardi.");
   });
 });

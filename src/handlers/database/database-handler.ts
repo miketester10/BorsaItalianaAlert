@@ -5,20 +5,14 @@ import { UpdateUserDto } from "../../dto/update-user.dto";
 import { CreateAlertDto } from "../../dto/create-alert.dto";
 import { UpdateAlertDto } from "../../dto/update-alert.dto";
 import { FindAllUsersOptions } from "../../interfaces/find-all-users-options.interface";
+import type { AlertRepository } from "../../interfaces/alert-repository.interface";
+import type { UserRepository } from "../../interfaces/user-repository.interface";
 
-export class DatabaseHandler {
-  private static _instance: DatabaseHandler;
-  readonly prisma: PrismaClient;
+export class DatabaseHandler implements AlertRepository, UserRepository {
+  private readonly prisma: PrismaClient;
 
-  private constructor() {
-    this.prisma = new PrismaClient(); // new PrismaClient({ log: ["query", "warn", "error"] });  se voglio vedere i log delle query
-  }
-
-  static getInstance(): DatabaseHandler {
-    if (!DatabaseHandler._instance) {
-      DatabaseHandler._instance = new DatabaseHandler();
-    }
-    return DatabaseHandler._instance;
+  constructor(databaseUrl: string) {
+    this.prisma = new PrismaClient({ datasourceUrl: databaseUrl });
   }
 
   /**

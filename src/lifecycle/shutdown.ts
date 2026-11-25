@@ -1,45 +1,53 @@
-import { BotHandler } from "../handlers/bot/00-bot-handler";
-import { DatabaseHandler } from "../handlers/database/database-handler";
-import { ServerHandler } from "../handlers/server/server-handler";
-import { stopAlertPriceJob } from "../jobs/alert-price.job";
 import { logger } from "../logger/logger";
 
-const botHandler = BotHandler.getInstance();
-const serverHandler = ServerHandler.getInstance();
-const databaseHandler = DatabaseHandler.getInstance();
+type ShutdownDependencies = {
+  job: { stop(): void };
+  bot: { stop(): Promise<void> };
+  server: { stop(): Promise<void> };
+  database: { disconnect(): Promise<void> };
+  process: {
+    on(signal: "SIGINT" | "SIGTERM", listener: () => void): unknown;
+    exit(code: number): void;
+  };
+};
 
-let isShuttingDown = false;
+export class ShutdownHandler {
+  private isShuttingDown = false;
 
-export const shutdown = async (exitCode: number, reason: string): Promise<void> => {
-  if (isShuttingDown) {
-    logger.warn(`Shutdown graceful in corso (${reason})...`);
-    return;
+  constructor(private readonly dependencies: ShutdownDependencies) {}
+
+  async shutdown(exitCode: number, reason: string): Promise<void> {
+    if (this.isShuttingDown) {
+      logger.warn(`Shutdown graceful in corso (${reason})...`);
+      return;
+    }
+
+    this.isShuttingDown = true;
+    logger.debug(`Shutdown graceful avviato (${reason})...`);
+
+    const { job, bot, server, database, process } = this.dependencies;
+    try {
+      job.stop();
+
+      const results = await Promise.allSettled([bot.stop(), server.stop(), database.disconnect()]);
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          const component = ["Bot", "Server", "Database"][index];
+          logger.error(`Errore durante lo shutdown del ${component}: ${String(result.reason)}`);
+        }
+      });
+    } finally {
+      process.exit(exitCode);
+    }
   }
 
-  isShuttingDown = true;
-  logger.debug(`Shutdown graceful avviato (${reason})...`);
-
-  try {
-    stopAlertPriceJob();
-
-    const results = await Promise.allSettled([botHandler.stop(), serverHandler.stop(), databaseHandler.disconnect()]);
-    results.forEach((result, index) => {
-      if (result.status === "rejected") {
-        const component = ["Bot", "Server", "Database"][index];
-        logger.error(`Errore durante lo shutdown del ${component}: ${String(result.reason)}`);
-      }
+  registerProcessShutdown(): void {
+    const { process } = this.dependencies;
+    process.on("SIGINT", () => {
+      void this.shutdown(0, "SIGINT");
     });
-  } finally {
-    process.exit(exitCode);
+    process.on("SIGTERM", () => {
+      void this.shutdown(0, "SIGTERM");
+    });
   }
-};
-
-export const registerProcessShutdown = (): void => {
-  process.on("SIGINT", () => {
-    shutdown(0, "SIGINT");
-  });
-
-  process.on("SIGTERM", () => {
-    shutdown(0, "SIGTERM");
-  });
-};
+}

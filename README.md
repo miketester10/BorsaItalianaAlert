@@ -31,7 +31,7 @@ Bot Telegram per monitorare i prezzi dei titoli della Borsa Italiana e inviare n
   - [Zod](https://zod.dev/) (Validazione runtime degli input)
 - **Database:** MongoDB con Prisma
 - **Containerizzazione:** Docker
-- **Pattern:** Singleton, Separation of Concerns
+- **Pattern:** Dependency Injection manuale, Separation of Concerns
 
 ## Iniziare
 
@@ -168,13 +168,14 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 
 ```
 ├── src/
-│   ├── handlers/        # Logica di business (bot, alert, api, database, error)
+│   ├── handlers/        # Logica applicativa e adapter
 │   │   ├── bot/         # Gestione bot Telegram
-│   │   ├── alert/       # Logica alert e notifiche
+│   │   ├── alert/       # Controllo soglie e orchestrazione
 │   │   ├── api/         # Integrazione API esterne
 │   │   ├── database/    # Operazioni database
 │   │   ├── server       # Express server
-│   │   └── error/       # Gestione errori
+│   │   ├── error/       # Gestione errori
+│   │   └── notification/ # Notifiche alert Telegram
 │   ├── utils/           # Utility helpers (es. formattazione prezzi)
 │   ├── types/           # Tipi TypeScript
 │   ├── dto/             # Data Transfer Objects
@@ -185,12 +186,12 @@ Il sistema utilizza una logica bidirezionale che distingue tra:
 │   ├── lifecycle/       # Lifecycle app (es. graceful shutdown)
 │   ├── logger/          # Configurazione logging
 │   ├── schemas/         # Schemi Zod per validazione input
-│   └── main.ts          # Punto di ingresso
+│   └── main.ts          # Composition Root e punto di ingresso
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml   # CI/CD: deploy automatico su VPS al push su main
 ├── prisma/              # Schema database e migrazioni
-├── tests/               # Suite di test (commands, config, fixtures, helpers, interfaces, jobs, schemas, server, utils)
+├── tests/               # Suite di test (commands, config, fixtures, helpers, interfaces, jobs, lifecycle, schemas, server, utils)
 ├── docker-compose.yml   # Configurazione Docker
 ├── package.json
 ├── tsconfig.json
@@ -225,11 +226,16 @@ La pipeline si aspetta che il progetto sul VPS sia in `/home/ubuntu/BorsaItalian
 
 ## Architettura
 
-### Design Patterns
+### Composizione delle dipendenze
 
-- **Singleton Pattern:** Implementato in tutti gli handler per garantire istanze uniche
-- **Service Locator leggero:** Le singleton vengono risolte tramite `getInstance()` nei moduli di orchestrazione
-- **Separation of Concerns:** Ogni handler ha responsabilità specifiche
+`src/main.ts` legge la configurazione validata, crea le istanze applicative e le passa ai costruttori. Le istanze condivise durano quanto il processo.
+
+- `DatabaseHandler` usa un solo client Prisma e implementa `AlertRepository` e `UserRepository`. Il bot e il controllo periodico condividono la stessa istanza.
+- `ApiHandler` implementa `PriceProvider`. I comandi Telegram e `AlertHandler` usano lo stesso provider e interpretano la risposta con `getLastPriceStatus()`.
+- `AlertHandler` verifica le soglie e invia tramite `NotificationService`. `TelegramNotificationService` formatta il messaggio e traduce gli errori di blocco o disattivazione. `BotHandler` e il servizio condividono il client GramIO creato in `main.ts`.
+- `AlertPriceJob` riceve la funzione di controllo degli alert. `ShutdownHandler` riceve il job, il bot, il server, il database e le operazioni del processo necessarie per gestire i segnali e l’uscita.
+
+I test costruiscono istanze con dipendenze finte locali. La suite usa un server HTTP locale per verificare `/health`.
 
 ### Gestione Errori
 
@@ -243,19 +249,19 @@ La pipeline si aspetta che il progetto sul VPS sia in `/home/ubuntu/BorsaItalian
 
 All'avvio dell'app il flusso è il seguente:
 
-1. `main.ts` registra gli handler di shutdown (`SIGINT`, `SIGTERM`) tramite `registerProcessShutdown()`.
+1. `main.ts` compone le dipendenze e registra `SIGINT` e `SIGTERM` tramite `ShutdownHandler.registerProcessShutdown()`.
 2. Viene avviato il server Express per l'endpoint health-check.
 3. Viene aperta la connessione al database MongoDB tramite Prisma.
 4. Viene avviato il bot Telegram e inizializzati comandi/menu.
 5. Parte il job di monitoraggio prezzi:
-   - `NODE_ENV=development` → job test (ogni minuto)
-   - `NODE_ENV=production` → job produzione (lun-ven, 07:00-18:58, ogni 2 minuti)
+   - `NODE_ENV=development` o `test` → job test (ogni minuto)
+   - `NODE_ENV=production` → job produzione (lun-ven, 07:00-18:58, ogni 2 minuti, fuso `Europe/Rome`)
 
 #### Flow di shutdown graceful
 
 Quando arriva un segnale di stop o un errore in startup:
 
-1. Viene attivato `shutdown(exitCode, reason)`.
+1. Viene chiamato `ShutdownHandler.shutdown(exitCode, reason)`.
 2. Il job di monitoraggio viene fermato.
 3. In parallelo vengono chiusi:
    - bot Telegram

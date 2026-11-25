@@ -29,44 +29,45 @@ Prod: ogni 2 min, lun–ven 07:00–18:58 `Europe/Rome`. Dev/test: ogni minuto.
 ## Struttura
 
 ```
-src/main.ts                         # entrypoint: server -> db -> bot -> job
+src/main.ts                         # Composition Root e avvio: server -> db -> bot -> job
 src/handlers/bot/00-bot-handler.ts  # registrazione comandi + menu Telegram
 src/handlers/bot/01-commands-basic.helper.ts  # start/help/admin
-src/handlers/bot/02-commands-helper.ts         # prezzo/alert/alerts_attivi/elimina_alerts
+src/handlers/bot/02-commands-helper.ts         # AlertCommands: prezzo/alert/alerts_attivi/elimina_alerts
 src/handlers/bot/reply-or-edit.helper.ts        # helper neutro replyOrEdit (usato da bot/ ed error/, rompe il ciclo error <-> 02)
 src/handlers/bot/03-callbacks-helper.ts + 04-callbacks-data.ts  # inline keyboard callbacks
 src/handlers/bot/05-user-handler.ts # sync utente ad ogni update + reattivazione status
-src/handlers/bot/06-kofi-commands.ts
+src/handlers/bot/06-kofi-commands.ts # KofiCommands: inviti e donatori
 src/handlers/alert/alert-handler.ts # checkAndNotifyAlerts: raggruppa ISIN, fetch, confronta, notifica
+src/handlers/notification/telegram-notification.service.ts  # messaggi di alert e classificazione errori Telegram
 src/handlers/api/api-handler.ts     # wrapper axios keep-alive, timeout 10s
 src/handlers/database/database-handler.ts  # unico accesso a Prisma
 src/handlers/error/error-handler.ts # gestione uniforme errori bot
 src/handlers/server/server-handler.ts
-src/jobs/alert-price.job.ts         # startAlertPriceJob / startTestAlertPriceJob / stopAlertPriceJob
-src/lifecycle/shutdown.ts           # graceful shutdown
+src/jobs/alert-price.job.ts         # AlertPriceJob: start / stop e controllo iniettato
+src/lifecycle/shutdown.ts           # ShutdownHandler: segnali e graceful shutdown
 src/schemas/input-validator.schema.ts  # TUTTA la validazione input utente (Zod)
 src/config/env.schema.ts + env.ts      # validazione env Zod fail-fast (unico punto che legge process.env)
 src/dto/ /src/interfaces/ /src/types/ /src/enums/ /src/utils/
 prisma/schema.prisma                # modelli User, Alert, enum Condition/UserStatus
-tests/commands|config|fixtures|helpers|interfaces|jobs|schemas|server|utils  # suite di test (mock condivisi in helpers/)
+tests/commands|config|fixtures|helpers|interfaces|jobs|lifecycle|schemas|server|utils  # suite di test (factory dei mock in helpers/)
 ```
 
 ## Pattern architetturali (obbligatori)
 
-- **Singleton** in ogni handler: costruttore `private`, accesso solo via `XxxHandler.getInstance()`. Non usare `new` direttamente, non creare istanze multiple.
-- **Separation of Concerns:** `bot/` = solo Telegram, `alert/` = logica soglie/notifiche, `api/` = solo HTTP, `database/` = solo Prisma, `error/` = solo gestione errori. `replyOrEdit` vive nel file neutro `src/handlers/bot/reply-or-edit.helper.ts`: importarlo sempre da lì, mai da `02-commands-helper.ts` (evita dipendenza circolare `error <-> 02`).
-- **Lazy bot in AlertHandler:** usa il getter `get bot()` esistente per evitare dipendenze circolari con `BotHandler`. Non importare `bot` come singleton eager da `AlertHandler`.
+- **Dependency Injection manuale.** `src/main.ts` è il Composition Root. Crea e condivide le istanze applicative, passa la configurazione validata e inietta le dipendenze nei costruttori. Le funzioni di registrazione dei callback e di sincronizzazione utente ricevono dipendenze esplicite come argomenti. Nei test costruisci istanze con fake locali.
+- **Separation of Concerns:** `bot/` = solo Telegram, `alert/` = logica soglie e orchestrazione, `notification/` = invio Telegram, `api/` = solo HTTP, `database/` = solo Prisma, `error/` = solo gestione errori. `replyOrEdit` vive nel file neutro `src/handlers/bot/reply-or-edit.helper.ts`: importarlo sempre da lì, mai da `02-commands-helper.ts` (evita dipendenza circolare `error <-> 02`).
+- **Contratti.** `DatabaseHandler` implementa `AlertRepository` e `UserRepository`. `ApiHandler` implementa `PriceProvider`. `AlertHandler` invia tramite `NotificationService`. `TelegramNotificationService` riceve la stessa API del bot utilizzato da `BotHandler` e traduce gli errori di consegna nello stato utente applicabile.
 - **DB ping reale:** `DatabaseHandler.connect()` fa `$connect()` + `$runCommandRaw({ ping: 1 })`. Non rimuovere il ping: `$connect()` da solo è lazy e darebbe falso OK con Mongo spento.
-- **Shutdown order** (`src/lifecycle/shutdown.ts`): 1. `stopAlertPriceJob()` 2. in parallelo `bot.stop() + server.stop() + db.disconnect()` via `Promise.allSettled` 3. `process.exit(code)`. Segnali gestiti: `SIGINT`, `SIGTERM`.
-- **Autorizzazione:** i check riservati all'owner usano `checkOwner(ctx, AuthorizationAction.X)` da `src/utils/authorization.util.ts` (fail-closed, warn sui tentativi), con le azioni nell'enum `AuthorizationAction` (`src/enums/authorization-action.enum.ts`); la proprietà di un alert si verifica in query con `findAlertByIdAndTelegramId(alertId, telegramId)` (null → "Alert non trovato"); i callback senza ID nel payload (es. `deleteAllAlerts`) agiscono solo sul mittente (`telegramId`), nessun check extra. Mai fidarsi degli ID arrivati nel callbackData.
+- **Shutdown order** (`src/lifecycle/shutdown.ts`): 1. `job.stop()` 2. in parallelo `bot.stop() + server.stop() + db.disconnect()` via `Promise.allSettled` 3. `process.exit(code)`. Segnali gestiti: `SIGINT`, `SIGTERM`.
+- **Autorizzazione:** i check riservati all'owner usano `checkOwner(ctx, AuthorizationAction.X)`. Il controllo è creato in `main.ts` tramite `createOwnerCheck` (fail-closed, warn sui tentativi). Le azioni sono nell'enum `AuthorizationAction` (`src/enums/authorization-action.enum.ts`); la proprietà di un alert si verifica in query con `findAlertByIdAndTelegramId(alertId, telegramId)` (null → "Alert non trovato"); i callback senza ID nel payload (es. `deleteAllAlerts`) agiscono solo sul mittente (`telegramId`), nessun check extra. Mai fidarsi degli ID arrivati nel callbackData.
 
 ## Convenzioni codice
 
 - Validazione input: **sempre Zod** in `src/schemas/input-validator.schema.ts` (`validatePrezzoInput`, `validateAlertInput`, `validateKofiUserInput`, `validateKofiDonorInput`). ISIN: `/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/` + normalizzazione centralizzata nello schema (`preprocess` con `trim()` + `toUpperCase()`): accetta anche minuscole. Mai duplicare `.toUpperCase()` nei command handler. Mai validare inline con regex/`Number()` nei command handler.
-- DB access: solo tramite `DatabaseHandler` + DTO (`CreateAlertDto`, `UpdateAlertDto`, `CreateUserDto`, `UpdateUserDto`). Mai chiamare `new PrismaClient()` fuori da `DatabaseHandler`.
-- API Borsa Italiana: solo tramite `ApiHandler.getPriceByIsin(isin)` (URL + header `Authorization` costruiti dentro, da `env`). Prezzo corrente = **ultimo** elemento di `intradayPoint`, da leggere solo con `getLastPriceStatus()` (unica chiamata: `ok` con `price+label`, `invalid`, `nodata` con `raw`; verifica risposta + tipo `number` + `NaN` + `> 0`): mai `!` su `endPx`, mai salvare/inviare prezzi non validati. Se `nodata`, messaggio utente `⚠️ Prezzo non disponibile.` (+ warn con valore raw) e skip senza scrivere nel DB.
+- DB access: tramite `AlertRepository` / `UserRepository` e i relativi DTO (`CreateAlertDto`, `UpdateAlertDto`, `CreateUserDto`, `UpdateUserDto`). Mai chiamare `new PrismaClient()` fuori da `DatabaseHandler`.
+- API Borsa Italiana: tramite `PriceProvider.getPriceByIsin(isin)`. `ApiHandler` costruisce URL e header `Authorization` dalla configurazione iniettata. Prezzo corrente = **ultimo** elemento di `intradayPoint`, da leggere solo con `getLastPriceStatus()` (unica chiamata: `ok` con `price+label`, `invalid`, `nodata` con `raw`; verifica risposta + tipo `number` + `NaN` + `> 0`): mai `!` su `endPx`, mai salvare/inviare prezzi non validati. Se `nodata`, messaggio utente `⚠️ Prezzo non disponibile.` (+ warn con valore raw) e skip senza scrivere nel DB.
 - Ottimizzazione alert: raggruppa per ISIN unici (`Set`), fetch parallelo con `p-limit(40)`, risultati con `Promise.allSettled`, mappa `priceMap[isin]`. Conta successi/errori e logga success-rate. Non cambiare il limite 40 senza motivo.
-- Notifiche: invia solo se `newCondition !== alert.lastCondition && newCondition !== equal` (`shouldNotify`). Dopo `sendNotification` OK, aggiorna DB con `lastCondition + lastCheckPrice`. Se `sendMessage` lancia `Forbidden`, mappa con `getUserStatusFromTelegramError()` e chiama `updateUserStatus()` (blocked/deactivated), poi `continue` senza aggiornare l'alert.
+- Notifiche: invia solo se `newCondition !== alert.lastCondition && newCondition !== equal` (`shouldNotify`). Dopo `sendAlert` OK, aggiorna DB con `lastCondition + lastCheckPrice`. L’adapter mappa gli errori di blocco o disattivazione con `getUserStatusFromTelegramError()`. In caso di errore il job aggiorna lo stato utente se applicabile e prosegue senza aggiornare l’alert.
 - Filtri utenti: il job elabora solo utenti `active` (`findAllAlerts({ onlyActiveUsers: true })`). `05-user-handler.ts` riporta a `active` chi interagisce di nuovo.
 - Errori nei comandi bot: wrap `try/catch` + `await errorHandler(error, ctx)` alla fine (sempre `await`, mai floating). Mai lanciare senza catch nei handler Telegram. Mai `!` su `ctx.from` (né `?.x!` altrove): nei contesti message usa `requireTelegramId(ctx)` da `src/utils/telegram-id.util.ts` dentro il `try` (lancia → `errorHandler`); nei callback `ctx.from` è non-optional: estrai sempre `const telegramId = ctx.from.id` e passa la variabile (mai `ctx.from.id` inline come argomento). `05-user-handler.ts` non rilancia mai (solo `logger.error`), così il middleware chiama sempre `next()`. `errorHandler` gestisce già `message is not modified` (solo `answerCallbackQuery`) e `AxiosError` con `status + message`.
 - Risposte Telegram: usa helper `replyOrEdit(ctx, message, options)` da `src/handlers/bot/reply-or-edit.helper.ts` per supportare sia comandi che callback. Formattazione con helper gramio (`format`, `code`, `bold`, `blockquote`, `InlineKeyboard`). Prezzi con `formatPrice()` da `src/utils/price-formatter.ts`.
@@ -94,7 +95,7 @@ Schema Prisma: `User.telegramId @id @map("_id")`, `Alert @db.ObjectId`, relation
 ## Verifiche prima di finire
 
 1. `bun typecheck` deve passare senza errori. Riporta l'errore reale se fallisce; non dichiarare controlli superati se non eseguiti.
-2. Nessun `console.log`, nessun `new PrismaClient()` fuori da `DatabaseHandler`, nessun `new BotHandler/AlertHandler/...` diretto.
+2. Nessun `console.log`, nessun `new PrismaClient()` fuori da `DatabaseHandler`, `new BotHandler/AlertHandler/...` solo in `main.ts` e nei test.
 3. Se toccato `prisma/schema.prisma`: rigenerato client + push (solo se autorizzato e sul DB corretto).
 4. Se nuovo comando: registrato in comandi + menu + validato con Zod.
 5. Non aggiungere dipendenze senza necessità; se le aggiungi usa `bun add`.
